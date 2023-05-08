@@ -1,0 +1,53 @@
+cursor:
+   style:
+      shape: Block
+      blinking: Off
+
+enable_rgb: true
+
+env:
+   TERM: screen-256color
+
+font:
+   builtin_box_drawing: true
+   normal:
+      family: FiraCode Nerd Font
+      style: Retina
+   bold:
+      family: FiraCode Nerd Font
+      style: Bold
+   bold_italic:
+      family: FiraCode Nerd Font
+      style: Bold Italic
+   italic:
+      family: FiraCode Nerd Font
+      style: Italic
+   size: 14.0
+
+live_config_reload: true
+
+selection:
+   semantic_escape_chars: ",│`|:\"' ()[]{}<>\t"
+   save_to_clipboard: true
+
+shell:
+   program: /bin/zsh
+   args:
+      - --login
+
+#scrolling:
+#   history: 10000
+
+window:
+   decorations: full
+   dynamic_padding: true
+   dynamic_title: true
+   opacity: 0.92
+   padding:
+      x: 16
+      y: 16
+   #startup_mode: Windowed
+   startup_mode: SimpleFullscreen
+   tabspaces: 4
+
+working_directory: None
