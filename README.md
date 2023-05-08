@@ -1,0 +1,73 @@
+# Development Config
+
+Personal working environment config 
+
+## ZSH
+ohmyzsh
+```bash
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+```
+
+### Theme
+
+[spaceship](https://spaceship-prompt.sh/getting-started/)
+
+```bash
+# Instal nerd fonts(Fira Code)
+
+brew tap homebrew/cask-fonts
+brew install --cask font-fira-mono-nerd-font
+
+# Restarting the pc is required
+```
+
+```bash
+git clone https://github.com/spaceship-prompt/spaceship-prompt.git "$ZSH_CUSTOM/themes/spaceship-prompt" --depth=1
+ln -s "$ZSH_CUSTOM/themes/spaceship-prompt/spaceship.zsh-theme" "$ZSH_CUSTOM/themes/spaceship.zsh-theme"
+
+# Replace default theme with spaceship
+ZSH_THEME=“spaceship”
+
+(Optional)
+SPACESHIP_RUST_VERBOSE_VERSION=true
+```
+
+## Terminal
+
+[alacritty](https://alacritty.org)
+```bash
+brew install --cask alacritty
+
+# After install to macos for the first time [issue](https://github.com/alacritty/alacritty/issues/6500)
+Application > (Right click to Alacritty) > Open
+```
+
+### Config
+
+Create a `.config` folder under `$HOME` directory 
+```bash
+mkdir -p .config/alacritty
+
+# Download the config from the repo
+cp -r ~/Downloads/alacritty ~/.config/alacritty/
+
+# Close & re-open the terminal
+```
+
+## Terminal Multiplexer
+
+[tmux](https://github.com/tmux/tmux/wiki)
+
+```bash
+mkdir -p .config/tmux
+
+# Download the config from the repo
+cp -r ~/Downloads/tmux ~/.config/tmux/
+
+# Run tmux in the terminal
+tmux
+
+# Hit Control(Ctrl) + b + I to install tmux plugins
+# Either hit Control(Ctrl) + b + R or tmux source ~/.config/tmux/tmux.config
+```
+[Tmux cheatsheet](https://tmuxcheatsheet.com)
