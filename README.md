@@ -30,6 +30,12 @@ ZSH_THEME=“spaceship”
 
 (Optional)
 SPACESHIP_RUST_VERBOSE_VERSION=true
+
+# Check font is installed
+fc-list -f '%{file}\n' | sort | grep Fira
+
+# If you encounter error (Fontconfig warning: ignoring UTF-8: not a valid region tag)
+brew reinstall fontconfig
 ```
 
 ## Terminal
