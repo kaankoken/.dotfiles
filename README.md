@@ -82,3 +82,26 @@ tmux
 # Either hit Control(Ctrl) + b + R or tmux source ~/.config/tmux/tmux.config
 ```
 [Tmux cheatsheet](https://tmuxcheatsheet.com)
+
+## Neovim
+
+[neovim](https://neovim.io)
+
+```bash
+# Install neovim
+brew install neovim
+
+# Clone astronvim config
+git clone --depth 1 https://github.com/AstroNvim/AstroNvim ~/.config/nvim
+
+# Run neovim to initialize & quit after first initialization
+nvim
+
+# Copy the config
+cp -r ~/Downloads/nvim ~/.config/nvim/lua/user/
+
+# Re-run neovim & initialize user configs & quit
+nvim
+
+# Set alias for nvim as vim
+echo '\nalias vim="nvim"' >> ~/.zshrc && source ~/.zshrc
