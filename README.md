@@ -40,14 +40,6 @@ brew install --cask alacritty
 
 # After install to macos for the first time [issue](https://github.com/alacritty/alacritty/issues/6500)
 Application > (Right click to Alacritty) > Open
-
-# Add terminfo for 24-bit color support on tmux
-
-# Download extras from [alacritty](https://github.com/alacritty/alacritty)
-cp -r ~/Downloads/alacritty/extra ~/.config/alacritty/extra
-
-cd ~/.config/alacritty
-sudo tic -xe alacritty,alacritty-direct extra/alacritty.info
 ```
 
 ### Config
@@ -58,6 +50,11 @@ mkdir -p .config/alacritty
 
 # Download the config from the repo
 cp -r ~/Downloads/alacritty ~/.config/alacritty/
+
+# Add terminfo for 24-bit color support on tmux
+
+cd ~/.config/alacritty
+sudo tic -xe alacritty,alacritty-direct extra/alacritty.info
 
 # Close & re-open the terminal
 ```
