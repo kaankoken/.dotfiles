@@ -70,6 +70,9 @@ sudo tic -xe alacritty,alacritty-direct extra/alacritty.info
 [tmux](https://github.com/tmux/tmux/wiki)
 
 ```bash
+# Install TPM (tmux plugin manager)
+git clone https://github.com/tmux-plugins/tpm.git ~/.tmux/plugins/tpm
+
 mkdir -p .config/tmux
 
 # Download the config from the repo
