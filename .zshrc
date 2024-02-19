@@ -146,3 +146,11 @@ rm -f ~/.zcompdump; compinit # avalanche completion
 
 export PATH=~/bin:$PATH
 export PATH="/opt/homebrew/opt/llvm/bin:$PATH"
+
+# pnpm
+export PNPM_HOME="/Users/legolas/Library/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME:"*) ;;
+  *) export PATH="$PNPM_HOME:$PATH" ;;
+esac
+# pnpm end
