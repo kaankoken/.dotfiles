@@ -48,3 +48,6 @@ startup_mode = "SimpleFullscreen"
 [window.padding]
 x = 16
 y = 16
+
+[terminal]
+osc52 = "CopyPaste"
