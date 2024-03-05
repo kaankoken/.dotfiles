@@ -182,6 +182,12 @@ cargo install sccache
 cargo install bacon
 ```
 
+- Install `msrv`
+
+```bash
+cargo install cargo-msrv
+```
+
 ## Go
 
 ```bash
