@@ -130,9 +130,56 @@ echo '\nalias vim="nvim"' >> ~/.zshrc && source ~/.zshrc
 
 ## Rust
 
-- Install llvm for `cross`
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+- Install `cargo-unused-features`
+
+```bash
+cargo install cargo-unused-features
+```
+
+- Install `cross`
 
 ```bash
 brew install llvm
+cargo install cross --git https://github.com/cross-rs/cross
+```
+
+- Install `git-cliff`
+
+```bash
+cargo install --git https://github.com/orhun/git-cliff
+```
+
+- Install `typos`
+
+```bash
+cargo install typos-cli
+```
+
+- Install `sccache`
+
+```bash
+cargo install sccache
+```
+
+- Install `bacon`
+
+```bash
+cargo install bacon
+```
+
+## Go
+
+```bash
+brew install go
+```
+
+### goenv
+
+```bash
+git clone https://github.com/go-nv/goenv.git ~/.goenv
 ```
 
