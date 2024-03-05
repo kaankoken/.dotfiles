@@ -127,3 +127,12 @@ nvim
 # Set alias for nvim as vim
 echo '\nalias vim="nvim"' >> ~/.zshrc && source ~/.zshrc
 ```
+
+## Rust
+
+- Install llvm for `cross`
+
+```bash
+brew install llvm
+```
+
