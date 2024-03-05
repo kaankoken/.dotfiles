@@ -120,12 +120,23 @@ git clone --depth 1 https://github.com/AstroNvim/AstroNvim ~/.config/nvim
 # Run neovim to initialize & quit after first initialization
 nvim
 ```
-
 - Add alias
 
 ```bash
 # Set alias for nvim as vim
 echo '\nalias vim="nvim"' >> ~/.zshrc && source ~/.zshrc
+```
+
+### Ripgrep
+
+```bash
+cargo install ripgrep
+```
+
+### Lazygit
+
+```bash
+brew install lazygit
 ```
 
 ## Rust
