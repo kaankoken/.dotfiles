@@ -19,4 +19,5 @@ return {
   { import = "astrocommunity.pack.json" },
   { import = "astrocommunity.pack.docker" },
   { import = "astrocommunity.recipes.disable-tabline" },
+  { import = "astrocommunity.workflow.hardtime-nvim"}
 }
