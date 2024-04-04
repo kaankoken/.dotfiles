@@ -159,3 +159,13 @@ case ":$PATH:" in
   *) export PATH="$PNPM_HOME:$PATH" ;;
 esac
 # pnpm end
+
+
+# Load Angular CLI autocompletion.
+source <(ng completion script)
+
+## [Completion]
+## Completion scripts setup. Remove the following line to uninstall
+[[ -f /Users/legolas/.dart-cli-completion/zsh-config.zsh ]] && . /Users/legolas/.dart-cli-completion/zsh-config.zsh || true
+## [/Completion]
+
