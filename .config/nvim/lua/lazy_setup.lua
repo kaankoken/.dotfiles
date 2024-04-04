@@ -25,6 +25,7 @@ require("lazy").setup({
         "tarPlugin",
         "tohtml",
         "zipPlugin",
+        "neo-tree",
       },
     },
   },
