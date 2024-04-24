@@ -9,7 +9,7 @@ return {
   "AstroNvim/astrocommunity",
   { import = "astrocommunity.colorscheme.mellow-nvim" },
   { import = "astrocommunity.editing-support.comment-box-nvim" },
-  { import = "astrocommunity.editing-support.telescope-undo-nvim" },
+  { import = "astrocommunity.editing-support.undotree" },
   { import = "astrocommunity.completion.copilot-lua-cmp" },
   { import = "astrocommunity.media.presence-nvim" },
   { import = "astrocommunity.motion.harpoon" },
