@@ -11,8 +11,9 @@ return {
   { import = "astrocommunity.editing-support.comment-box-nvim" },
   { import = "astrocommunity.editing-support.telescope-undo-nvim" },
   { import = "astrocommunity.completion.copilot-lua-cmp" },
-  { import = "astrocommunity.media.presence-nvim"},
+  { import = "astrocommunity.media.presence-nvim" },
   { import = "astrocommunity.motion.harpoon" },
+  { import = "astrocommunity.pack.kotlin" },
   { import = "astrocommunity.pack.typescript" },
   { import = "astrocommunity.pack.lua" },
   { import = "astrocommunity.pack.go" },
@@ -22,5 +23,5 @@ return {
   { import = "astrocommunity.pack.docker" },
   { import = "astrocommunity.pack.markdown" },
   { import = "astrocommunity.recipes.disable-tabline" },
-  { import = "astrocommunity.workflow.hardtime-nvim"}
+  { import = "astrocommunity.workflow.hardtime-nvim" },
 }
