@@ -43,7 +43,7 @@ dynamic_padding = true
 dynamic_title = true
 opacity = 0.92
 startup_mode = "SimpleFullscreen"
-#tabspace = 4
+option_as_alt = "OnlyRight"
 
 [window.padding]
 x = 16
