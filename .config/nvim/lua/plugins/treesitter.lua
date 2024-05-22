@@ -14,6 +14,7 @@ return {
       "python",
       "typescript",
       "javascript",
+      "ruby",
       -- add more arguments for adding more treesitter parsers
     })
   end,
