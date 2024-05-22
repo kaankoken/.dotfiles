@@ -3,3 +3,5 @@ include:
 - "**/Fastfile"
 - "**/Appfile"
 - "**/Pluginfile"
+- "**/Matchfile"
+- "**/*file"
