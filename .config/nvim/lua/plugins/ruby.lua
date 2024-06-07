@@ -14,7 +14,7 @@ return {
           autocmd BufNewFile,BufRead Appfile set filetype=ruby
           autocmd BufNewFile,BufRead Pluginfile set filetype=ruby
           autocmd BufNewFile,BufRead Matchfile set filetype=ruby
-          autocmd BufNewFile,BufRead fastlane/*file set filetype=ruby
+          autocmd BufNewFile,BufRead **/fastlane/*file set filetype=ruby
         augroup END
       ]]
     end,
