@@ -99,6 +99,7 @@ return {
         --   desc = "Toggle LSP semantic highlight (buffer)",
         --   cond = function(client) return client.server_capabilities.semanticTokensProvider and vim.lsp.semantic_tokens end,
         -- },
+        ["<Leader>i"] = { "<cmd>lua vim.lsp.buf.code_action()<CR>", desc = "Import method under cursor" },
       },
     },
     -- A custom `on_attach` function to be run after the default `on_attach` function
