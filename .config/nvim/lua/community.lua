@@ -24,6 +24,7 @@ return {
   { import = "astrocommunity.pack.docker" },
   { import = "astrocommunity.pack.markdown" },
   { import = "astrocommunity.pack.ruby" },
+  { import = "astrocommunity.pack.rust" },
   { import = "astrocommunity.recipes.disable-tabline" },
   { import = "astrocommunity.workflow.hardtime-nvim" },
 }
