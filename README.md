@@ -179,13 +179,41 @@ cargo install sccache
 - Install `bacon`
 
 ```bash
-cargo install bacon
+cargo install bacon --loced
 ```
 
 - Install `msrv`
 
 ```bash
 cargo install cargo-msrv
+```
+
+- Install `cargo-nextest`
+
+```bash
+cargo install cargo-nextest --locked
+```
+
+- Install `cargo-mutants`
+
+```bash
+cargo install cargo-mutants --locked
+
+# if cargo-nextest installed
+cargo mutants --test-tool=nextest
+```
+
+- Install `cargo-unused-features`
+
+```bash
+cargo install cargo-unused-features --locked
+```
+
+- Install `cargo-tarpaulin`
+
+
+```bash
+cargo install cargo-tarpaulin --locked
 ```
 
 ## Go
