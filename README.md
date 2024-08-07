@@ -120,6 +120,7 @@ git clone --depth 1 https://github.com/AstroNvim/AstroNvim ~/.config/nvim
 # Run neovim to initialize & quit after first initialization
 nvim
 ```
+
 - Add alias
 
 ```bash
@@ -211,9 +212,20 @@ cargo install cargo-unused-features --locked
 
 - Install `cargo-tarpaulin`
 
-
 ```bash
 cargo install cargo-tarpaulin --locked
+```
+
+- Install `cargo-update`
+
+```bash
+cargo install cargo-update
+
+# Check installed binaries outdated
+cargo install-update -l
+
+# Update all binaries
+cargo install-update --all
 ```
 
 ## Go
@@ -227,4 +239,3 @@ brew install go
 ```bash
 git clone https://github.com/go-nv/goenv.git ~/.goenv
 ```
-
