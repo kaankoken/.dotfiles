@@ -10,6 +10,19 @@ return {
   "AstroNvim/astrocore",
   ---@type AstroCoreOpts
   opts = {
+    autocmds = {
+      LspAttach = {
+        {
+          event = "LspAttach",
+          callback = function(event)
+            local client = vim.lsp.get_client_by_id(event.data.client_id)
+            if client and client.supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint) then
+              vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
+            end
+          end
+        }
+      }
+    },
     -- Configure core features of AstroNvim
     features = {
       large_buf = { size = 1024 * 500, lines = 10000 }, -- set global limits for large files for disabling features like treesitter
