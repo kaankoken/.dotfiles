@@ -71,7 +71,7 @@ ZSH_THEME="spaceship"
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
 
-plugins=(web-search transfer macos git)
+plugins=(web-search transfer macos git poetry)
 
 # Open tmux on startup, requires tmux plugin
 # ZSH_TMUX_AUTOSTART=true
@@ -170,3 +170,6 @@ source <(ng completion script)
 
 ## [/Completion]
 eval "$(rbenv init - zsh)"
+
+# Created by `pipx` on 2024-08-13 10:55:32
+export PATH="$PATH:/Users/legolas/.local/bin"
