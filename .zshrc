@@ -173,3 +173,5 @@ eval "$(rbenv init - zsh)"
 
 # Created by `pipx` on 2024-08-13 10:55:32
 export PATH="$PATH:/Users/legolas/.local/bin"
+
+eval "$(starship init zsh)"
