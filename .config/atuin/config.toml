@@ -46,7 +46,7 @@ update_check = true
 
 ## With workspace filtering enabled, Atuin will filter for commands executed
 ## in any directory within a git repository tree (default: false)
-workspaces = false
+workspaces = true
 
 ## which filter mode to use when atuin is invoked from a shell up-key binding
 ## the accepted values are identical to those of "filter_mode"
@@ -181,6 +181,8 @@ common_subcommands = [
   #   "port",
   #   "systemctl",
   "tmux",
+  "pnpm",
+  "rustup"
   #   "yarn",
 ]
 
@@ -203,3 +205,6 @@ common_subcommands = [
 # This ensures that sync v2 is enabled for new installs only
 # In a later release it will become the default across the board
 records = true
+
+[dotfiles]
+enabled = true
