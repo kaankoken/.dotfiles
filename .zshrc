@@ -8,7 +8,7 @@ export ZSH="$HOME/.oh-my-zsh"
 # load a random theme each time oh-my-zsh is loaded, in which case,
 # to know which specific one was loaded, run: echo $RANDOM_THEME
 # See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
-ZSH_THEME="spaceship"
+# ZSH_THEME="spaceship"
 
 # Set list of themes to pick from when loading at random
 # Setting this variable when ZSH_THEME=random will cause zsh to load
@@ -107,11 +107,11 @@ export PATH="/opt/homebrew/opt/openjdk/bin:$PATH"
 export CPPFLAGS="-I/opt/homebrew/opt/openjdk/include"
 alias vim=nvim
 
-SPACESHIP_RUST_VERBOSE_VERSION=true
+# SPACESHIP_RUST_VERBOSE_VERSION=true
 alias flutter="fvm flutter"
 alias dart="fvm dart"
 
-export TERM=xterm-256color
+#export TERM=xterm-256color
 export PYENV_ROOT="$HOME/.pyenv"
 command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
 eval "$(pyenv init -)"
@@ -175,3 +175,4 @@ eval "$(rbenv init - zsh)"
 export PATH="$PATH:/Users/legolas/.local/bin"
 
 eval "$(starship init zsh)"
+export COLORTERM=truecolor
