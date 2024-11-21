@@ -114,7 +114,7 @@ alias dart="fvm dart"
 #export TERM=xterm-256color
 export PYENV_ROOT="$HOME/.pyenv"
 command -v pyenv >/dev/null || export PATH="$PYENV_ROOT/bin:$PATH"
-eval "$(pyenv init -)"
+# eval "$(pyenv init -)"
 
 # goenv
 export GOENV_ROOT="$HOME/.goenv"
@@ -143,7 +143,7 @@ export PATH="$PATH":"~/.pub-cache/bin"
 
 # bun completions
 [ -s "/Users/legolas/.bun/_bun" ] && source "/Users/legolas/.bun/_bun"
-eval "$(atuin init zsh)"
+eval "$(atuin init zsh --disable-up-arrow)"
 
 # avalanche completions
 fpath=(/Users/legolas/.local/share/zsh-completion/completions $fpath) # avalanche completion
@@ -162,17 +162,17 @@ esac
 
 
 # Load Angular CLI autocompletion.
-source <(ng completion script)
+# source <(ng completion script)
 
 ## [Completion]
 ## Completion scripts setup. Remove the following line to uninstall
 [[ -f /Users/legolas/.dart-cli-completion/zsh-config.zsh ]] && . /Users/legolas/.dart-cli-completion/zsh-config.zsh || true
 
 ## [/Completion]
-eval "$(rbenv init - zsh)"
+# eval "$(rbenv init - zsh)"
 
 # Created by `pipx` on 2024-08-13 10:55:32
-export PATH="$PATH:/Users/legolas/.local/bin"
+# export PATH="$PATH:/Users/legolas/.local/bin"
 
 eval "$(starship init zsh)"
 export COLORTERM=truecolor
