@@ -26,20 +26,41 @@ pacman -S stow
 # Clone the repo
 git clone git@github.com:kaankoken/.dotfiles.git
 
-# Move it under home
-mv -r .dotfiles ~/.dotfiles
 cd ~/.dotfiles
 
 # Run stow
-stow --adopt .
+stow .
 ```
 
-## ZSH
+## Font
 
 - Installation
 
 ```bash
-sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+# Fira Code
+brew install --cask font-fira-mono-nerd-font
+brew install --cask font-jetbrains-mono-nerd-font
+
+# check the installed fonts & packages
+brew list
+```
+
+## Atuin (shell history)
+
+```bash
+brew install atuin
+```
+
+### Sync history with existing history
+
+```bash
+atuin key # use this on existing machine & get the key
+atuin login
+# enter username
+# enter password
+# enter key
+
+atuin sync -fA
 ```
 
 ## Spaceship
@@ -47,42 +68,23 @@ sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/too
 - [Installation](https://spaceship-prompt.sh/getting-started/)
 
 ```bash
-git clone https://github.com/spaceship-prompt/spaceship-prompt.git "$ZSH_CUSTOM/themes/spaceship-prompt" --depth=1
-ln -s "$ZSH_CUSTOM/themes/spaceship-prompt/spaceship.zsh-theme" "$ZSH_CUSTOM/themes/spaceship.zsh-theme"
+brew install starship
 ```
 
-### Assign Theme to ZSH
+### Startup via zsh
 
 ```bash
-# Set in .zshrc
-ZSH_THEME="spaceship"
+echo 'eval "$(starship init zsh)"' >> ~/.dotfiles/.zshrc
+stow .
+source ~/.zshrc
 ```
 
-## Alacritty
+## Wezterm
 
-- [Installation](https://alacritty.org)
-
-```bash
-brew install --cask alacritty
-
-# After install to macos for the first time [issue](https://github.com/alacritty/alacritty/issues/6500)
-Application > (Right click to Alacritty) > Open
-```
-
-### Font
-
-- Installation
+- [Installation](https://wezfurlong.org/wezterm/install/macos.html)
 
 ```bash
-# Fira Code
-brew tap homebrew/cask-fonts
-brew install --cask font-fira-mono-nerd-font
-
-# Check font is installed
-fc-list -f '%{file}\n' | sort | grep Fira
-
-# If you encounter error (Fontconfig warning: ignoring UTF-8: not a valid region tag)
-brew reinstall fontconfig
+brew install --cask wezterm
 ```
 
 ## [Tmux](https://github.com/tmux/tmux/wiki)
@@ -99,11 +101,14 @@ git clone https://github.com/tmux-plugins/tpm.git ~/.tmux/plugins/tpm
 - Running
 
 ```bash
+# Purge existing installation
+rm -rf ~/.dotfiles/.config/tmux/plugins/
+
 # Run tmux in the terminal
 tmux
 
 # Hit Control(Ctrl) + b + I to install tmux plugins
-# Either hit Control(Ctrl) + b + R or tmux source ~/.config/tmux/tmux.config
+# Either hit Control(Ctrl) + b + R or tmux source ~/dotfies/.config/tmux/tmux.config
 ```
 
 ## Neovim (Astronvim)
@@ -114,8 +119,14 @@ tmux
 # Install neovim
 brew install neovim
 
+# Unlink utf8proc
+brew unlink utf8proc
+
+# Re-install utf8proc
+brew install --HEAD utf8proc
+
 # Clone astronvim config
-git clone --depth 1 https://github.com/AstroNvim/AstroNvim ~/.config/nvim
+git clone --depth 1 https://github.com/AstroNvim/AstroNvim ~/.dotfiles/.config/nvim
 
 # Run neovim to initialize & quit after first initialization
 nvim
@@ -125,19 +136,9 @@ nvim
 
 ```bash
 # Set alias for nvim as vim
-echo '\nalias vim="nvim"' >> ~/.zshrc && source ~/.zshrc
-```
-
-### Ripgrep
-
-```bash
-cargo install ripgrep
-```
-
-### Lazygit
-
-```bash
-brew install lazygit
+echo '\nalias vim="nvim"' >> ~/.zshrc
+stow .
+source ~/.zshrc
 ```
 
 ## Rust
@@ -146,6 +147,21 @@ brew install lazygit
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
+## Rust Based Tools
+
+### Ripgrep
+
+```bash
+brew install ripgrep
+```
+
+### Lazygit
+
+```bash
+brew install lazygit
+```
+
+### cargo-unused-features
 - Install `cargo-unused-features`
 
 ```bash
@@ -228,14 +244,37 @@ cargo install-update -l
 cargo install-update --all
 ```
 
-## Go
-
-```bash
-brew install go
-```
-
-### goenv
+## goenv
 
 ```bash
 git clone https://github.com/go-nv/goenv.git ~/.goenv
+
+# Restart shell
+exec $SHELL
+```
+
+### Install go
+
+```bash
+goenv install x.xx.x
+
+# set global
+goenv global x.xx.x
+```
+
+## NVM
+
+```bash
+brew install nvm
+
+# Create a folder if does not exist
+mkdir -p ~/.nvm
+
+nvm install --lts
+```
+
+### Pnpm
+
+```bash
+brew install pnpm
 ```
