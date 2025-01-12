@@ -8,7 +8,7 @@
 return {
   "AstroNvim/astrocommunity",
   -- { import = "astrocommunity.completion.copilot-lua-cmp" },
-  { import = "astrocommunity.colorscheme.mellow-nvim" },
+  { import = "astrocommunity.colorscheme.tokyonight-nvim" },
   { import = "astrocommunity.editing-support.comment-box-nvim" },
   { import = "astrocommunity.editing-support.undotree" },
   { import = "astrocommunity.media.presence-nvim" },
@@ -23,10 +23,12 @@ return {
   { import = "astrocommunity.pack.json" },
   { import = "astrocommunity.pack.yaml" },
   { import = "astrocommunity.pack.docker" },
+  -- { import = "astrocommunity.pack.dart" },
   { import = "astrocommunity.pack.markdown" },
-  -- { import = "astrocommunity.pack.ruby" },
+  { import = "astrocommunity.pack.ruby" },
   { import = "astrocommunity.pack.rust" },
   { import = "astrocommunity.pack.python-ruff" },
+  { import = "astrocommunity.diagnostics.trouble-nvim" },
   { import = "astrocommunity.recipes.disable-tabline" },
   { import = "astrocommunity.workflow.hardtime-nvim" },
 }
