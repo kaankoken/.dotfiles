@@ -16,6 +16,7 @@ return {
   { import = "astrocommunity.lsp.garbage-day-nvim" },
   { import = "astrocommunity.pack.angular" },
   -- { import = "astrocommunity.pack.kotlin" },
+  { import = "astrocommunity.pack.bash" },
   { import = "astrocommunity.pack.typescript" },
   { import = "astrocommunity.pack.lua" },
   { import = "astrocommunity.pack.go" },
