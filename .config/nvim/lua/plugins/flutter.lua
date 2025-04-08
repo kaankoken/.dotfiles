@@ -30,7 +30,7 @@ return {
           enabled = true,
           run_via_dap = true,
           register_configurations = function(_)
-            local dap = require("dap")
+            -- local dap = require("dap")
             -- dap.configurations.dart = {
             --   {
             --     type = "dart",
