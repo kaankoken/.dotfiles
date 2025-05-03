@@ -6,6 +6,31 @@ Personal dotfiles used for development.
 >
 > Run `stow` after installing all necessary packages below to symlink
 
+## Nu Shell
+
+`zsh` alternative
+
+- [Installation](https://www.nushell.sh/book/installation.html)
+
+```bash
+brew install nushell
+```
+
+- Default Shell
+
+```bash
+echo /opt/homebrew/bin/nu | sudo tee -a /etc/shells
+chsh -s /opt/homebrew/bin/nu
+
+# Restart your computer
+```
+- Ghostty Integration
+
+```bash
+# Add these two lines to ghostty config
+command = /opt/homebrew/bin/nu -l --config ~/.config/nushell/config.nu --env-config ~/.config/nushell/env.nu
+```
+
 ## GNU Stow
 
 Creating symlink between the system & the `.dotfiles` folder.
