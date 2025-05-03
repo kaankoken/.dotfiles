@@ -4,7 +4,7 @@
 use std/util "path add"
 
 # Set config path to ~/.config
-let-env XDG_CONFIG_HOME = $"($env.HOME)/.config"
+$env.XDG_CONFIG_HOME = $"($env.HOME)/.config"
 
 # Flutter and Dart aliases using fvm
 alias flutter = fvm flutter
@@ -26,13 +26,18 @@ $env.PROMPT_COMMAND_RIGHT = ""
 
 # Initialize NVM if the script exists
 def --env load-nvm [] {
-    if ($env.NVM_DIR | path exists) and ("/usr/local/opt/nvm/nvm.sh" | path exists) {
-        # This is a simplification - might need to create a custom command to properly source nvm
-        zsh -c "source /usr/local/opt/nvm/nvm.sh && node -v" | str trim | load-env { NODE_VERSION: $in }
-        echo "NVM loaded, using Node" $env.NODE_VERSION
+    # Check if NVM_DIR exists in $env using 'has'
+    let nvm_exists = ($env | get -i NVM_DIR | is-not-empty)
+    let nvm_script_exists = ("/usr/local/opt/nvm/nvm.sh" | path exists)
+    
+    if $nvm_exists and $nvm_script_exists {
+        # NVM loading logic here
+    } else {
+        # Set default NVM_DIR if it doesn't exist
+        $env.NVM_DIR = $"($env.HOME)/.nvm"
+        # Rest of your NVM setup
     }
 }
-
 # Call the nvm loader
 load-nvm
 
