@@ -12,6 +12,7 @@ $env.PATH = ($env.PATH | prepend $"($env.CARGO_HOME)/bin")
 # Go Environment
 $env.GOENV_ROOT = $"($env.HOME)/.goenv"
 $env.PATH = ($env.PATH | prepend $"($env.GOENV_ROOT)/bin")
+$env.PATH = ($env.PATH | prepend $"($env.GOENV_ROOT)/shims")
 
 # Ruby
 $env.PATH = ($env.PATH | prepend "/opt/homebrew/opt/ruby/bin")
@@ -21,6 +22,9 @@ $env.CPPFLAGS = "-I/opt/homebrew/opt/ruby/include"
 # pnpm
 $env.PNPM_HOME = $"($env.HOME)/Library/pnpm"
 $env.PATH = ($env.PATH | prepend $env.PNPM_HOME)
+
+# lazygit
+$env.PATH = ($env.PATH | prepend "/opt/homebrew/opt/lazygit/bin")
 
 # Java
 $env.JAVA_HOME = "/Applications/Android Studio.app/Contents/jbr/Contents/Home"
