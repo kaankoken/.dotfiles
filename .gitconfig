@@ -7,3 +7,11 @@
 	driver = mergiraf merge --git %O %A %B -s %S -x %X -y %Y -p %P -l %L
 [core]
 	attributesfile = /Users/legolas/.gitattributes
+[diff]
+  external = difft
+[difftool]
+  prompt = false
+[pager]
+  difftool = true
+[diff]
+  tool = difftastic
