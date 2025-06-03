@@ -19,6 +19,14 @@ $env.PATH = ($env.PATH | prepend "/opt/homebrew/opt/ruby/bin")
 $env.LDFLAGS = "-L/opt/homebrew/opt/ruby/lib"
 $env.CPPFLAGS = "-I/opt/homebrew/opt/ruby/include"
 
+# asdf configuration
+$env.ASDF_DIR = "/opt/homebrew/opt/asdf/libexec"
+$env.PATH = ($env.PATH | prepend "/opt/homebrew/opt/asdf/libexec/bin")
+$env.PATH = ($env.PATH | prepend $"($env.HOME)/.asdf/shims")
+
+# Source asdf completions and setup
+source /opt/homebrew/opt/asdf/libexec/asdf.nu
+
 # pnpm
 $env.PNPM_HOME = $"($env.HOME)/Library/pnpm"
 $env.PATH = ($env.PATH | prepend $env.PNPM_HOME)
@@ -35,9 +43,6 @@ $env.PATH = ($env.PATH | prepend $"($env.HOME)/fvm/default/bin")
 # Set COLORTERM for truecolor support
 $env.COLORTERM = "truecolor"
 
-# NVM configuration
-$env.NVM_DIR = $"($env.HOME)/.nvm"
-
 # Starship configuration
 mkdir ($nu.data-dir | path join "vendor/autoload")
 starship init nu | save -f ($nu.data-dir | path join "vendor/autoload/starship.nu")
@@ -49,11 +54,11 @@ if not (ls ~/.local/share/atuin/ | is-empty) {
 }
 
 # Only initialize Atuin if the file doesn't exist yet
-if not (ls ~/.local/share/atuin/init.nu | is-empty) {
-  # "Atuin init file already exists, skipping initialization"
-} else {
-  # "Creating Atuin initialization file"
-  atuin init nu | save ~/.local/share/atuin/init.nu
+if not ("~/.local/share/atuin/init.nu" | path exists) {
+  # Create the directory if it doesn't exist
+  mkdir ~/.local/share/atuin
+  # Create Atuin initialization file
+  atuin init nu | save -f ~/.local/share/atuin/init.nu
 }
 
 source ~/.local/share/atuin/init.nu

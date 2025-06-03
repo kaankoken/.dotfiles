@@ -24,23 +24,6 @@ $env.PROMPT_COMMAND = { || create_left_prompt }
 # Set right prompt (empty for now)
 $env.PROMPT_COMMAND_RIGHT = ""
 
-# Initialize NVM if the script exists
-def --env load-nvm [] {
-    # Check if NVM_DIR exists in $env using 'has'
-    let nvm_exists = ($env | get -i NVM_DIR | is-not-empty)
-    let nvm_script_exists = ("/usr/local/opt/nvm/nvm.sh" | path exists)
-    
-    if $nvm_exists and $nvm_script_exists {
-        # NVM loading logic here
-    } else {
-        # Set default NVM_DIR if it doesn't exist
-        $env.NVM_DIR = $"($env.HOME)/.nvm"
-        # Rest of your NVM setup
-    }
-}
-# Call the nvm loader
-load-nvm
-
 # Initialize goenv if it's installed
 if not (which goenv | is-empty) {
     # This gets more complex in Nushell and might require a custom plugin
