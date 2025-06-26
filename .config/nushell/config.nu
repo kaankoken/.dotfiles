@@ -5,6 +5,12 @@ use std/util "path add"
 $env.PATH = ($env.PATH | prepend "/opt/homebrew/bin")  # For Apple Silicon Macs
 $env.PATH = ($env.PATH | prepend "/usr/local/bin")     # For Intel Macs (as fallback)
 
+# UV tools
+$env.PATH = ($env.PATH | prepend $"($env.HOME)/.local/bin")
+
+# Orb Stack
+$env.PATH = ($env.PATH | prepend $"($env.HOME)/.orbstack/bin")
+
 # Rust's Cargo
 $env.CARGO_HOME = $"($env.HOME)/.cargo"
 $env.PATH = ($env.PATH | prepend $"($env.CARGO_HOME)/bin")
@@ -39,6 +45,7 @@ $env.JAVA_HOME = "/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 
 # FVM (Flutter Version Management)
 $env.PATH = ($env.PATH | prepend $"($env.HOME)/fvm/default/bin")
+$env.PATH = ($env.PATH | prepend $"($env.HOME)/.pub-cache/bin")
 
 # Set COLORTERM for truecolor support
 $env.COLORTERM = "truecolor"
