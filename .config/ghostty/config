@@ -21,3 +21,4 @@ confirm-close-surface = false
 copy-on-select = true
 macos-option-as-alt = right
 auto-update = off
+keybind = shift+enter=text:\n
