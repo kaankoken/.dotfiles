@@ -1,4 +1,20 @@
 keybinds clear-defaults=true {
+    normal {
+        // Easy tab navigation with Ctrl + arrow keys (avoid Alt conflicts)
+        bind "Ctrl Left" { GoToPreviousTab; }
+        bind "Ctrl Right" { GoToNextTab; }
+        
+        // Alternative with Ctrl + h/l (vim-style, avoid Alt)
+        bind "Ctrl h" { GoToPreviousTab; }
+        bind "Ctrl l" { GoToNextTab; }
+        
+        // Quick access to first few tabs - use Ctrl instead of Alt to avoid Turkish keyboard conflicts
+        bind "Ctrl 1" { GoToTab 1; }
+        bind "Ctrl 2" { GoToTab 2; }
+        bind "Ctrl 3" { GoToTab 3; }
+        bind "Ctrl 4" { GoToTab 4; }
+        bind "Ctrl 5" { GoToTab 5; }
+    }
     locked {
         bind "Ctrl g" { SwitchToMode "normal"; }
     }
@@ -50,6 +66,8 @@ keybinds clear-defaults=true {
         bind "Ctrl t" { SwitchToMode "normal"; }
         bind "x" { CloseTab; SwitchToMode "normal"; }
         bind "tab" { ToggleTab; }
+        bind "," { MoveTab "Left"; }
+        bind "." { MoveTab "Right"; }
     }
     resize {
         bind "left" { Resize "Increase left"; }
@@ -125,26 +143,25 @@ keybinds clear-defaults=true {
             SwitchToMode "normal"
         }
     }
+    // UPDATED: Removed ALL Alt+number and Alt+navigation conflicts for Turkish keyboard
     shared_except "locked" {
-        bind "Alt left" { MoveFocusOrTab "left"; }
-        bind "Alt down" { MoveFocus "down"; }
-        bind "Alt up" { MoveFocus "up"; }
-        bind "Alt right" { MoveFocusOrTab "right"; }
-        bind "Alt +" { Resize "Increase"; }
-        bind "Alt -" { Resize "Decrease"; }
-        bind "Alt =" { Resize "Increase"; }
-        bind "Alt [" { PreviousSwapLayout; }
-        bind "Alt ]" { NextSwapLayout; }
+        // Removed all Alt+hjkl, Alt+arrows, Alt+numbers that conflict with Turkish layout
+        // Only keeping safe Alt bindings that don't conflict
         bind "Alt f" { ToggleFloatingPanes; }
         bind "Ctrl g" { SwitchToMode "locked"; }
-        bind "Alt h" { MoveFocusOrTab "left"; }
-        bind "Alt i" { MoveTab "left"; }
-        bind "Alt j" { MoveFocus "down"; }
-        bind "Alt k" { MoveFocus "up"; }
-        bind "Alt l" { MoveFocusOrTab "right"; }
         bind "Alt n" { NewPane; }
-        bind "Alt o" { MoveTab "right"; }
         bind "Ctrl q" { Quit; }
+        
+        // Use Ctrl for tab movement instead of Alt to avoid conflicts
+        bind "Ctrl i" { MoveTab "left"; }
+        bind "Ctrl o" { MoveTab "right"; }
+        
+        // Keep resize but use Ctrl combinations
+        bind "Ctrl +" { Resize "Increase"; }
+        bind "Ctrl -" { Resize "Decrease"; }
+        bind "Ctrl =" { Resize "Increase"; }
+        bind "Ctrl [" { PreviousSwapLayout; }
+        bind "Ctrl ]" { NextSwapLayout; }
     }
     shared_except "locked" "move" {
         bind "Ctrl h" { SwitchToMode "move"; }
@@ -430,7 +447,7 @@ default_layout "compact"
 // 
 // disable_session_metadata false
  
-// Enable or disable support for the enhanced Kitty Keyboard Protocol (the host terminal must also support it)
+// Enable or disable support for the enhanced Kitty Keyboard Protocol (the host terminal must support it)
 // (Requires restart)
 // Default: true (if the host terminal supports it)
 // 
