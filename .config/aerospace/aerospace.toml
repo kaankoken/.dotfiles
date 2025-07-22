@@ -1,0 +1,196 @@
+# Auto-start applications on launch
+after-startup-command = ['exec-and-forget ~/.config/aerospace/launch-apps.sh']
+
+# General settings
+start-at-login = true
+
+# Normalizations
+enable-normalization-flatten-containers = true
+enable-normalization-opposite-orientation-for-nested-containers = true
+
+# Mouse settings
+on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
+
+# Default layout mode
+default-root-container-layout = 'tiles'
+default-root-container-orientation = 'auto'
+
+# Accordion padding
+accordion-padding = 30
+
+# Automatically unhide macOS hidden apps
+automatically-unhide-macos-hidden-apps = false
+
+# Gaps and padding
+[gaps]
+inner.horizontal = 10
+inner.vertical = 10
+outer.left = 10
+outer.right = 10
+outer.top = 0
+outer.bottom = 10
+
+# Key bindings
+[mode.main.binding]
+
+# Window focus - using cmd+shift to avoid all terminal conflicts
+cmd-shift-j = 'focus down'
+cmd-shift-k = 'focus up'
+cmd-shift-h = 'focus left'
+cmd-shift-l = 'focus right'
+
+# Monitor focus - using cmd+ctrl to avoid conflicts
+cmd-ctrl-s = 'focus-monitor left'
+cmd-ctrl-g = 'focus-monitor right'
+
+# Layout modifications
+cmd-ctrl-shift-r = 'layout tiles horizontal vertical'
+cmd-ctrl-shift-y = 'layout tiles vertical horizontal'
+cmd-ctrl-shift-x = 'layout tiles horizontal vertical'
+
+# Toggle floating
+cmd-ctrl-shift-t = 'layout floating tiling'
+
+# Fullscreen toggle
+cmd-ctrl-shift-m = 'fullscreen'
+
+# Balance windows
+cmd-ctrl-shift-e = 'balance-sizes'
+
+# Move windows
+cmd-ctrl-j = 'move down'
+cmd-ctrl-k = 'move up'
+cmd-ctrl-h = 'move left'
+cmd-ctrl-l = 'move right'
+
+# Move window to monitor
+cmd-ctrl-shift-s = 'move-node-to-monitor left'
+cmd-ctrl-shift-g = 'move-node-to-monitor right'
+
+# Move to workspace - avoiding Turkish keyboard Alt+numbers conflicts
+cmd-shift-alt-1 = 'move-node-to-workspace 1'
+cmd-shift-alt-2 = 'move-node-to-workspace 2'
+cmd-shift-alt-3 = 'move-node-to-workspace 3'
+cmd-shift-alt-4 = 'move-node-to-workspace 4'
+cmd-shift-alt-5 = 'move-node-to-workspace 5'
+cmd-shift-alt-6 = 'move-node-to-workspace 6'
+cmd-shift-alt-7 = 'move-node-to-workspace 7'
+
+# Switch to workspace - using cmd+numbers (safe for Turkish keyboard)
+cmd-1 = 'workspace 1'
+cmd-2 = 'workspace 2'
+cmd-3 = 'workspace 3'
+cmd-4 = 'workspace 4'
+cmd-5 = 'workspace 5'
+cmd-6 = 'workspace 6'
+cmd-7 = 'workspace 7'
+
+# Move between workspaces
+cmd-shift-p = 'workspace --wrap-around prev'
+cmd-shift-n = 'workspace --wrap-around next'
+
+# Workspace back and forth
+cmd-shift-tab = 'workspace-back-and-forth'
+
+# Move workspace to next monitor
+cmd-ctrl-tab = 'move-workspace-to-monitor --wrap-around next'
+
+# Window resizing - using cmd+minus/equal (safe)
+cmd-minus = 'resize smart -50'
+cmd-equal = 'resize smart +50'
+
+# Service management
+cmd-ctrl-shift-semicolon = 'mode service'
+
+# Service mode
+[mode.service.binding]
+esc = ['reload-config', 'mode main']
+r = ['flatten-workspace-tree', 'mode main']
+f = ['layout floating tiling', 'mode main']
+backspace = ['close-all-windows-but-current', 'mode main']
+
+# Join windows
+cmd-ctrl-shift-h = ['join-with left', 'mode main']
+cmd-ctrl-shift-j = ['join-with down', 'mode main']
+cmd-ctrl-shift-k = ['join-with up', 'mode main']
+cmd-ctrl-shift-l = ['join-with right', 'mode main']
+
+# Application rules and workspace assignments
+
+# Floating application rules
+[[on-window-detected]]
+if.app-id = 'com.apple.calculator'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.systempreferences'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.fortinet.forticlient'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.iphonesimulator'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'org.qemu.qemu'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.google.android.simulator'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.finder'
+run = 'layout floating'
+
+# Workspace 1: Safari Personal and Spotify
+[[on-window-detected]]
+if.app-id = 'com.apple.Safari'
+if.window-title-regex-substring = '.*Personal.*|^(?!.*Morfeu).*$'
+run = 'move-node-to-workspace 1'
+
+[[on-window-detected]]
+if.app-id = 'com.spotify.client'
+run = 'move-node-to-workspace 1'
+
+# Workspace 2: Ghostty
+[[on-window-detected]]
+if.app-id = 'com.mitchellh.ghostty'
+run = 'move-node-to-workspace 2'
+
+# Workspace 3: WhatsApp and Signal
+[[on-window-detected]]
+if.app-id = 'net.whatsapp.WhatsApp'
+run = 'move-node-to-workspace 3'
+
+[[on-window-detected]]
+if.app-id = 'org.whispersystems.signal-desktop'
+run = 'move-node-to-workspace 3'
+
+# Workspace 4: Safari Morfeu profile
+[[on-window-detected]]
+if.app-id = 'com.apple.Safari'
+if.window-title-regex-substring = '.*Morfeu.*'
+run = 'move-node-to-workspace 4'
+
+# Workspace 5: Slack and Microsoft Outlook
+[[on-window-detected]]
+if.app-id = 'com.tinyspeck.slackmacgap'
+run = 'move-node-to-workspace 5'
+
+[[on-window-detected]]
+if.app-id = 'com.microsoft.Outlook'
+run = 'move-node-to-workspace 5'
+
+# Workspace definitions
+[workspace-to-monitor-force-assignment]
+1 = 'main'
+2 = 'main'
+3 = 'main'
+4 = 'secondary'
+5 = 'secondary'
+6 = 'secondary'
+7 = 'secondary'
