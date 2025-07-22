@@ -22,3 +22,61 @@ copy-on-select = true
 macos-option-as-alt = right
 auto-update = off
 keybind = shift+enter=text:\n
+
+# AeroSpace integration - pass through window management keys
+# Window focus keys
+keybind = cmd+shift+h=ignore
+keybind = cmd+shift+j=ignore  
+keybind = cmd+shift+k=ignore
+keybind = cmd+shift+l=ignore
+
+# Monitor focus keys
+keybind = cmd+ctrl+s=ignore
+keybind = cmd+ctrl+g=ignore
+
+# Layout modification keys
+keybind = cmd+ctrl+shift+r=ignore
+keybind = cmd+ctrl+shift+y=ignore
+keybind = cmd+ctrl+shift+x=ignore
+keybind = cmd+ctrl+shift+t=ignore
+keybind = cmd+ctrl+shift+m=ignore
+keybind = cmd+ctrl+shift+e=ignore
+
+# Window movement keys
+keybind = cmd+ctrl+h=ignore
+keybind = cmd+ctrl+j=ignore
+keybind = cmd+ctrl+k=ignore
+keybind = cmd+ctrl+l=ignore
+keybind = cmd+ctrl+shift+s=ignore
+keybind = cmd+ctrl+shift+g=ignore
+
+# Workspace switching (cmd+numbers)
+keybind = cmd+1=ignore
+keybind = cmd+2=ignore
+keybind = cmd+3=ignore
+keybind = cmd+4=ignore
+keybind = cmd+5=ignore
+keybind = cmd+6=ignore
+keybind = cmd+7=ignore
+
+# Move to workspace keys - updated for Turkish keyboard compatibility
+keybind = cmd+shift+alt+1=ignore
+keybind = cmd+shift+alt+2=ignore
+keybind = cmd+shift+alt+3=ignore
+keybind = cmd+shift+alt+4=ignore
+keybind = cmd+shift+alt+5=ignore
+keybind = cmd+shift+alt+6=ignore
+keybind = cmd+shift+alt+7=ignore
+
+# Workspace navigation
+keybind = cmd+shift+p=ignore
+keybind = cmd+shift+n=ignore
+keybind = cmd+shift+tab=ignore
+keybind = cmd+ctrl+tab=ignore
+
+# Window resizing
+keybind = cmd+minus=ignore
+keybind = cmd+equal=ignore
+
+# Service mode
+keybind = cmd+ctrl+shift+semicolon=ignore
