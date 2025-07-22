@@ -34,10 +34,10 @@ outer.bottom = 10
 [mode.main.binding]
 
 # Window focus - using cmd+shift to avoid all terminal conflicts
-cmd-shift-j = 'focus down'
-cmd-shift-k = 'focus up'
-cmd-shift-h = 'focus left'
-cmd-shift-l = 'focus right'
+cmd-j = 'focus down'
+cmd-k = 'focus up'
+cmd-h = 'focus left'
+cmd-l = 'focus right'
 
 # Monitor focus - using cmd+ctrl to avoid conflicts
 cmd-ctrl-s = 'focus-monitor left'
@@ -52,10 +52,10 @@ cmd-ctrl-shift-x = 'layout tiles horizontal vertical'
 cmd-ctrl-shift-t = 'layout floating tiling'
 
 # Fullscreen toggle
-cmd-ctrl-shift-m = 'fullscreen'
+cmd-ctrl-m = 'fullscreen'
 
 # Balance windows
-cmd-ctrl-shift-e = 'balance-sizes'
+cmd-ctrl-e = 'balance-sizes'
 
 # Move windows
 cmd-ctrl-j = 'move down'
