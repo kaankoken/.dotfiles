@@ -26,9 +26,7 @@ $env.PROMPT_COMMAND_RIGHT = ""
 
 # Initialize goenv if it's installed
 if not (which goenv | is-empty) {
-    # This gets more complex in Nushell and might require a custom plugin
-    # For now, we'll just add the path
-    if ($env | get -i GOENV_ROOT) != null {
+    if ($env | get -o GOENV_ROOT) != null {
         let goenv_root = $env.GOENV_ROOT
         $env.PATH = ($env.PATH | prepend $"($goenv_root)/shims")
     }
