@@ -17,3 +17,5 @@
   tool = difftastic
 [fetch]
 	pruneTags = true
+[git-town]
+	main-branch = master
