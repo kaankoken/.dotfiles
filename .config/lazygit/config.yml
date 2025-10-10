@@ -1,0 +1,84 @@
+gui:
+  theme:
+    activeBorderColor:
+      - green
+      - bold
+    selectedLineBgColor:
+      - blue
+customCommands:
+  # Git Town Sync - Updates all branches in the stack
+  - key: "Y"
+    context: "global"
+    description: "Git Town sYnc (update all branches)"
+    command: "git town sync --all"
+    loadingText: "Syncing all branches"
+    output: log
+  # Git Town Undo - Revert the last Git Town command
+  - key: "U"
+    context: "global"
+    description: "Git Town Undo (revert last command)"
+    command: "git town undo"
+    prompts:
+      - type: "confirm"
+        title: "Undo Last Command"
+        body: "Are you sure you want to undo the last Git Town command?"
+    loadingText: "Undoing"
+    output: log
+  # Git Town Repo - Open repository in browser
+  - key: "!"
+    context: "global"
+    description: "Git Town Repo (open repo link)"
+    command: "git town repo"
+    loadingText: "Opening repo"
+    output: log
+  # Git Town Append - Create a child branch on top of current branch
+  - key: "a"
+    context: "localBranches"
+    description: "Git Town Append (create child branch)"
+    prompts:
+      - type: "input"
+        title: "Enter name of new child branch. Branches off of '{{.CheckedOutBranch.Name}}'"
+        key: "BranchName"
+    command: "git town append {{.Form.BranchName}}"
+    loadingText: "Creating child branch"
+    output: log
+  # Git Town Hack - Create a new branch from main
+  - key: "h"
+    context: "localBranches"
+    description: "Git Town Hack (create branch from main)"
+    prompts:
+      - type: "input"
+        title: "Enter name of new branch. Branches off of 'main'"
+        key: "BranchName"
+    command: "git town hack {{.Form.BranchName}}"
+    loadingText: "Creating branch from main"
+    output: log
+  # Git Town Kill - Delete current feature branch
+  - key: "K"
+    context: "localBranches"
+    description: "Git Town Kill (delete branch & sync)"
+    prompts:
+      - type: "confirm"
+        title: "Delete Branch"
+        body: "Are you sure you want to delete '{{.CheckedOutBranch.Name}}'?"
+    command: "git town kill"
+    loadingText: "Deleting branch"
+    output: log
+  # Git Town Ship - Merge and delete the current branch
+  - key: "S"
+    context: "localBranches"
+    description: "Git Town Ship (merge & delete branch)"
+    prompts:
+      - type: "confirm"
+        title: "Ship Branch"
+        body: "Merge '{{.CheckedOutBranch.Name}}' to parent and delete?"
+    command: "git town ship"
+    loadingText: "Shipping branch"
+    output: log
+  # Git Town Propose - Create pull request for current branch
+  - key: "P"
+    context: "localBranches"
+    description: "Git Town Propose (create PR)"
+    command: "git town propose"
+    loadingText: "Creating pull request"
+    output: log
