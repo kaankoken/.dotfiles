@@ -19,3 +19,5 @@
 	pruneTags = true
 [git-town]
 	main-branch = master
+[rebase]
+	updateRefs = true
