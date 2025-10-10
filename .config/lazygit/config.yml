@@ -76,7 +76,7 @@ customCommands:
     loadingText: "Shipping branch"
     output: log
   # Git Town Propose - Create pull request for current branch
-  - key: "P"
+  - key: "o"
     context: "localBranches"
     description: "Git Town Propose (create PR)"
     command: "git town propose"
