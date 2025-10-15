@@ -19,5 +19,6 @@
 	pruneTags = true
 [git-town]
 	main-branch = master
+	sync-feature-strategy = rebase
 [rebase]
 	updateRefs = true
