@@ -20,5 +20,6 @@
 [git-town]
 	main-branch = master
 	sync-feature-strategy = rebase
+	forge-type = github
 [rebase]
 	updateRefs = true
