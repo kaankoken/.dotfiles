@@ -87,7 +87,6 @@ return {
     end,
     dependencies = {
       "nvim-lua/plenary.nvim",
-      "stevearc/dressing.nvim",    -- Optional: for better UI
       "rcarriga/nvim-dap-ui",      -- Add DAP UI support
       "mfussenegger/nvim-dap",     -- Add DAP support
     },
