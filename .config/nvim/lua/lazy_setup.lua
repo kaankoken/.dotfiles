@@ -15,6 +15,9 @@ require("lazy").setup({
   { import = "plugins" },
 } --[[@as LazySpec]], {
   -- Configure any other `lazy.nvim` configuration options here
+  git = {
+    url_format = "https://github.com/%s.git", -- Use HTTPS instead of SSH
+  },
   install = { colorscheme = { "astrodark", "tokyonight"} },
   ui = { backdrop = 100 },
   performance = {
