@@ -21,6 +21,17 @@ return {
             end
           end
         }
+      },
+      -- Disable spell check for Devanagari (Hindi) script
+      DevanagariNoSpell = {
+        {
+          event = { "FileType" },
+          pattern = { "markdown", "text", "gitcommit" },
+          callback = function()
+            -- Match Devanagari Unicode range (U+0900-U+097F) and mark as @nospell
+            vim.cmd([[syntax match DevanagariText /[ऀ-ॿ]\+/ contains=@NoSpell]])
+          end
+        }
       }
     },
     -- Configure core features of AstroNvim
