@@ -78,3 +78,29 @@ $env.config.buffer_editor = "vim"
 $env.config.show_banner = false
 # Default file format for history
 $env.config.history.file_format = "sqlite"
+
+# Claude Code with separate configs
+def --wrapped claude-personal [...args: string] {
+    with-env { CLAUDE_CONFIG_DIR: $"($env.HOME)/.claude" } {
+        ^claude ...$args
+    }
+}
+
+def --wrapped claude-work [...args: string] {
+    with-env { CLAUDE_CONFIG_DIR: $"($env.HOME)/.claude-enterprise" } {
+        ^claude ...$args
+    }
+}
+
+# Auto-select Claude config based on directory
+def --wrapped claude [...args: string] {
+    let work_dir = $"($env.HOME)/Desktop/morfeu"
+    let config_dir = if ($env.PWD | str starts-with $work_dir) {
+        $"($env.HOME)/.claude-enterprise"
+    } else {
+        $"($env.HOME)/.claude"
+    }
+    with-env { CLAUDE_CONFIG_DIR: $config_dir } {
+        ^claude ...$args
+    }
+}
