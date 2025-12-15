@@ -1,1 +1,9 @@
 .config/nvim.bak
+
+# Claude Code
+.claude/
+.claude-enterprise/
+.claude.json*
+
+# Nushell
+.config/nushell/history.*
