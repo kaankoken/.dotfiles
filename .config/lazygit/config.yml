@@ -86,9 +86,9 @@ customCommands:
     loadingText: "Submitting stack PRs"
     output: log
   # Graphite Merge - Merge PR when approved
-  - key: "M"
+  - key: "P"
     context: "localBranches"
-    description: "Graphite Merge (merge PR)"
+    description: "Graphite Push/merge (merge PR)"
     prompts:
       - type: "confirm"
         title: "Merge PR"
@@ -97,9 +97,9 @@ customCommands:
     loadingText: "Merging PR"
     output: log
   # Graphite Restack - Rebase stack on parent changes
-  - key: "R"
+  - key: "N"
     context: "localBranches"
-    description: "Graphite Restack (rebase stack)"
+    description: "Graphite restack (rebase stack)"
     command: "gt restack"
     loadingText: "Restacking"
     output: log
@@ -132,23 +132,23 @@ customCommands:
     loadingText: "Jumping to bottom"
     output: log
   # Graphite Modify - Amend current commit
-  - key: "m"
+  - key: "e"
     context: "localBranches"
-    description: "Graphite Modify (amend commit)"
+    description: "Graphite Edit/modify (amend commit)"
     command: "gt modify --all"
     loadingText: "Amending commit"
     output: log
   # Graphite Absorb - Auto-amend to correct commits
-  - key: "b"
+  - key: "E"
     context: "localBranches"
-    description: "Graphite aBsorb (auto-amend)"
+    description: "Graphite Embed/absorb (auto-amend)"
     command: "gt absorb --all"
     loadingText: "Absorbing changes"
     output: log
   # Graphite Fold - Merge branch into parent
-  - key: "F"
+  - key: "J"
     context: "localBranches"
-    description: "Graphite Fold (merge into parent)"
+    description: "Graphite Join/fold (merge into parent)"
     prompts:
       - type: "confirm"
         title: "Fold Branch"
@@ -199,18 +199,11 @@ customCommands:
     loadingText: "Aborting"
     output: log
   # Graphite Info - Show branch details
-  - key: "i"
+  - key: "H"
     context: "localBranches"
-    description: "Graphite Info (branch details)"
+    description: "Graphite Help/info (branch details)"
     command: "gt info --diff"
     loadingText: "Loading info"
-    output: log
-  # Graphite Checkout - Interactive branch switcher
-  - key: "o"
-    context: "localBranches"
-    description: "Graphite checkOut (interactive)"
-    command: "gt checkout --stack"
-    loadingText: "Opening branch switcher"
     output: log
   # Graphite Dashboard - Open web dashboard
   - key: "W"
