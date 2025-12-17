@@ -6,79 +6,223 @@ gui:
     selectedLineBgColor:
       - blue
 customCommands:
-  # Git Town Sync - Updates all branches in the stack
+  # Graphite Sync - Sync stack with remote
   - key: "Y"
     context: "global"
-    description: "Git Town sYnc (update all branches)"
-    command: "git town sync --all"
-    loadingText: "Syncing all branches"
+    description: "Graphite sYnc (sync stack)"
+    command: "gt sync"
+    loadingText: "Syncing stack"
     output: log
-  # Git Town Undo - Revert the last Git Town command
+  # Graphite Undo - Revert last gt command
   - key: "U"
     context: "global"
-    description: "Git Town Undo (revert last command)"
-    command: "git town undo"
+    description: "Graphite Undo (revert last command)"
+    command: "gt undo"
     prompts:
       - type: "confirm"
         title: "Undo Last Command"
-        body: "Are you sure you want to undo the last Git Town command?"
+        body: "Are you sure you want to undo the last Graphite command?"
     loadingText: "Undoing"
     output: log
-  # Git Town Repo - Open repository in browser
+  # Graphite Repo - Open repository in browser
   - key: "!"
     context: "global"
-    description: "Git Town Repo (open repo link)"
-    command: "git town repo"
+    description: "Graphite Repo (open in browser)"
+    command: "gt repo"
     loadingText: "Opening repo"
     output: log
-  # Git Town Append - Create a child branch on top of current branch
+  # Graphite Log - Show stack visualization
+  - key: "L"
+    context: "global"
+    description: "Graphite Log (show stack)"
+    command: "gt log short"
+    loadingText: "Loading stack"
+    output: log
+  # Graphite Create - Create stacked branch on current
   - key: "a"
     context: "localBranches"
-    description: "Git Town Append (create child branch)"
+    description: "Graphite Create (stacked branch)"
     prompts:
       - type: "input"
-        title: "Enter name of new child branch. Branches off of '{{.CheckedOutBranch.Name}}'"
+        title: "Enter name of new stacked branch on '{{.CheckedOutBranch.Name}}'"
         key: "BranchName"
-    command: "git town append {{.Form.BranchName}}"
-    loadingText: "Creating child branch"
+    command: "gt create {{.Form.BranchName}}"
+    loadingText: "Creating stacked branch"
     output: log
-  # Git Town Hack - Create a new branch from main
+  # Graphite Create from trunk - New branch from main
   - key: "h"
     context: "localBranches"
-    description: "Git Town Hack (create branch from main)"
+    description: "Graphite Hack (new stack from main)"
     prompts:
       - type: "input"
-        title: "Enter name of new branch. Branches off of 'main'"
+        title: "Enter name of new branch from trunk"
         key: "BranchName"
-    command: "git town hack {{.Form.BranchName}}"
+    command: "gt checkout main && gt create {{.Form.BranchName}}"
     loadingText: "Creating branch from main"
     output: log
-  # Git Town Kill - Delete current feature branch
+  # Graphite Delete - Delete current branch
   - key: "K"
     context: "localBranches"
-    description: "Git Town Kill (delete branch & sync)"
+    description: "Graphite Kill (delete branch)"
     prompts:
       - type: "confirm"
         title: "Delete Branch"
         body: "Are you sure you want to delete '{{.CheckedOutBranch.Name}}'?"
-    command: "git town kill"
+    command: "gt branch delete --force"
     loadingText: "Deleting branch"
     output: log
-  # Git Town Ship - Merge and delete the current branch
+  # Graphite Submit - Create/update PRs for stack
   - key: "S"
     context: "localBranches"
-    description: "Git Town Ship (merge & delete branch)"
+    description: "Graphite Submit (create/update PRs)"
+    command: "gt submit"
+    loadingText: "Submitting PRs"
+    output: log
+  # Graphite Stack Submit - Submit all branches in stack
+  - key: "A"
+    context: "localBranches"
+    description: "Graphite stAck submit (all PRs)"
+    command: "gt stack submit"
+    loadingText: "Submitting stack PRs"
+    output: log
+  # Graphite Merge - Merge PR when approved
+  - key: "M"
+    context: "localBranches"
+    description: "Graphite Merge (merge PR)"
     prompts:
       - type: "confirm"
-        title: "Ship Branch"
-        body: "Merge '{{.CheckedOutBranch.Name}}' to parent and delete?"
-    command: "git town ship"
-    loadingText: "Shipping branch"
+        title: "Merge PR"
+        body: "Merge PR for '{{.CheckedOutBranch.Name}}'?"
+    command: "gt merge"
+    loadingText: "Merging PR"
     output: log
-  # Git Town Propose - Create pull request for current branch
+  # Graphite Restack - Rebase stack on parent changes
+  - key: "R"
+    context: "localBranches"
+    description: "Graphite Restack (rebase stack)"
+    command: "gt restack"
+    loadingText: "Restacking"
+    output: log
+  # Graphite Up - Move up the stack
+  - key: "<up>"
+    context: "localBranches"
+    description: "Graphite Up (navigate stack)"
+    command: "gt up"
+    loadingText: "Moving up"
+    output: log
+  # Graphite Down - Move down the stack
+  - key: "<down>"
+    context: "localBranches"
+    description: "Graphite Down (navigate stack)"
+    command: "gt down"
+    loadingText: "Moving down"
+    output: log
+  # Graphite Top - Jump to stack tip
+  - key: "T"
+    context: "localBranches"
+    description: "Graphite Top (jump to tip)"
+    command: "gt top"
+    loadingText: "Jumping to top"
+    output: log
+  # Graphite Bottom - Jump to trunk-closest branch
+  - key: "B"
+    context: "localBranches"
+    description: "Graphite Bottom (jump to base)"
+    command: "gt bottom"
+    loadingText: "Jumping to bottom"
+    output: log
+  # Graphite Modify - Amend current commit
+  - key: "m"
+    context: "localBranches"
+    description: "Graphite Modify (amend commit)"
+    command: "gt modify --all"
+    loadingText: "Amending commit"
+    output: log
+  # Graphite Absorb - Auto-amend to correct commits
+  - key: "b"
+    context: "localBranches"
+    description: "Graphite aBsorb (auto-amend)"
+    command: "gt absorb --all"
+    loadingText: "Absorbing changes"
+    output: log
+  # Graphite Fold - Merge branch into parent
+  - key: "F"
+    context: "localBranches"
+    description: "Graphite Fold (merge into parent)"
+    prompts:
+      - type: "confirm"
+        title: "Fold Branch"
+        body: "Merge '{{.CheckedOutBranch.Name}}' into its parent?"
+    command: "gt fold"
+    loadingText: "Folding branch"
+    output: log
+  # Graphite Squash - Combine all commits
+  - key: "Q"
+    context: "localBranches"
+    description: "Graphite sQuash (combine commits)"
+    command: "gt squash --no-edit"
+    loadingText: "Squashing commits"
+    output: log
+  # Graphite Submit Draft - Submit stack as draft PRs
+  - key: "D"
+    context: "localBranches"
+    description: "Graphite Draft (submit draft PRs)"
+    command: "gt submit --stack --draft"
+    loadingText: "Submitting draft PRs"
+    output: log
+  # Graphite Submit AI - AI-generated PR descriptions
+  - key: "I"
+    context: "localBranches"
+    description: "Graphite AI submit (AI PR description)"
+    command: "gt submit --stack --ai"
+    loadingText: "AI generating PRs"
+    output: log
+  # Graphite PR View - Open all stack PRs in browser
+  - key: "V"
+    context: "localBranches"
+    description: "Graphite View PRs (open in browser)"
+    command: "gt pr --stack"
+    loadingText: "Opening PRs"
+    output: log
+  # Graphite Continue - Resume after conflict
+  - key: "C"
+    context: "localBranches"
+    description: "Graphite Continue (after conflict)"
+    command: "gt continue"
+    loadingText: "Continuing"
+    output: log
+  # Graphite Abort - Cancel current operation
+  - key: "X"
+    context: "localBranches"
+    description: "Graphite abort (cancel operation)"
+    command: "gt abort --force"
+    loadingText: "Aborting"
+    output: log
+  # Graphite Info - Show branch details
+  - key: "i"
+    context: "localBranches"
+    description: "Graphite Info (branch details)"
+    command: "gt info --diff"
+    loadingText: "Loading info"
+    output: log
+  # Graphite Checkout - Interactive branch switcher
   - key: "o"
     context: "localBranches"
-    description: "Git Town Propose (create PR)"
-    command: "git town propose"
-    loadingText: "Creating pull request"
+    description: "Graphite checkOut (interactive)"
+    command: "gt checkout --stack"
+    loadingText: "Opening branch switcher"
+    output: log
+  # Graphite Dashboard - Open web dashboard
+  - key: "W"
+    context: "global"
+    description: "Graphite Web dashboard"
+    command: "gt dash"
+    loadingText: "Opening dashboard"
+    output: log
+  # Graphite Sync with Restack - Full sync
+  - key: "Z"
+    context: "global"
+    description: "Graphite sync + restack (full)"
+    command: "gt sync --restack"
+    loadingText: "Full sync"
     output: log
