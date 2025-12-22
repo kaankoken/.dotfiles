@@ -55,7 +55,7 @@ return {
 <head>
   <meta charset="UTF-8">
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11.12.2/dist/mermaid.min.js"></script>
   <style>
     body { font-family: -apple-system, sans-serif; max-width: 900px; margin: 40px auto; padding: 20px; }
     pre { background: #f4f4f4; padding: 16px; border-radius: 8px; overflow-x: auto; }
@@ -66,7 +66,11 @@ return {
 <body>
   <div id="content"></div>
   <script>
-    mermaid.initialize({ startOnLoad: false, theme: 'default' });
+    mermaid.initialize({
+      startOnLoad: false,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
     const renderer = new marked.Renderer();
     renderer.code = function({ text, lang }) {
       if (lang === 'mermaid') {
@@ -76,7 +80,17 @@ return {
     };
     marked.setOptions({ renderer: renderer });
     document.getElementById('content').innerHTML = marked.parse(`]] .. content .. [[`);
-    mermaid.init(undefined, '.mermaid');
+
+    // Render with error handling
+    document.querySelectorAll('.mermaid').forEach(async (el, i) => {
+      try {
+        const { svg } = await mermaid.render('mermaid-' + i, el.textContent);
+        el.innerHTML = svg;
+      } catch (err) {
+        el.innerHTML = '<pre style="color:red;background:#fff0f0;padding:10px;border-radius:4px;">Mermaid Error:\\n' + err.message + '</pre>';
+        console.error('Mermaid error:', err);
+      }
+    });
   </script>
 </body>
 </html>]]
