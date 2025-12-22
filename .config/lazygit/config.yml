@@ -85,17 +85,6 @@ customCommands:
     command: "gt stack submit"
     loadingText: "Submitting stack PRs"
     output: log
-  # Graphite Merge - Merge PR when approved
-  - key: "P"
-    context: "localBranches"
-    description: "Graphite Push/merge (merge PR)"
-    prompts:
-      - type: "confirm"
-        title: "Merge PR"
-        body: "Merge PR for '{{.CheckedOutBranch.Name}}'?"
-    command: "gt merge"
-    loadingText: "Merging PR"
-    output: log
   # Graphite Restack - Rebase stack on parent changes
   - key: "N"
     context: "localBranches"
