@@ -104,3 +104,61 @@ def --wrapped claude [...args: string] {
         ^claude ...$args
     }
 }
+
+# Firebase with auto-select based on directory
+def --wrapped firebase [...args: string] {
+    let morfeu_dir = $"($env.HOME)/Desktop/morfeu"
+    let voluble_dir = $"($env.HOME)/Desktop/voluble"
+    let personal_dir = $"($env.HOME)/Desktop/personal"
+
+    let config_base = $"($env.HOME)/.dotfiles/.config/configstore/firebase-tools.json"
+    let config_link = $"($env.HOME)/.config/configstore/firebase-tools.json"
+
+    let config_suffix = if ($env.PWD | str starts-with $morfeu_dir) {
+        "morfeu"
+    } else if ($env.PWD | str starts-with $voluble_dir) {
+        "voluble"
+    } else if ($env.PWD | str starts-with $personal_dir) {
+        "personal"
+    } else {
+        "morfeu"  # default
+    }
+
+    # Update symlink if needed
+    let target_config = $"($config_base).($config_suffix)"
+    rm -f $config_link
+    ln -s $target_config $config_link
+
+    ^firebase ...$args
+}
+
+# Manual Firebase config switching
+def firebase-morfeu [] {
+    let config_path = $"($env.HOME)/.config/configstore/firebase-tools.json"
+    let target_path = $"($env.HOME)/.dotfiles/.config/configstore/firebase-tools.json.morfeu"
+    rm -f $config_path
+    ln -s $target_path $config_path
+    print "Switched to Firebase morfeu (kaan@morfeu.ai)"
+}
+
+def firebase-voluble [] {
+    let config_path = $"($env.HOME)/.config/configstore/firebase-tools.json"
+    let target_path = $"($env.HOME)/.dotfiles/.config/configstore/firebase-tools.json.voluble"
+    rm -f $config_path
+    ln -s $target_path $config_path
+    print "Switched to Firebase voluble (kaan@voluble.co.uk)"
+}
+
+def firebase-personal [] {
+    let config_path = $"($env.HOME)/.config/configstore/firebase-tools.json"
+    let target_path = $"($env.HOME)/.dotfiles/.config/configstore/firebase-tools.json.personal"
+    rm -f $config_path
+    ln -s $target_path $config_path
+    print "Switched to Firebase personal (bkakm@hotmail.com)"
+}
+
+def firebase-which [] {
+    let config_path = $"($env.HOME)/.config/configstore/firebase-tools.json"
+    let target = (ls -la $config_path | get target.0 | path basename)
+    print $"Currently using: ($target)"
+}

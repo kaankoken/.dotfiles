@@ -7,6 +7,7 @@
 	driver = mergiraf merge --git %O %A %B -s %S -x %X -y %Y -p %P -l %L
 [core]
 	attributesfile = /Users/legolas/.gitattributes
+	ignorecase = false
 [diff]
   external = difft
 [difftool]
@@ -23,3 +24,6 @@
 	forge-type = github
 [rebase]
 	updateRefs = true
+; [url "https://github.com/"]
+; 	insteadOf = git@github.com:
+; 	insteadOf = ssh://git@github.com/

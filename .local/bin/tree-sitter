@@ -1,0 +1,9 @@
+#!/bin/bash
+# Wrapper to strip --no-bindings flag for newer tree-sitter versions
+args=()
+for arg in "$@"; do
+  if [[ "$arg" != "--no-bindings" ]]; then
+    args+=("$arg")
+  fi
+done
+exec /opt/homebrew/bin/tree-sitter "${args[@]}"
