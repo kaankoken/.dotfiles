@@ -15,6 +15,7 @@ require("lazy").setup({
   { import = "plugins" },
 } --[[@as LazySpec]], {
   -- Configure any other `lazy.nvim` configuration options here
+  concurrency = 4, -- Limit parallel git operations to prevent "Failed to spawn process" errors
   git = {
     url_format = "https://github.com/%s.git", -- Use HTTPS instead of SSH
   },
