@@ -12,7 +12,6 @@ return {
   opts = {
     -- Configuration table of features provided by AstroLSP
     features = {
-      autoformat = true, -- enable or disable auto formatting on start
       codelens = true, -- enable/disable codelens refresh on start
       inlay_hints = false, -- enable/disable inlay hints on start
       semantic_tokens = true, -- enable/disable semantic token highlighting
@@ -49,14 +48,15 @@ return {
     config = {
       -- clangd = { capabilities = { offsetEncoding = "utf-8" } },
     },
-    -- customize how language servers are attached
+    -- customize how language servers are attached (v6: uses vim.lsp.config APIs)
     handlers = {
-      -- a function without a key is simply the default handler, functions take two parameters, the server name and the configured options table for that server
-      -- function(server, opts) require("lspconfig")[server].setup(opts) end
+      -- v6: default handler uses "*" key and vim.lsp.enable
+      -- ["*"] = function(server) vim.lsp.enable(server) end
 
-      -- the key is the server that is being setup with `lspconfig`
-      -- rust_analyzer = false, -- setting a handler to false will disable the set up of that language server
-      -- pyright = function(_, opts) require("lspconfig").pyright.setup(opts) end -- or a custom handler function can be passed
+      -- disable a specific server (still supported):
+      -- rust_analyzer = false,
+      -- custom handler (v6 style):
+      -- pyright = function(server) vim.lsp.enable(server) end
     },
     -- Configure buffer local auto commands to add when attaching a language server
     autocmds = {
@@ -100,7 +100,7 @@ return {
       },
     },
     -- A custom `on_attach` function to be run after the default `on_attach` function
-    -- takes two parameters `client` and `bufnr`  (`:h lspconfig-setup`)
+    -- takes two parameters `client` and `bufnr`  (`:h lsp-attach`)
     on_attach = function(client, bufnr)
       -- this would disable semanticTokensProvider for all clients
       -- client.server_capabilities.semanticTokensProvider = nil

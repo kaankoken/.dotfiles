@@ -1,19 +1,25 @@
--- if true then return {} end -- WARN: REMOVE THIS LINE TO ACTIVATE THIS FILE
-
 -- Customize Treesitter
+-- --------------------
+-- In v6, nvim-treesitter is just a parser download utility.
+-- All treesitter configuration is handled through AstroCore.
 
 ---@type LazySpec
 return {
-  "nvim-treesitter/nvim-treesitter",
+  "AstroNvim/astrocore",
+  ---@type AstroCoreOpts
   opts = {
-    ensure_installed = {
-      "lua",
-      "vim",
-      "rust",
-      "python",
-      "typescript",
-      "javascript",
-      -- add more arguments for adding more treesitter parsers
+    treesitter = {
+      highlight = true,
+      indent = true,
+      auto_install = true,
+      ensure_installed = {
+        "lua",
+        "vim",
+        "rust",
+        "python",
+        "typescript",
+        "javascript",
+      },
     },
   },
 }

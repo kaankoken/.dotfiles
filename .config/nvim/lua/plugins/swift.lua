@@ -1,12 +1,10 @@
 return {
   {
-    "nvim-treesitter/nvim-treesitter",
+    "AstroNvim/astrocore",
     opts = function(_, opts)
-      opts.install = opts.install or {}
-      opts.install.prefer_git = false
-      if opts.ensure_installed ~= "all" then
-        opts.ensure_installed = require("astrocore").list_insert_unique(opts.ensure_installed, { "swift" })
-      end
+      opts.treesitter = opts.treesitter or {}
+      opts.treesitter.ensure_installed =
+        require("astrocore").list_insert_unique(opts.treesitter.ensure_installed or {}, { "swift" })
     end,
   },
   {

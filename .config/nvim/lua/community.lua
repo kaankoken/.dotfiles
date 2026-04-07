@@ -30,7 +30,10 @@ return {
   { import = "astrocommunity.pack.ruby" },
   { import = "astrocommunity.pack.rust" },
   { import = "astrocommunity.pack.proto" },
-  { import = "astrocommunity.pack.python-ruff" },
+  { import = "astrocommunity.pack.python.base" },
+  { import = "astrocommunity.pack.python.basedpyright" },
+  { import = "astrocommunity.pack.python.ruff" },
+  { import = "astrocommunity.pack.python.isort" },
   { import = "astrocommunity.recipes.disable-tabline" },
   { import = "astrocommunity.workflow.hardtime-nvim" },
 }

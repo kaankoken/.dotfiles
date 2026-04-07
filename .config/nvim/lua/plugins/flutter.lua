@@ -10,21 +10,18 @@ return {
     },
   },
   {
-    "nvim-treesitter/nvim-treesitter",
+    "AstroNvim/astrocore",
     optional = true,
     opts = function(_, opts)
-      if opts.ensure_installed ~= "all" then
-        opts.ensure_installed = require("astrocore").list_insert_unique(opts.ensure_installed, { "dart" })
-      end
-      local select = vim.tbl_get(opts, "textobjects", "select")
-      if select then select.disable = require("astrocore").list_insert_unique(select.disable, { "dart" }) end
+      opts.treesitter = opts.treesitter or {}
+      opts.treesitter.ensure_installed =
+        require("astrocore").list_insert_unique(opts.treesitter.ensure_installed or {}, { "dart" })
     end,
   },
   {
     "akinsho/flutter-tools.nvim",
     ft = "dart",
     opts = function()
-      local astrolsp_avail, astrolsp = pcall(require, "astrolsp")
       local opts = {
         debugger = { 
           enabled = true,
@@ -75,7 +72,7 @@ return {
           prefix = "//",         -- Character to use for close tag
           enabled = true         -- Enable closing tags
         },
-        lsp = astrolsp_avail and astrolsp.lsp_opts("dartls") or nil,
+        lsp = vim.lsp.config["dartls"] or nil,
         settings = {
           showTodos = true,    -- Show todo comments in outline
           completeFunctionCalls = true, -- Complete function calls
