@@ -79,14 +79,24 @@ $env.config.show_banner = false
 # Default file format for history
 $env.config.history.file_format = "sqlite"
 
+$env.CLAUDE_CODE_NO_FLICKER = "1"
+
 # Claude Code with separate configs
 def --wrapped claude-personal [...args: string] {
+    let json_link = $"($env.HOME)/.claude.json"
+    let json_target = $"($env.HOME)/.dotfiles/.claude.json.personal"
+    rm -f $json_link
+    ln -s $json_target $json_link
     with-env { CLAUDE_CONFIG_DIR: $"($env.HOME)/.claude" } {
         ^claude ...$args
     }
 }
 
 def --wrapped claude-work [...args: string] {
+    let json_link = $"($env.HOME)/.claude.json"
+    let json_target = $"($env.HOME)/.dotfiles/.claude.json.enterprise"
+    rm -f $json_link
+    ln -s $json_target $json_link
     with-env { CLAUDE_CONFIG_DIR: $"($env.HOME)/.claude-enterprise" } {
         ^claude ...$args
     }
@@ -95,14 +105,25 @@ def --wrapped claude-work [...args: string] {
 # Auto-select Claude config based on directory
 def --wrapped claude [...args: string] {
     let work_dir = $"($env.HOME)/Desktop/morfeu"
-    let config_dir = if ($env.PWD | str starts-with $work_dir) {
-        $"($env.HOME)/.claude-enterprise"
-    } else {
-        $"($env.HOME)/.claude"
-    }
+    let is_work = ($env.PWD | str starts-with $work_dir)
+
+    let config_dir = if $is_work { $"($env.HOME)/.claude-enterprise" } else { $"($env.HOME)/.claude" }
+    let json_suffix = if $is_work { "enterprise" } else { "personal" }
+
+    let json_link = $"($env.HOME)/.claude.json"
+    let json_target = $"($env.HOME)/.dotfiles/.claude.json.($json_suffix)"
+    rm -f $json_link
+    ln -s $json_target $json_link
+
     with-env { CLAUDE_CONFIG_DIR: $config_dir } {
         ^claude ...$args
     }
+}
+
+def claude-which [] {
+    let json_link = $"($env.HOME)/.claude.json"
+    let target = (ls -la $json_link | get target.0 | path basename)
+    print $"Currently using: ($target)"
 }
 
 # Firebase with auto-select based on directory
