@@ -11,6 +11,9 @@ $env.PATH = ($env.PATH | prepend $"($env.HOME)/.local/bin")
 # Orb Stack
 $env.PATH = ($env.PATH | prepend $"($env.HOME)/.orbstack/bin")
 
+# Radicle
+$env.PATH = ($env.PATH | prepend $"($env.HOME)/.radicle/bin")
+
 # Rust's Cargo
 $env.CARGO_HOME = $"($env.HOME)/.cargo"
 $env.PATH = ($env.PATH | prepend $"($env.CARGO_HOME)/bin")

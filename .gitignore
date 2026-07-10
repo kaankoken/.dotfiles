@@ -14,3 +14,7 @@ firebase-debug.log
 
 # Shell history databases
 .config/history.*
+
+# Radicle (only config.json is tracked; keys + local state must never be committed)
+.radicle/*
+!.radicle/config.json
