@@ -34,6 +34,18 @@ sleep 1
 open -a "Microsoft Outlook"
 sleep 1
 
+# Workspace 6: Chrome & Claude desktop
+echo "Launching Chrome and Claude on workspace 6..."
+open -a "Google Chrome"
+sleep 1
+open -a "Claude"
+sleep 1
+
+# Workspace 7: Safari (Capybara profile)
+echo "Launching Safari (Capybara profile) on workspace 7..."
+open -a Safari --args --profile-directory="Capybara"
+sleep 1
+
 echo "All applications launched!"
 
 # Optional: Focus on workspace 1 after launching

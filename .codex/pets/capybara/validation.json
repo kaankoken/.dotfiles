@@ -1,0 +1,48 @@
+{
+  "file": "capybara-spritesheet.png",
+  "mime_type": "image/png",
+  "dimensions": [
+    1536,
+    1872
+  ],
+  "grid": {
+    "columns": 8,
+    "rows": 9,
+    "cell": [
+      192,
+      208
+    ]
+  },
+  "mode": "RGBA",
+  "byte_size": 1345918,
+  "under_20_mib": true,
+  "required_frame_counts": {
+    "idle": 6,
+    "run-right": 8,
+    "run-left": 8,
+    "wave": 4,
+    "jump": 5,
+    "failure-reaction": 8,
+    "waiting": 6,
+    "active-work": 6,
+    "review-inspect": 6
+  },
+  "required_frames_non_empty": true,
+  "unused_cells_fully_transparent": true,
+  "transparent_corner_alpha": [
+    0,
+    0,
+    0,
+    0
+  ],
+  "visible_bbox_width_range": [
+    94,
+    176
+  ],
+  "visible_bbox_height_range": [
+    86,
+    130
+  ],
+  "source_global_scale": 1.2394366197183098,
+  "encoded_bytes_valid": true
+}

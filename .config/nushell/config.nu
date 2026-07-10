@@ -19,19 +19,20 @@ $env.PATH = ($env.PATH | prepend $"($env.CARGO_HOME)/bin")
 $env.GOENV_ROOT = $"($env.HOME)/.goenv"
 $env.PATH = ($env.PATH | prepend $"($env.GOENV_ROOT)/bin")
 $env.PATH = ($env.PATH | prepend $"($env.GOENV_ROOT)/shims")
+let go_bin = (go env GOPATH | str trim | path join "bin")
+$env.PATH = ($env.PATH | prepend $go_bin)
 
 # Ruby
 $env.PATH = ($env.PATH | prepend "/opt/homebrew/opt/ruby/bin")
 $env.LDFLAGS = "-L/opt/homebrew/opt/ruby/lib"
 $env.CPPFLAGS = "-I/opt/homebrew/opt/ruby/include"
 
-# asdf configuration
-$env.ASDF_DIR = "/opt/homebrew/opt/asdf/libexec"
-$env.PATH = ($env.PATH | prepend "/opt/homebrew/opt/asdf/libexec/bin")
+# asdf configuration (Go rewrite, v0.16+: single binary, no shell init)
 $env.PATH = ($env.PATH | prepend $"($env.HOME)/.asdf/shims")
 
-# Source asdf completions and setup
-source /opt/homebrew/opt/asdf/libexec/asdf.nu
+# asdf completions via vendor autoload
+mkdir ($nu.data-dir | path join "vendor/autoload")
+asdf completion nushell | save -f ($nu.data-dir | path join "vendor/autoload/asdf.nu")
 
 # pnpm
 $env.PNPM_HOME = $"($env.HOME)/Library/pnpm"
@@ -54,20 +55,7 @@ $env.COLORTERM = "truecolor"
 mkdir ($nu.data-dir | path join "vendor/autoload")
 starship init nu | save -f ($nu.data-dir | path join "vendor/autoload/starship.nu")
 
-# Atuin configuration
-# Create directory for Atuin if it doesn't exist
-if not (ls ~/.local/share/atuin/ | is-empty) {
-  mkdir ~/.local/share/atuin/
-}
-
-# Only initialize Atuin if the file doesn't exist yet
-if not ("~/.local/share/atuin/init.nu" | path exists) {
-  # Create the directory if it doesn't exist
-  mkdir ~/.local/share/atuin
-  # Create Atuin initialization file
-  atuin init nu | save -f ~/.local/share/atuin/init.nu
-}
-
+# Atuin configuration (init.nu generated in env.nu so it exists at parse time)
 source ~/.local/share/atuin/init.nu
 
 # NVIM config
@@ -88,7 +76,7 @@ def --wrapped claude-personal [...args: string] {
     rm -f $json_link
     ln -s $json_target $json_link
     with-env { CLAUDE_CONFIG_DIR: $"($env.HOME)/.claude" } {
-        ^claude ...$args
+        ^headroom wrap claude ...$args
     }
 }
 
@@ -98,7 +86,7 @@ def --wrapped claude-work [...args: string] {
     rm -f $json_link
     ln -s $json_target $json_link
     with-env { CLAUDE_CONFIG_DIR: $"($env.HOME)/.claude-enterprise" } {
-        ^claude ...$args
+        ^headroom wrap claude ...$args
     }
 }
 
@@ -116,7 +104,7 @@ def --wrapped claude [...args: string] {
     ln -s $json_target $json_link
 
     with-env { CLAUDE_CONFIG_DIR: $config_dir } {
-        ^claude ...$args
+        ^headroom wrap claude ...$args
     }
 }
 
@@ -124,6 +112,16 @@ def claude-which [] {
     let json_link = $"($env.HOME)/.claude.json"
     let target = (ls -la $json_link | get target.0 | path basename)
     print $"Currently using: ($target)"
+}
+
+# Codex through Headroom by default.
+def --wrapped codex [...args: string] {
+    ^headroom wrap codex ...$args
+}
+
+# Bypass the Nushell Codex wrapper when needed.
+def --wrapped codex-raw [...args: string] {
+    ^codex ...$args
 }
 
 # Firebase with auto-select based on directory

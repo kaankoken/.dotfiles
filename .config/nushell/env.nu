@@ -31,3 +31,10 @@ if not (which goenv | is-empty) {
         $env.PATH = ($env.PATH | prepend $"($goenv_root)/shims")
     }
 }
+
+# Generate atuin init before config.nu parses its `source` directive.
+let atuin_init_file = ($env.HOME | path join ".local/share/atuin/init.nu")
+mkdir ($atuin_init_file | path dirname)
+if not ($atuin_init_file | path exists) {
+    atuin init nu | save -f $atuin_init_file
+}

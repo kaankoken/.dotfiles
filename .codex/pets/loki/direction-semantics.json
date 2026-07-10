@@ -1,0 +1,27 @@
+{
+  "ok": true,
+  "reviewed_by": "independent-final-visual-qa-worker",
+  "directions": [
+    {"direction":"000","verdict":"pass","expected":"up","observed":"up","reason":"Nose and eyes lift vertically; horizontal axis remains centered."},
+    {"direction":"022.5","verdict":"pass","expected":"up-right","observed":"up-right","reason":"Head and muzzle lift toward screen-right."},
+    {"direction":"045","verdict":"pass","expected":"up-right","observed":"up-right","reason":"Clear raised rightward gaze."},
+    {"direction":"067.5","verdict":"pass","expected":"up-right","observed":"up-right","reason":"Rightward profile retains upward pitch."},
+    {"direction":"090","verdict":"pass","expected":"right","observed":"right","reason":"Muzzle points unmistakably screen-right with a level vertical axis."},
+    {"direction":"112.5","verdict":"pass","expected":"down-right","observed":"down-right","reason":"Head turns right with a mild downward pitch."},
+    {"direction":"135","verdict":"pass","expected":"down-right","observed":"down-right","reason":"Rightward muzzle lowers further while staying in the correct quadrant."},
+    {"direction":"157.5","verdict":"warning","expected":"down-right","observed":"down-right","reason":"Labeled normal-size view shows the muzzle right of head center and lowered gaze; blind horizontal classification was uncertain."},
+    {"direction":"180","verdict":"pass","expected":"down","observed":"down","reason":"Centered bowed head reads unmistakably down."},
+    {"direction":"202.5","verdict":"pass","expected":"down-left","observed":"down-left","reason":"Muzzle shifts screen-left while remaining lowered."},
+    {"direction":"225","verdict":"pass","expected":"down-left","observed":"down-left","reason":"Clear lowered screen-left gaze."},
+    {"direction":"247.5","verdict":"pass","expected":"down-left","observed":"down-left","reason":"Screen-left profile remains downward."},
+    {"direction":"270","verdict":"pass","expected":"left","observed":"left","reason":"Muzzle points unmistakably screen-left with a level vertical axis."},
+    {"direction":"292.5","verdict":"pass","expected":"up-left","observed":"up-left","reason":"Screen-left profile begins lifting."},
+    {"direction":"315","verdict":"pass","expected":"up-left","observed":"up-left","reason":"Clear raised screen-left gaze."},
+    {"direction":"337.5","verdict":"pass","expected":"up-left","observed":"up-left","reason":"Muzzle remains screen-left and strongly elevated, approaching centered up."}
+  ],
+  "review_warnings": [
+    "157.5 has an intermediate blind horizontal warning, but labeled normal-size review confirms down-right.",
+    "157.5 to 180 is a metric outlier but visually transitions smoothly without reversal, scale pop, or identity snap.",
+    "Bottom alpha-hole candidates are intentional negative spaces between paws, legs, body, and tail."
+  ]
+}

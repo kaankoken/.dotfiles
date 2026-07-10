@@ -149,7 +149,7 @@ run = 'layout floating'
 # Workspace 1: Safari Personal and Spotify
 [[on-window-detected]]
 if.app-id = 'com.apple.Safari'
-if.window-title-regex-substring = '.*Personal.*|^(?!.*Morfeu).*$'
+if.window-title-regex-substring = '.*Personal.*|^(?!.*Morfeu)(?!.*Capybara).*$'
 run = 'move-node-to-workspace 1'
 
 [[on-window-detected]]
@@ -184,6 +184,21 @@ run = 'move-node-to-workspace 5'
 [[on-window-detected]]
 if.app-id = 'com.microsoft.Outlook'
 run = 'move-node-to-workspace 5'
+
+# Workspace 6: Chrome and Claude desktop
+[[on-window-detected]]
+if.app-id = 'com.google.Chrome'
+run = 'move-node-to-workspace 6'
+
+[[on-window-detected]]
+if.app-id = 'com.anthropic.claudefordesktop'
+run = 'move-node-to-workspace 6'
+
+# Workspace 7: Safari Capybara profile
+[[on-window-detected]]
+if.app-id = 'com.apple.Safari'
+if.window-title-regex-substring = '.*Capybara.*'
+run = 'move-node-to-workspace 7'
 
 # Workspace definitions
 [workspace-to-monitor-force-assignment]

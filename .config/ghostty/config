@@ -80,3 +80,5 @@ keybind = cmd+equal=ignore
 
 # Service mode
 keybind = cmd+ctrl+shift+semicolon=ignore
+
+custom-shader-animation = true

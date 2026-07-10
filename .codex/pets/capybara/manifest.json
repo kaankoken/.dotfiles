@@ -1,0 +1,268 @@
+{
+  "format": "chatgpt-work-pet-bundle",
+  "format_version": 1,
+  "package_version": "1.0.0",
+  "pet": {
+    "id": "pet_6a500c6a92188191a6e4e4c27f1bc625",
+    "name": "Capybara",
+    "description": "A calm, friendly and focused cinnamon-brown capybara work companion.",
+    "custom": true
+  },
+  "sprite_sheet": {
+    "path": "assets/spritesheet.png",
+    "mime_type": "image/png",
+    "width": 1536,
+    "height": 1872,
+    "columns": 8,
+    "rows": 9,
+    "cell_width": 192,
+    "cell_height": 208,
+    "alpha": true
+  },
+  "animations": {
+    "idle": {
+      "atlas_row": 0,
+      "atlas_columns": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "frame_count": 6,
+      "frame_width": 192,
+      "frame_height": 208,
+      "fps": 6,
+      "frame_duration_ms": 167,
+      "loop": true,
+      "frames": [
+        "animations/idle/frame-00.png",
+        "animations/idle/frame-01.png",
+        "animations/idle/frame-02.png",
+        "animations/idle/frame-03.png",
+        "animations/idle/frame-04.png",
+        "animations/idle/frame-05.png"
+      ]
+    },
+    "run-right": {
+      "atlas_row": 1,
+      "atlas_columns": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "frame_count": 8,
+      "frame_width": 192,
+      "frame_height": 208,
+      "fps": 10,
+      "frame_duration_ms": 100,
+      "loop": true,
+      "frames": [
+        "animations/run-right/frame-00.png",
+        "animations/run-right/frame-01.png",
+        "animations/run-right/frame-02.png",
+        "animations/run-right/frame-03.png",
+        "animations/run-right/frame-04.png",
+        "animations/run-right/frame-05.png",
+        "animations/run-right/frame-06.png",
+        "animations/run-right/frame-07.png"
+      ]
+    },
+    "run-left": {
+      "atlas_row": 2,
+      "atlas_columns": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "frame_count": 8,
+      "frame_width": 192,
+      "frame_height": 208,
+      "fps": 10,
+      "frame_duration_ms": 100,
+      "loop": true,
+      "frames": [
+        "animations/run-left/frame-00.png",
+        "animations/run-left/frame-01.png",
+        "animations/run-left/frame-02.png",
+        "animations/run-left/frame-03.png",
+        "animations/run-left/frame-04.png",
+        "animations/run-left/frame-05.png",
+        "animations/run-left/frame-06.png",
+        "animations/run-left/frame-07.png"
+      ]
+    },
+    "wave": {
+      "atlas_row": 3,
+      "atlas_columns": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "frame_count": 4,
+      "frame_width": 192,
+      "frame_height": 208,
+      "fps": 6,
+      "frame_duration_ms": 167,
+      "loop": false,
+      "frames": [
+        "animations/wave/frame-00.png",
+        "animations/wave/frame-01.png",
+        "animations/wave/frame-02.png",
+        "animations/wave/frame-03.png"
+      ]
+    },
+    "jump": {
+      "atlas_row": 4,
+      "atlas_columns": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "frame_count": 5,
+      "frame_width": 192,
+      "frame_height": 208,
+      "fps": 8,
+      "frame_duration_ms": 125,
+      "loop": false,
+      "frames": [
+        "animations/jump/frame-00.png",
+        "animations/jump/frame-01.png",
+        "animations/jump/frame-02.png",
+        "animations/jump/frame-03.png",
+        "animations/jump/frame-04.png"
+      ]
+    },
+    "failure-reaction": {
+      "atlas_row": 5,
+      "atlas_columns": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "frame_count": 8,
+      "frame_width": 192,
+      "frame_height": 208,
+      "fps": 7,
+      "frame_duration_ms": 143,
+      "loop": false,
+      "frames": [
+        "animations/failure-reaction/frame-00.png",
+        "animations/failure-reaction/frame-01.png",
+        "animations/failure-reaction/frame-02.png",
+        "animations/failure-reaction/frame-03.png",
+        "animations/failure-reaction/frame-04.png",
+        "animations/failure-reaction/frame-05.png",
+        "animations/failure-reaction/frame-06.png",
+        "animations/failure-reaction/frame-07.png"
+      ]
+    },
+    "waiting": {
+      "atlas_row": 6,
+      "atlas_columns": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "frame_count": 6,
+      "frame_width": 192,
+      "frame_height": 208,
+      "fps": 5,
+      "frame_duration_ms": 200,
+      "loop": true,
+      "frames": [
+        "animations/waiting/frame-00.png",
+        "animations/waiting/frame-01.png",
+        "animations/waiting/frame-02.png",
+        "animations/waiting/frame-03.png",
+        "animations/waiting/frame-04.png",
+        "animations/waiting/frame-05.png"
+      ]
+    },
+    "active-work": {
+      "atlas_row": 7,
+      "atlas_columns": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "frame_count": 6,
+      "frame_width": 192,
+      "frame_height": 208,
+      "fps": 6,
+      "frame_duration_ms": 167,
+      "loop": true,
+      "frames": [
+        "animations/active-work/frame-00.png",
+        "animations/active-work/frame-01.png",
+        "animations/active-work/frame-02.png",
+        "animations/active-work/frame-03.png",
+        "animations/active-work/frame-04.png",
+        "animations/active-work/frame-05.png"
+      ]
+    },
+    "review-inspect": {
+      "atlas_row": 8,
+      "atlas_columns": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "frame_count": 6,
+      "frame_width": 192,
+      "frame_height": 208,
+      "fps": 6,
+      "frame_duration_ms": 167,
+      "loop": true,
+      "frames": [
+        "animations/review-inspect/frame-00.png",
+        "animations/review-inspect/frame-01.png",
+        "animations/review-inspect/frame-02.png",
+        "animations/review-inspect/frame-03.png",
+        "animations/review-inspect/frame-04.png",
+        "animations/review-inspect/frame-05.png"
+      ]
+    }
+  },
+  "state_aliases": {
+    "run_right": "run-right",
+    "run_left": "run-left",
+    "failure": "failure-reaction",
+    "processing": "active-work",
+    "review": "review-inspect"
+  },
+  "previews": {
+    "all_states_gif": "previews/capybara-all-states.gif",
+    "all_states_mp4": "previews/capybara-all-states.mp4",
+    "contact_sheet": "previews/capybara-contact-sheet.png",
+    "idle_jump_idle": "previews/capybara-idle-jump-idle.gif"
+  }
+}
