@@ -19,8 +19,8 @@ brew install nushell
 - Default Shell
 
 ```bash
-echo /opt/homebrew/bin/nu | sudo tee -a /etc/shells
-chsh -s /opt/homebrew/bin/nu
+echo /etc/profiles/per-user/$USER/bin/nu | sudo tee -a /etc/shells
+chsh -s /etc/profiles/per-user/$USER/bin/nu
 
 # Restart your computer
 ```
@@ -28,7 +28,7 @@ chsh -s /opt/homebrew/bin/nu
 
 ```bash
 # Add these two lines to ghostty config
-command = /opt/homebrew/bin/nu -l --config ~/.config/nushell/config.nu --env-config ~/.config/nushell/env.nu
+command = /etc/profiles/per-user/$USER/bin/nu -l --config ~/.config/nushell/config.nu --env-config ~/.config/nushell/env.nu
 ```
 
 ## GNU Stow

@@ -1,40 +1,75 @@
-# Config file for Nushell
+# env.nu — environment for every Nu session (loaded before config.nu)
+# Official role: PATH and env vars only. No aliases / custom commands / $env.config.
+# See: https://www.nushell.sh/book/configuration.html
 
-# First, import the path add utility if not done in env.nu
 use std/util "path add"
 
-# Set config path to ~/.config
+# --- XDG ---
 $env.XDG_CONFIG_HOME = $"($env.HOME)/.config"
 
-# Flutter and Dart aliases using fvm
-alias flutter = fvm flutter
-alias dart = fvm dart
+# --- PATH (one ordered list; later prepends would invert priority) ---
+# Determinate multi-user: bash loads this via /etc/bashrc → nix-daemon.sh;
+# Nushell does not, so default profile must be listed here.
+let managed_paths = ([
+    $"/etc/profiles/per-user/($env.USER)/bin"   # home-manager (after nix-darwin)
+    $"($env.HOME)/.nix-profile/bin"               # user nix profile
+    "/nix/var/nix/profiles/default/bin"           # Determinate / multi-user nix
+    "/run/current-system/sw/bin"                  # nix-darwin system path
+    $"($env.HOME)/.local/bin"                     # uv tools, user bins
+    $"($env.HOME)/.cargo/bin"                     # rustup
+    $"($env.HOME)/.radicle/bin"                   # radicle
+    $"($env.HOME)/.orbstack/bin"                  # OrbStack
+    $"($env.HOME)/Library/pnpm"                   # pnpm (macOS)
+    $"($env.HOME)/fvm/default/bin"                # Flutter via FVM
+    $"($env.HOME)/.pub-cache/bin"                 # Dart pub globals
+    "/opt/homebrew/bin"                           # Homebrew (migration)
+    "/opt/homebrew/opt/ruby/bin"                  # Homebrew ruby (optional)
+    "/usr/local/bin"
+] | where {|p| $p | path exists })
 
-alias nu-open = open
-alias open = ^open
+$env.PATH = ($managed_paths | append $env.PATH | uniq)
 
-# Initialize Starship prompt
-def create_left_prompt [] {
-    starship prompt --cmd-duration $env.CMD_DURATION_MS $'--status=($env.LAST_EXIT_CODE)'
+# --- Tool homes / flags ---
+$env.CARGO_HOME = $"($env.HOME)/.cargo"
+$env.COLORTERM = "truecolor"
+$env.CLAUDE_CODE_NO_FLICKER = "1"
+
+if ($"($env.HOME)/Library/pnpm" | path exists) {
+    $env.PNPM_HOME = $"($env.HOME)/Library/pnpm"
 }
 
-# Use Nushell functions to define your left prompt
-$env.PROMPT_COMMAND = { || create_left_prompt }
+if ("/opt/homebrew/opt/ruby/lib" | path exists) {
+    $env.LDFLAGS = "-L/opt/homebrew/opt/ruby/lib"
+    $env.CPPFLAGS = "-I/opt/homebrew/opt/ruby/include"
+}
 
-# Set right prompt (empty for now)
-$env.PROMPT_COMMAND_RIGHT = ""
+let android_jbr = "/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+if ($android_jbr | path exists) {
+    $env.JAVA_HOME = $android_jbr
+}
 
-# Initialize goenv if it's installed
-if not (which goenv | is-empty) {
-    if ($env | get -o GOENV_ROOT) != null {
-        let goenv_root = $env.GOENV_ROOT
-        $env.PATH = ($env.PATH | prepend $"($goenv_root)/shims")
+# --- Generate vendor/autoload scripts (sourced automatically by Nu) ---
+# Must run in env.nu so files exist before config / autoload phase.
+let autoload_dir = ($nu.data-dir | path join "vendor/autoload")
+mkdir $autoload_dir
+
+if (which starship | is-not-empty) {
+    starship init nu | save -f ($autoload_dir | path join "starship.nu")
+}
+
+if (which asdf | is-not-empty) {
+    try {
+        asdf completion nushell | save -f ($autoload_dir | path join "asdf.nu")
     }
 }
 
-# Generate atuin init before config.nu parses its `source` directive.
+# Atuin: write init for config.nu to `source` (atuin does not use vendor/autoload by default)
 let atuin_init_file = ($env.HOME | path join ".local/share/atuin/init.nu")
 mkdir ($atuin_init_file | path dirname)
 if not ($atuin_init_file | path exists) {
-    atuin init nu | save -f $atuin_init_file
+    if (which atuin | is-not-empty) {
+        atuin init nu | save -f $atuin_init_file
+    } else {
+        "# atuin not installed\n" | save -f $atuin_init_file
+    }
 }

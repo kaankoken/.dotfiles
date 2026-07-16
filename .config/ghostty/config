@@ -10,7 +10,7 @@ macos-titlebar-style = hidden
 window-padding-balance = true
 window-save-state = always
 window-colorspace = "display-p3"
-command = /opt/homebrew/bin/nu -l --config ~/.config/nushell/config.nu --env-config ~/.config/nushell/env.nu
+command = /Users/legolas/.dotfiles/bin/nu-for-ghostty
 cursor-style-blink = true
 window-padding-x = 2,4
 window-padding-y = 0
@@ -22,6 +22,7 @@ copy-on-select = true
 macos-option-as-alt = right
 auto-update = off
 keybind = shift+enter=text:\n
+shell-integration = nushell
 
 # AeroSpace integration - pass through window management keys
 # Window focus keys

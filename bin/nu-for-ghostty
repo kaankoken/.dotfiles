@@ -1,0 +1,15 @@
+#!/bin/sh
+# Resolve nushell for Ghostty across brew → Nix migration.
+for candidate in \
+  "/etc/profiles/per-user/$USER/bin/nu" \
+  "$HOME/.nix-profile/bin/nu" \
+  "/run/current-system/sw/bin/nu" \
+  "/opt/homebrew/bin/nu" \
+  "/usr/local/bin/nu"
+do
+  if [ -x "$candidate" ]; then
+    exec "$candidate" -l --config "$HOME/.config/nushell/config.nu" --env-config "$HOME/.config/nushell/env.nu" "$@"
+  fi
+done
+# last resort: PATH
+exec nu -l --config "$HOME/.config/nushell/config.nu" --env-config "$HOME/.config/nushell/env.nu" "$@"

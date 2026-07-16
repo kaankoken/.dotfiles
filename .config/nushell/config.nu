@@ -1,78 +1,27 @@
-# Environment variables and path settings for Nushell
-use std/util "path add"
+# config.nu — interactive shell configuration (loaded after env.nu)
+# Official role: $env.config, aliases, custom commands, sources.
+# PATH and tool env vars live in env.nu — do not re-declare them here.
+# See: https://www.nushell.sh/book/configuration.html
 
-# Add Homebrew paths first
-$env.PATH = ($env.PATH | prepend "/opt/homebrew/bin")  # For Apple Silicon Macs
-$env.PATH = ($env.PATH | prepend "/usr/local/bin")     # For Intel Macs (as fallback)
-
-# UV tools
-$env.PATH = ($env.PATH | prepend $"($env.HOME)/.local/bin")
-
-# Orb Stack
-$env.PATH = ($env.PATH | prepend $"($env.HOME)/.orbstack/bin")
-
-# Radicle
-$env.PATH = ($env.PATH | prepend $"($env.HOME)/.radicle/bin")
-
-# Rust's Cargo
-$env.CARGO_HOME = $"($env.HOME)/.cargo"
-$env.PATH = ($env.PATH | prepend $"($env.CARGO_HOME)/bin")
-
-# Go Environment
-$env.GOENV_ROOT = $"($env.HOME)/.goenv"
-$env.PATH = ($env.PATH | prepend $"($env.GOENV_ROOT)/bin")
-$env.PATH = ($env.PATH | prepend $"($env.GOENV_ROOT)/shims")
-let go_bin = (go env GOPATH | str trim | path join "bin")
-$env.PATH = ($env.PATH | prepend $go_bin)
-
-# Ruby
-$env.PATH = ($env.PATH | prepend "/opt/homebrew/opt/ruby/bin")
-$env.LDFLAGS = "-L/opt/homebrew/opt/ruby/lib"
-$env.CPPFLAGS = "-I/opt/homebrew/opt/ruby/include"
-
-# asdf configuration (Go rewrite, v0.16+: single binary, no shell init)
-$env.PATH = ($env.PATH | prepend $"($env.HOME)/.asdf/shims")
-
-# asdf completions via vendor autoload
-mkdir ($nu.data-dir | path join "vendor/autoload")
-asdf completion nushell | save -f ($nu.data-dir | path join "vendor/autoload/asdf.nu")
-
-# pnpm
-$env.PNPM_HOME = $"($env.HOME)/Library/pnpm"
-$env.PATH = ($env.PATH | prepend $env.PNPM_HOME)
-
-# lazygit
-$env.PATH = ($env.PATH | prepend "/opt/homebrew/opt/lazygit/bin")
-
-# Java
-$env.JAVA_HOME = "/Applications/Android Studio.app/Contents/jbr/Contents/Home"
-
-# FVM (Flutter Version Management)
-$env.PATH = ($env.PATH | prepend $"($env.HOME)/fvm/default/bin")
-$env.PATH = ($env.PATH | prepend $"($env.HOME)/.pub-cache/bin")
-
-# Set COLORTERM for truecolor support
-$env.COLORTERM = "truecolor"
-
-# Starship configuration
-mkdir ($nu.data-dir | path join "vendor/autoload")
-starship init nu | save -f ($nu.data-dir | path join "vendor/autoload/starship.nu")
-
-# Atuin configuration (init.nu generated in env.nu so it exists at parse time)
-source ~/.local/share/atuin/init.nu
-
-# NVIM config
-$env.PATH = ($env.PATH | prepend "/opt/homebrew/bin/nvim")
-alias vim = nvim
-$env.config.buffer_editor = "vim"
-
+# --- Shell options ---
 $env.config.show_banner = false
-# Default file format for history
 $env.config.history.file_format = "sqlite"
+$env.config.buffer_editor = "nvim"
 
-$env.CLAUDE_CODE_NO_FLICKER = "1"
+# --- Aliases ---
+alias vim = nvim
+alias nu-open = open
+alias open = ^open
 
-# Claude Code with separate configs
+# Flutter / Dart via FVM when present on PATH (env.nu)
+alias flutter = fvm flutter
+alias dart = fvm dart
+
+# --- Integrations (env.nu generates init files) ---
+source ~/.local/share/atuin/init.nu
+# starship + asdf: vendor/autoload (generated in env.nu)
+
+# --- Claude Code (personal / work profiles via headroom) ---
 def --wrapped claude-personal [...args: string] {
     let json_link = $"($env.HOME)/.claude.json"
     let json_target = $"($env.HOME)/.dotfiles/.claude.json.personal"
@@ -93,7 +42,6 @@ def --wrapped claude-work [...args: string] {
     }
 }
 
-# Auto-select Claude config based on directory
 def --wrapped claude [...args: string] {
     let work_dir = $"($env.HOME)/Desktop/morfeu"
     let is_work = ($env.PWD | str starts-with $work_dir)
@@ -117,17 +65,16 @@ def claude-which [] {
     print $"Currently using: ($target)"
 }
 
-# Codex through Headroom by default.
+# --- Codex (via headroom by default) ---
 def --wrapped codex [...args: string] {
     ^headroom wrap codex ...$args
 }
 
-# Bypass the Nushell Codex wrapper when needed.
 def --wrapped codex-raw [...args: string] {
     ^codex ...$args
 }
 
-# Firebase with auto-select based on directory
+# --- Firebase multi-account helpers ---
 def --wrapped firebase [...args: string] {
     let morfeu_dir = $"($env.HOME)/Desktop/morfeu"
     let voluble_dir = $"($env.HOME)/Desktop/voluble"
@@ -143,10 +90,9 @@ def --wrapped firebase [...args: string] {
     } else if ($env.PWD | str starts-with $personal_dir) {
         "personal"
     } else {
-        "morfeu"  # default
+        "morfeu"
     }
 
-    # Update symlink if needed
     let target_config = $"($config_base).($config_suffix)"
     rm -f $config_link
     ln -s $target_config $config_link
@@ -154,7 +100,6 @@ def --wrapped firebase [...args: string] {
     ^firebase ...$args
 }
 
-# Manual Firebase config switching
 def firebase-morfeu [] {
     let config_path = $"($env.HOME)/.config/configstore/firebase-tools.json"
     let target_path = $"($env.HOME)/.dotfiles/.config/configstore/firebase-tools.json.morfeu"
