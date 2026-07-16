@@ -21,8 +21,8 @@ alias dart = fvm dart
 source ~/.local/share/atuin/init.nu
 # starship + asdf: vendor/autoload (generated in env.nu)
 
-# --- Claude Code (personal / work profiles via headroom) ---
-def --wrapped claude-personal [...args: string] {
+# --- Claude Code (personal profile via headroom) ---
+def --wrapped claude [...args: string] {
     let json_link = $"($env.HOME)/.claude.json"
     let json_target = $"($env.HOME)/.dotfiles/.claude.json.personal"
     rm -f $json_link
@@ -32,33 +32,9 @@ def --wrapped claude-personal [...args: string] {
     }
 }
 
-def --wrapped claude-work [...args: string] {
-    let json_link = $"($env.HOME)/.claude.json"
-    let json_target = $"($env.HOME)/.dotfiles/.claude.json.enterprise"
-    rm -f $json_link
-    ln -s $json_target $json_link
-    with-env { CLAUDE_CONFIG_DIR: $"($env.HOME)/.claude-enterprise" } {
-        ^headroom wrap claude ...$args
-    }
-}
-
-def --wrapped claude [...args: string] {
-    # Default to personal; use `claude-work` for enterprise config explicitly.
-    let config_dir = $"($env.HOME)/.claude"
-    let json_link = $"($env.HOME)/.claude.json"
-    let json_target = $"($env.HOME)/.dotfiles/.claude.json.personal"
-    rm -f $json_link
-    ln -s $json_target $json_link
-
-    with-env { CLAUDE_CONFIG_DIR: $config_dir } {
-        ^headroom wrap claude ...$args
-    }
-}
-
-def claude-which [] {
-    let json_link = $"($env.HOME)/.claude.json"
-    let target = (ls -la $json_link | get target.0 | path basename)
-    print $"Currently using: ($target)"
+# Alias kept for old muscle memory
+def --wrapped claude-personal [...args: string] {
+    claude ...$args
 }
 
 # --- Codex (via headroom by default) ---
