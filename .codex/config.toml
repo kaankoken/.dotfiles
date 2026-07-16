@@ -4,11 +4,12 @@ openai_base_url = "http://127.0.0.1:8787/v1"
 # --- end Headroom ---
 
 model = "gpt-5.6-sol"
-model_reasoning_effort = "medium"
+model_reasoning_effort = "xhigh"
 approvals_reviewer = "guardian_subagent"
 service_tier = "default"
 
 notify = ["/Users/legolas/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended"]
+plan_mode_reasoning_effort = "xhigh"
 
 [mcp_servers.pencil]
 command = "/Applications/Pencil.app/Contents/Resources/app.asar.unpacked/out/mcp-server-darwin-arm64"
@@ -28,13 +29,13 @@ NODE_REPL_NODE_MODULE_DIRS = "/Applications/ChatGPT.app/Contents/Resources/cua_n
 NODE_REPL_NODE_PATH = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"
 NODE_REPL_TRUSTED_CODE_PATHS = "/Users/legolas/.codex"
 CODEX_HOME = "/Users/legolas/.codex"
-NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "6d25aa7656feac858f3a3bdaea5bcbab0dbfd426c9de8e6931ce90c399ee8e4f,c8b7e809d7cf9e20a57123b2530d476ccec9a01a6230a7b2b924fea7d94d7f4a"
+NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "6d25aa7656feac858f3a3bdaea5bcbab0dbfd426c9de8e6931ce90c399ee8e4f,e2cad16d8d9f60f09c9f0951ec7dfdd9e8f59dedd06045c0b6827dc8fa8322f0"
 BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
 NODE_REPL_INSTRUCTIONS_USE_CASE_BROWSER = "Control the in-app browser in conjunction with the Browser Plugin."
 NODE_REPL_INSTRUCTIONS_USE_CASE_CHROME = "Control the Chrome browser in conjunction with the Chrome Plugin. Prefer this method of controlling Chrome over alternatives (such as Computer Use) unless the user explicitly mentions an alternative."
 NODE_REPL_INSTRUCTIONS_USE_CASE_COMPUTER_USE = "Control desktop apps on macOS through Computer Use."
 BROWSER_USE_CODEX_APP_BUILD_FLAVOR = "prod"
-BROWSER_USE_CODEX_APP_VERSION = "26.707.31428"
+BROWSER_USE_CODEX_APP_VERSION = "26.707.62119"
 CODEX_CLI_PATH = "/Applications/ChatGPT.app/Contents/Resources/codex"
 
 [mcp_servers.computer-use]
@@ -43,22 +44,7 @@ args = ["mcp"]
 cwd = "."
 enabled = false
 
-[projects."/Users/legolas/Desktop/morfeu/again"]
-trust_level = "trusted"
-
-[projects."/Users/legolas/Desktop/morfeu/personal/morpheus"]
-trust_level = "trusted"
-
 [projects."/Users/legolas/.dotfiles"]
-trust_level = "trusted"
-
-[projects."/Users/legolas/Desktop/morfeu/voluble/coati"]
-trust_level = "trusted"
-
-[projects."/Users/legolas/Desktop/morfeu/personal/retro"]
-trust_level = "trusted"
-
-[projects."/Users/legolas/Desktop/morfeu/laila/api"]
 trust_level = "trusted"
 
 [projects."/Users/legolas/Desktop/personal/career-ops"]
@@ -110,6 +96,24 @@ trust_level = "trusted"
 trust_level = "trusted"
 
 [projects."/Users/legolas/Documents/Codex/2026-07-10/hatch-pet-users-legolas-codex-skills-4"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Documents/Codex/2026-07-10/i"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Documents/Codex/2026-07-10/hatch-pet-users-legolas-codex-skills-5"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Documents/Codex/2026-07-10/hatch-pet-users-legolas-codex-skills-6"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Documents/Codex/2026-07-10/hatch-pet-users-legolas-codex-skills-7"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Documents/Codex/2026-07-13/i"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Desktop/personal/nix-setup"]
 trust_level = "trusted"
 
 [features]
@@ -166,9 +170,6 @@ enabled = true
 [plugins."visualize@openai-bundled"]
 enabled = true
 
-[plugins."browser@openai-bundled"]
-enabled = true
-
 [plugins."documents@openai-primary-runtime"]
 enabled = true
 
@@ -184,14 +185,17 @@ enabled = true
 [plugins."template-creator@openai-primary-runtime"]
 enabled = true
 
+[plugins."browser@openai-bundled"]
+enabled = true
+
 [marketplaces.coati-local]
 last_updated = "2026-05-12T16:03:38Z"
 source_type = "local"
-source = "/Users/legolas/Desktop/morfeu/voluble/coati"
+source = "/Users/legolas/Desktop/voluble/coati"
 
 [marketplaces.context-mode]
-last_updated = "2026-07-10T07:34:16Z"
-last_revision = "b13cfa83e7b7d8255f0585f5f83aee757f9a414c"
+last_updated = "2026-07-16T14:31:10Z"
+last_revision = "b6f25a6feeca09e8ee0407c7d77be5b805f55d44"
 source_type = "git"
 source = "https://github.com/mksglu/context-mode.git"
 
@@ -201,7 +205,7 @@ source_type = "local"
 source = "/Users/legolas/.codex/marketplaces/webwright"
 
 [marketplaces.openai-bundled]
-last_updated = "2026-07-10T09:38:51Z"
+last_updated = "2026-07-13T17:02:14Z"
 source_type = "local"
 source = "/Users/legolas/.codex/.tmp/bundled-marketplaces/openai-bundled"
 
@@ -209,6 +213,8 @@ source = "/Users/legolas/.codex/.tmp/bundled-marketplaces/openai-bundled"
 last_updated = "2026-07-10T09:39:08Z"
 source_type = "local"
 source = "/Users/legolas/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
+
+[hooks.state]
 
 [hooks.state."understand-anything@coati-local:hooks/hooks.json:post_tool_use:0:0"]
 trusted_hash = "sha256:3cd146a10ffa13b3064770ba6a044aabe8bbb71cd0621167964edaa221425e9c"
@@ -287,6 +293,9 @@ trusted_hash = "sha256:850ebfdcc626472862323d3f08ed7de5eee041d79b6a0110c60e0f157
 [hooks.state."/Users/legolas/Desktop/voluble/coati/.codex/hooks.json:stop:0:0"]
 trusted_hash = "sha256:0cb696ca3b6dad39a09563ef8f422959da89068190959569cdc11d1500c540a9"
 
+[hooks.state."/Users/legolas/.dotfiles/.codex/config.toml:session_start:0:0"]
+trusted_hash = "sha256:ed997f3f9766959ba56dc2243cd02468d6eadad80d92b7f5a650e6fc0fb0c050"
+
 [[hooks.SessionStart]]
 matcher = "startup|resume|clear|compact"
 
@@ -303,6 +312,7 @@ open-link-in-target-preference = "external-browser"
 open-local-url-in-target-preference = "external-browser"
 avatar-overlay-mascot-width-px = 110
 selected-avatar-id = "custom:loki"
+followUpQueueMode = "queue"
 
 [desktop.appearanceLightChromeTheme]
 accent = "#8839ef"

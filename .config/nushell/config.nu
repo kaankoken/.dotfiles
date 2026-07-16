@@ -43,14 +43,10 @@ def --wrapped claude-work [...args: string] {
 }
 
 def --wrapped claude [...args: string] {
-    let work_dir = $"($env.HOME)/Desktop/morfeu"
-    let is_work = ($env.PWD | str starts-with $work_dir)
-
-    let config_dir = if $is_work { $"($env.HOME)/.claude-enterprise" } else { $"($env.HOME)/.claude" }
-    let json_suffix = if $is_work { "enterprise" } else { "personal" }
-
+    # Default to personal; use `claude-work` for enterprise config explicitly.
+    let config_dir = $"($env.HOME)/.claude"
     let json_link = $"($env.HOME)/.claude.json"
-    let json_target = $"($env.HOME)/.dotfiles/.claude.json.($json_suffix)"
+    let json_target = $"($env.HOME)/.dotfiles/.claude.json.personal"
     rm -f $json_link
     ln -s $json_target $json_link
 
@@ -74,23 +70,20 @@ def --wrapped codex-raw [...args: string] {
     ^codex ...$args
 }
 
-# --- Firebase multi-account helpers ---
+# --- Firebase multi-account helpers (personal / voluble only) ---
 def --wrapped firebase [...args: string] {
-    let morfeu_dir = $"($env.HOME)/Desktop/morfeu"
     let voluble_dir = $"($env.HOME)/Desktop/voluble"
     let personal_dir = $"($env.HOME)/Desktop/personal"
 
     let config_base = $"($env.HOME)/.dotfiles/.config/configstore/firebase-tools.json"
     let config_link = $"($env.HOME)/.config/configstore/firebase-tools.json"
 
-    let config_suffix = if ($env.PWD | str starts-with $morfeu_dir) {
-        "morfeu"
-    } else if ($env.PWD | str starts-with $voluble_dir) {
+    let config_suffix = if ($env.PWD | str starts-with $voluble_dir) {
         "voluble"
     } else if ($env.PWD | str starts-with $personal_dir) {
         "personal"
     } else {
-        "morfeu"
+        "personal"
     }
 
     let target_config = $"($config_base).($config_suffix)"
@@ -98,14 +91,6 @@ def --wrapped firebase [...args: string] {
     ln -s $target_config $config_link
 
     ^firebase ...$args
-}
-
-def firebase-morfeu [] {
-    let config_path = $"($env.HOME)/.config/configstore/firebase-tools.json"
-    let target_path = $"($env.HOME)/.dotfiles/.config/configstore/firebase-tools.json.morfeu"
-    rm -f $config_path
-    ln -s $target_path $config_path
-    print "Switched to Firebase morfeu (kaan@morfeu.ai)"
 }
 
 def firebase-voluble [] {

@@ -1,3 +1,6 @@
+# AeroSpace configuration compatibility
+config-version = 2
+
 # Auto-start applications on launch
 after-startup-command = ['exec-and-forget ~/.config/aerospace/launch-apps.sh']
 
@@ -20,6 +23,10 @@ accordion-padding = 30
 
 # Automatically unhide macOS hidden apps
 automatically-unhide-macos-hidden-apps = false
+
+# Keep the configured workspaces available when empty.
+# This preserves the workspace persistence previously inferred by config-version 1.
+persistent-workspaces = ['1', '2', '3', '4', '5', '6', '7']
 
 # Gaps and padding
 [gaps]
@@ -149,7 +156,7 @@ run = 'layout floating'
 # Workspace 1: Safari Personal and Spotify
 [[on-window-detected]]
 if.app-id = 'com.apple.Safari'
-if.window-title-regex-substring = '.*Personal.*|^(?!.*Morfeu)(?!.*Capybara).*$'
+if.window-title-regex-substring = '.*Personal.*|^(?!.*Capybara).*$'
 run = 'move-node-to-workspace 1'
 
 [[on-window-detected]]
@@ -159,7 +166,10 @@ run = 'move-node-to-workspace 1'
 # Workspace 2: Ghostty
 [[on-window-detected]]
 if.app-id = 'com.mitchellh.ghostty'
-run = 'move-node-to-workspace 2'
+run = [
+  'move-node-to-workspace 2',
+  'layout tiling',
+]
 
 # Workspace 3: WhatsApp and Signal
 [[on-window-detected]]
@@ -170,11 +180,7 @@ run = 'move-node-to-workspace 3'
 if.app-id = 'org.whispersystems.signal-desktop'
 run = 'move-node-to-workspace 3'
 
-# Workspace 4: Safari Morfeu profile
-[[on-window-detected]]
-if.app-id = 'com.apple.Safari'
-if.window-title-regex-substring = '.*Morfeu.*'
-run = 'move-node-to-workspace 4'
+# Workspace 4: free (no Morfeu profile)
 
 # Workspace 5: Slack and Microsoft Outlook
 [[on-window-detected]]
