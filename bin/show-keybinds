@@ -1,6 +1,7 @@
 #!/bin/sh
-# show-keybinds — open per-app cheatsheet (Swift app preferred, markdown fallback)
+# show-keybinds — open per-app cheatsheet (Swift app only; no spammy markdown open)
 # Usage: show-keybinds [aerospace|zellij|ghostty|nvim|shell|all]
+# Set KEYBINDS_FALLBACK=md to open docs/keybindings.md when the app is missing.
 set -eu
 APP="${1:-all}"
 DOTFILES="${HOME}/.dotfiles"
@@ -30,12 +31,15 @@ for candidate in "$@"; do
   fi
 done
 
-if [ -f "$MD" ]; then
+# Optional fallback only when explicitly requested (avoids reopening the md constantly)
+if [ "${KEYBINDS_FALLBACK:-}" = "md" ] && [ -f "$MD" ]; then
   /usr/bin/open "$MD"
-  echo "Opened $MD (Swift cheatsheet app not found yet)"
   exit 0
 fi
 
-echo "Keybinds JSON: $JSON"
-echo "Tip: install app KeybindCheatsheet, or set KEYBINDS_APP."
+# Quiet notice — does not open a document window
+if command -v osascript >/dev/null 2>&1; then
+  /usr/bin/osascript -e "display notification \"No KeybindCheatsheet app yet. JSON: ${JSON}\" with title \"Keybinds (${APP})\"" 2>/dev/null || true
+fi
+
 exit 0
