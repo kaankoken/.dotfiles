@@ -150,3 +150,7 @@ load_plugins {
 theme "gruvbox-dark"
 default_shell "nu"
 default_layout "compact"
+
+// Pass Shift+Enter / modified keys through to panes (Claude Code, Codex, …)
+// Default is true when the host supports it; set explicitly so it cannot be lost.
+support_kitty_keyboard_protocol true
