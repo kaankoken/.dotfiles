@@ -1,0 +1,41 @@
+#!/bin/sh
+# show-keybinds — open per-app cheatsheet (Swift app preferred, markdown fallback)
+# Usage: show-keybinds [aerospace|zellij|ghostty|nvim|shell|all]
+set -eu
+APP="${1:-all}"
+DOTFILES="${HOME}/.dotfiles"
+JSON="${DOTFILES}/.config/keybinds/keybinds.json"
+MD="${DOTFILES}/docs/keybindings.md"
+
+case "$APP" in
+  aerospace|zellij|ghostty|nvim|shell|all) ;;
+  *) echo "Unknown app: $APP (use aerospace|zellij|ghostty|nvim|shell|all)" >&2; exit 1 ;;
+esac
+
+if [ ! -f "$JSON" ]; then
+  echo "Missing keybind catalog: $JSON" >&2
+  exit 1
+fi
+
+# Prefer Swift app; override with KEYBINDS_APP
+if [ -n "${KEYBINDS_APP:-}" ]; then
+  set -- "$KEYBINDS_APP"
+else
+  set -- KeybindCheatsheet Keybinds
+fi
+
+for candidate in "$@"; do
+  if /usr/bin/open -a "$candidate" --args --app "$APP" --json "$JSON" 2>/dev/null; then
+    exit 0
+  fi
+done
+
+if [ -f "$MD" ]; then
+  /usr/bin/open "$MD"
+  echo "Opened $MD (Swift cheatsheet app not found yet)"
+  exit 0
+fi
+
+echo "Keybinds JSON: $JSON"
+echo "Tip: install app KeybindCheatsheet, or set KEYBINDS_APP."
+exit 0
