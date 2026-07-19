@@ -70,7 +70,8 @@ Launcher: `bin/show-keybinds <app>` (Swift cheatsheet app when installed)
 | `Ctrl+-` / `=` | Resize |
 | `Ctrl+g` | Lock / unlock |
 | `Ctrl+/` | Cheatsheet |
-| `Ctrl+a` | Leader |
+| `Ctrl+a` | Leader (status bar may say “tmux” — Zellij internal name only) |
+| `Ctrl+o` | Session mode |
 
 ### Leader (`Ctrl+a` then …)
 
@@ -83,6 +84,14 @@ Launcher: `bin/show-keybinds <app>` (Swift cheatsheet app when installed)
 | `z` | Zoom |
 | `w` then `h/j/k/l` | Move pane |
 | `i` or `/` | Cheatsheet |
+| `Esc` | Cancel |
+
+### Session (`Ctrl+o` then …)
+
+| Keys | Action |
+|------|--------|
+| `w` or `s` | Session manager (switch / attach UI) |
+| `d` | Detach |
 | `Esc` | Cancel |
 
 ---

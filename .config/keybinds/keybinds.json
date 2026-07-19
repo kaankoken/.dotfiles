@@ -71,7 +71,7 @@
         { "keys": "Ctrl+- / Ctrl+=", "action": "Resize decrease / increase", "group": "resize" },
         { "keys": "Ctrl+g", "action": "Toggle lock (pass keys to app)", "group": "session" },
         { "keys": "Ctrl+/", "action": "Show cheatsheet (this app)", "group": "help" },
-        { "keys": "Ctrl+a", "action": "Leader mode", "group": "leader" },
+        { "keys": "Ctrl+a", "action": "Leader mode (status bar may say tmux — internal name only)", "group": "leader" },
         { "keys": "Ctrl+a h/j/k/l", "action": "Split (new pane) in direction", "group": "leader" },
         { "keys": "Ctrl+a n", "action": "New pane (default)", "group": "leader" },
         { "keys": "Ctrl+a x", "action": "Close pane", "group": "leader" },
@@ -79,7 +79,10 @@
         { "keys": "Ctrl+a z", "action": "Zoom / fullscreen pane", "group": "leader" },
         { "keys": "Ctrl+a w then h/j/k/l", "action": "Move pane in direction", "group": "leader" },
         { "keys": "Ctrl+a i or /", "action": "Show cheatsheet", "group": "help" },
-        { "keys": "Esc (in leader)", "action": "Leave leader mode", "group": "leader" }
+        { "keys": "Esc (in leader)", "action": "Leave leader mode", "group": "leader" },
+        { "keys": "Ctrl+o", "action": "Session mode", "group": "session" },
+        { "keys": "Ctrl+o then w or s", "action": "Session manager (switch/attach UI)", "group": "session" },
+        { "keys": "Ctrl+o then d", "action": "Detach session", "group": "session" }
       ]
     },
     "ghostty": {
