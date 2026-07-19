@@ -21,7 +21,7 @@ confirm-close-surface = false
 copy-on-select = true
 # Left Option = typing (Turkish Q); Right Option = Alt for terminal apps
 macos-option-as-alt = right
-auto-update = off
+auto-update = on
 # Do NOT remap shift+enter to text:\n — that collapses Shift+Enter into a plain
 # newline and breaks TUIs (Claude Code, Codex, …) that need the Kitty keyboard
 # protocol to distinguish Shift+Enter (newline) from Enter (submit).
