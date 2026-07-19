@@ -64,7 +64,9 @@ Launcher: `bin/show-keybinds <app>` (Swift cheatsheet app when installed)
 | `Ctrl+h/j/k/l` | Focus pane |
 | `Ctrl+Shift+h/j/k/l` | Move pane |
 | `Ctrl+1`…`5` | Tab N |
-| `Ctrl+Left` / `Right` | Prev / next tab |
+| `Ctrl+[` / `Ctrl+]` | Prev / next tab *(recommended)* |
+| `Ctrl+Shift+Left` / `Right` | Prev / next tab |
+| `Ctrl+Left` / `Right` | Prev / next tab *(often broken: macOS Spaces steals these — disable Mission Control “Move left/right a space” if you want them)* |
 | `Ctrl+t` | New tab |
 | `Ctrl+w` | Close pane |
 | `Ctrl+-` / `=` | Resize |

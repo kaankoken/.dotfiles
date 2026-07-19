@@ -17,8 +17,14 @@ keybinds clear-defaults=true {
         bind "Ctrl Shift l" { MovePane "right"; }
 
         // Tabs
+        // Note: plain Ctrl+Left/Right is often stolen by macOS Mission Control (Spaces).
+        // Prefer Ctrl+[ / ] or Ctrl+Shift+Left/Right; keep Ctrl+Left/Right if you disable Spaces shortcuts.
         bind "Ctrl Left" { GoToPreviousTab; }
         bind "Ctrl Right" { GoToNextTab; }
+        bind "Ctrl Shift Left" { GoToPreviousTab; }
+        bind "Ctrl Shift Right" { GoToNextTab; }
+        bind "Ctrl [" { GoToPreviousTab; }
+        bind "Ctrl ]" { GoToNextTab; }
         bind "Ctrl 1" { GoToTab 1; }
         bind "Ctrl 2" { GoToTab 2; }
         bind "Ctrl 3" { GoToTab 3; }
