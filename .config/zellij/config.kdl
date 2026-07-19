@@ -32,6 +32,8 @@ keybinds clear-defaults=true {
         bind "Ctrl 5" { GoToTab 5; }
         bind "Ctrl t" { NewTab; }
         bind "Ctrl w" { CloseFocus; }
+        // Rename current tab (type name, Enter to confirm, Esc to cancel)
+        bind "Ctrl r" { SwitchToMode "renametab"; }
 
         // Resize
         bind "Ctrl -" { Resize "Decrease"; }
@@ -97,6 +99,12 @@ keybinds clear-defaults=true {
         bind "j" { MovePane "down"; SwitchToMode "normal"; }
         bind "k" { MovePane "up"; SwitchToMode "normal"; }
         bind "l" { MovePane "right"; SwitchToMode "normal"; }
+    }
+
+    // Rename current tab — type name, Enter confirms, Esc undoes
+    renametab {
+        bind "Esc" { UndoRenameTab; SwitchToMode "normal"; }
+        bind "Enter" { SwitchToMode "normal"; }
     }
 
     // Session: switch / attach UI + detach
