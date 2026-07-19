@@ -79,6 +79,7 @@
         { "keys": "Ctrl+a x", "action": "Close pane", "group": "leader" },
         { "keys": "Ctrl+a f", "action": "Toggle floating panes", "group": "leader" },
         { "keys": "Ctrl+a z", "action": "Zoom / fullscreen pane", "group": "leader" },
+        { "keys": "Ctrl+a r", "action": "Rename current tab", "group": "leader" },
         { "keys": "Ctrl+a w then h/j/k/l", "action": "Move pane in direction", "group": "leader" },
         { "keys": "Ctrl+a i or /", "action": "Show cheatsheet", "group": "help" },
         { "keys": "Esc (in leader)", "action": "Leave leader mode", "group": "leader" },

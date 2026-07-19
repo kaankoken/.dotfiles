@@ -32,8 +32,7 @@ keybinds clear-defaults=true {
         bind "Ctrl 5" { GoToTab 5; }
         bind "Ctrl t" { NewTab; }
         bind "Ctrl w" { CloseFocus; }
-        // Rename current tab (type name, Enter to confirm, Esc to cancel)
-        bind "Ctrl r" { SwitchToMode "renametab"; }
+        // Ctrl+r left free for Atuin reverse search
 
         // Resize
         bind "Ctrl -" { Resize "Decrease"; }
@@ -74,6 +73,10 @@ keybinds clear-defaults=true {
         bind "x" { CloseFocus; SwitchToMode "normal"; }
         bind "f" { ToggleFloatingPanes; SwitchToMode "normal"; }
         bind "z" { ToggleFocusFullscreen; SwitchToMode "normal"; }
+
+        // Rename current tab (type name, Enter to confirm, Esc to cancel)
+        // Leader chord so Ctrl+r stays free for Atuin
+        bind "r" { SwitchToMode "renametab"; }
 
         // Move pane sub-mode
         bind "w" { SwitchToMode "move"; }

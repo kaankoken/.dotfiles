@@ -84,6 +84,7 @@ Launcher: `bin/show-keybinds <app>` (Swift cheatsheet app when installed)
 | `x` | Close pane |
 | `f` | Floating |
 | `z` | Zoom |
+| `r` | Rename current tab |
 | `w` then `h/j/k/l` | Move pane |
 | `i` or `/` | Cheatsheet |
 | `Esc` | Cancel |
