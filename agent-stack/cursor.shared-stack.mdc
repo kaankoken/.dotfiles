@@ -1,0 +1,26 @@
+---
+alwaysApply: true
+---
+
+# Shared agent stack (Cursor)
+
+Same stack for every agent host. Full text: `~/.agents/AGENTS.md` (symlink → `.dotfiles/agent-stack/AGENTS.md`).
+
+## Hard rules
+
+1. **Shell:** prefix with `rtk` (or use RTK hooks). Escape hatch: `rtk proxy <cmd>`.
+2. **Code graph:** **tokensave only** (`tokensave_context`, search, callers, impact). Never codebase-memory.
+3. **Local CLI:** prefer `rg`/`fd`/`eza`/`bat`/`sd`/`ast-grep` (`sg`)/`jq`/`gh`/`uv`/`bun`/`dust`/`procs`/`nh` over grep/find/sed/cat/ps/du.
+4. **Discovery order:** tokensave → `rg`/`fd`/`ast-grep` → targeted reads. No whole-repo thrashing.
+5. **Tasks:** `bd` (beads) for durable work — not markdown TODOs when Beads is present.
+6. **Skills:** caveman = terse prose; ponytail = minimal code. Use both when installed.
+7. **Docs:** context7 for library APIs. Do not invent APIs.
+
+## Examples
+
+```bash
+rtk rg -n 'pattern'
+rtk fd -e rs
+rtk ast-grep -p 'PATTERN' -l rust
+rtk git status
+```

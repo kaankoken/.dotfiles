@@ -57,6 +57,22 @@ cd ~/.dotfiles
 stow .
 ```
 
+## Agent stack (Claude / Codex / Cursor / Grok / pi)
+
+Global agent instruction files live in **`agent-stack/`** (not Nix). Packages
+and MCP installers come from [nix-setup](https://github.com/kaankoken/nix-setup).
+
+```bash
+# After clone / when AGENTS.md gets clobbered (e.g. bd setup codex):
+~/.dotfiles/agent-stack/link.sh
+```
+
+Symlinks: `~/.agents/AGENTS.md`, `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`,
+`~/.grok/Agents.md`, `~/AGENTS.md`, `~/.cursor/rules/shared-agent-stack.mdc`.
+
+Stack rules: tokensave only (no codebase-memory), RTK-prefixed shell, local CLI
+toolkit (`rg`/`fd`/`eza`/`bat`/`sd`/`ast-grep`/…). See `agent-stack/README.md`.
+
 ## Font
 
 - Installation
