@@ -15,9 +15,9 @@ let managed_paths = ([
     $"($env.HOME)/.nix-profile/bin"               # user nix profile
     "/nix/var/nix/profiles/default/bin"           # Determinate / multi-user nix
     "/run/current-system/sw/bin"                  # nix-darwin system path
-    $"($env.HOME)/.local/bin"                     # uv tools, user bins
+    $"($env.HOME)/.local/bin"                     # agent CLIs (codex/rtk standalone), pi wrapper, uv tools
+    $"($env.HOME)/.bun/bin"                       # bun globals (pi only — never codex)
     $"($env.HOME)/.cargo/bin"                     # rustup
-    $"($env.HOME)/.radicle/bin"                   # radicle
     $"($env.HOME)/.orbstack/bin"                  # OrbStack
     $"($env.HOME)/Library/pnpm"                   # pnpm (macOS)
     $"($env.HOME)/fvm/default/bin"                # Flutter via FVM

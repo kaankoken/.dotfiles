@@ -1,48 +1,29 @@
 # RTK - Rust Token Killer
 
-**Usage**: Token-optimized CLI proxy for shell commands.
-Part of the shared agent stack — see `AGENTS.md` for tokensave, beads, headroom,
-local CLI toolkit (`rg`/`fd`/`eza`/`bat`/`sd`/`ast-grep`/…), etc.
+**Usage**: Token-optimized CLI proxy (60-90% savings on dev operations)
 
-## Rule
-
-Always prefix shell commands with `rtk` (or rely on RTK PreToolUse hooks after `rtk init`).
+## Meta Commands (always use rtk directly)
 
 ```bash
-rtk git status
-rtk cargo test
-rtk cargo clippy
-rtk npm run build
-rtk pytest -q
-rtk rg -n 'pattern'
-rtk fd -e rs
+rtk gain              # Show token savings analytics
+rtk gain --history    # Show command usage history with savings
+rtk discover          # Analyze Claude Code history for missed opportunities
+rtk proxy <cmd>       # Execute raw command without filtering (for debugging)
 ```
 
-## Meta Commands
+## Installation Verification
 
 ```bash
-rtk gain            # Token savings analytics
-rtk gain --history  # Recent command savings history
-rtk proxy <cmd>     # Run raw command without filtering
-rtk discover        # Missed savings opportunities
+rtk --version         # Should show: rtk X.Y.Z
+rtk gain              # Should work (not "command not found")
+which rtk             # Verify correct binary
 ```
 
-## Multi-agent hooks
+⚠️ **Name collision**: If `rtk gain` fails, you may have reachingforthejack/rtk (Rust Type Kit) installed instead.
 
-```bash
-rtk init -g --auto-patch           # Claude Code
-rtk init -g --codex                # Codex
-rtk init -g --agent cursor --auto-patch
-rtk init -g --agent pi --auto-patch
-```
+## Hook-Based Usage
 
-Grok and other agents without a dedicated RTK hook: follow this file + `AGENTS.md`
-and prefix shell with `rtk` manually.
+All other commands are automatically rewritten by the Claude Code hook.
+Example: `git status` → `rtk git status` (transparent, 0 tokens overhead)
 
-## Verification
-
-```bash
-rtk --version
-rtk gain
-which rtk
-```
+Refer to CLAUDE.md for full command reference.
