@@ -1,4 +1,5 @@
 # Shared agent stack (home / generic hosts)
+# Claude Code, Codex, Cursor, Grok, Pi, Oh My Pi — same stack.
 # Includes resolve next to this file (link.sh installs AGENTS.shared.md + RTK.md).
 
 @AGENTS.shared.md

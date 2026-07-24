@@ -1,14 +1,28 @@
 #!/usr/bin/env bash
-# Install global agent instruction symlinks from .dotfiles/agent-stack.
+# Install global agent instruction symlinks + RTK hooks from .dotfiles/agent-stack.
 # Idempotent. Backs up non-symlink targets once as *.bak-agent-stack.
+#
+# Hosts: Claude Code, Codex, Grok, Cursor, Pi, Oh My Pi (~/.omp), ~/AGENTS.md
 #
 # Usage:
 #   ~/.dotfiles/agent-stack/link.sh
+#   ~/.dotfiles/agent-stack/link.sh --no-rtk-init   # skip rtk init vendor hooks
 set -euo pipefail
 
 STACK="$(cd "$(dirname "$0")" && pwd)"
 HOME_DIR="${HOME:-}"
 [ -n "$HOME_DIR" ] || { echo "HOME unset" >&2; exit 1; }
+
+DO_RTK_INIT=1
+for arg in "$@"; do
+  case "$arg" in
+    --no-rtk-init) DO_RTK_INIT=0 ;;
+    -h|--help)
+      echo "Usage: $0 [--no-rtk-init]"
+      exit 0
+      ;;
+  esac
+done
 
 link_one() {
   local target="$1"
@@ -62,21 +76,96 @@ install_host() {
   link_one "$host_dir/RTK.md" "$STACK/RTK.md"
 }
 
+# Pi / Oh My Pi: instruction files only (do not clobber HM-managed AGENTS when it is a nix store link).
+install_pi_like() {
+  local agent_dir="$1"
+  local label="$2"
+
+  if [ ! -d "$agent_dir" ] && [ "$label" = "omp" ]; then
+    mkdir -p "$agent_dir"
+    echo "mkdir $agent_dir (Oh My Pi)"
+  fi
+
+  if [ ! -d "$agent_dir" ]; then
+    echo "skip $label (no $agent_dir)"
+    return 0
+  fi
+
+  link_one "$agent_dir/RTK.md" "$STACK/RTK.md"
+  link_one "$agent_dir/AGENTS.shared.md" "$STACK/AGENTS.md"
+
+  # Prefer shared stack when AGENTS.md is missing or a regular file we own; never replace nix-store HM links.
+  if [ -L "$agent_dir/AGENTS.md" ]; then
+    local dest
+    dest="$(readlink "$agent_dir/AGENTS.md" || true)"
+    case "$dest" in
+      /nix/store/*)
+        echo "ok  $agent_dir/AGENTS.md (home-manager; see AGENTS.shared.md + RTK.md)"
+        ;;
+      *)
+        link_one "$agent_dir/AGENTS.md" "$STACK/AGENTS.md"
+        ;;
+    esac
+  elif [ ! -e "$agent_dir/AGENTS.md" ]; then
+    link_one "$agent_dir/AGENTS.md" "$STACK/AGENTS.md"
+  else
+    echo "keep $agent_dir/AGENTS.md (existing file)"
+  fi
+
+  # RTK extension for Pi-family agents (rewrite via rtk rewrite).
+  if [ -f "$STACK/hooks/rtk-pi-extension.ts" ]; then
+    mkdir -p "$agent_dir/extensions"
+    link_one "$agent_dir/extensions/rtk.ts" "$STACK/hooks/rtk-pi-extension.ts"
+  elif [ -f "$HOME_DIR/.pi/agent/extensions/rtk.ts" ] && [ "$agent_dir" != "$HOME_DIR/.pi/agent" ]; then
+    mkdir -p "$agent_dir/extensions"
+    if [ ! -e "$agent_dir/extensions/rtk.ts" ]; then
+      cp "$HOME_DIR/.pi/agent/extensions/rtk.ts" "$agent_dir/extensions/rtk.ts"
+      echo "cp  $agent_dir/extensions/rtk.ts (from pi)"
+    fi
+  fi
+}
+
+install_grok_hooks() {
+  local hooks_dir="$HOME_DIR/.grok/hooks"
+  mkdir -p "$hooks_dir"
+  chmod +x "$STACK/hooks/rtk-shell-rewrite.sh"
+  link_one "$hooks_dir/rtk-shell.json" "$STACK/hooks/grok-rtk.json"
+}
+
+run_rtk_init() {
+  if [ "$DO_RTK_INIT" -ne 1 ]; then
+    echo "skip rtk init (--no-rtk-init)"
+    return 0
+  fi
+  if ! command -v rtk >/dev/null 2>&1; then
+    echo "warn: rtk not on PATH — skip rtk init" >&2
+    return 0
+  fi
+
+  # --hook-only: never write RTK.md (rtk init follows symlinks and would clobber agent-stack/RTK.md).
+  echo "rtk init --hook-only (claude / cursor / pi)…"
+  rtk init -g --auto-patch --hook-only || true
+  rtk init -g --agent cursor --auto-patch --hook-only || true
+  rtk init -g --agent pi --auto-patch --hook-only || true
+  # Codex: do not run rtk init --codex — fights our AGENTS.md symlink; RTK.md via link_one.
+}
+
 echo "agent-stack: $STACK"
 
 # Canonical copies for tools that look at ~/.agents
 link_one "$HOME_DIR/.agents/AGENTS.md" "$STACK/AGENTS.md"
 link_one "$HOME_DIR/.agents/RTK.md" "$STACK/RTK.md"
 
-# Claude Code (~/.claude often already points at .dotfiles/.claude)
+# Claude Code
 install_host "$HOME_DIR/.claude" "$STACK/claude.CLAUDE.md" "CLAUDE.md"
 
-# Codex (real dir with sessions — instruction files only)
+# Codex
 install_host "$HOME_DIR/.codex" "$STACK/codex.AGENTS.md" "AGENTS.md"
 
 # Grok (both casings)
 install_host "$HOME_DIR/.grok" "$STACK/grok.Agents.md" "Agents.md"
 link_one "$HOME_DIR/.grok/AGENTS.md" "$STACK/grok.Agents.md"
+install_grok_hooks
 
 # Cursor alwaysApply rule
 mkdir -p "$HOME_DIR/.cursor/rules"
@@ -85,4 +174,19 @@ link_one "$HOME_DIR/.cursor/rules/shared-agent-stack.mdc" "$STACK/cursor.shared-
 # $HOME AGENTS for home-walking hosts
 install_host "$HOME_DIR" "$STACK/home.AGENTS.md" "AGENTS.md"
 
-echo "done. Re-run after 'bd setup codex' if it rewrites ~/.codex/AGENTS.md."
+# Pi + Oh My Pi
+install_pi_like "$HOME_DIR/.pi/agent" "pi"
+install_pi_like "$HOME_DIR/.omp/agent" "omp"
+
+run_rtk_init
+
+# Re-assert RTK.md symlinks after rtk init (vendor may write a plain file).
+link_one "$HOME_DIR/.claude/RTK.md" "$STACK/RTK.md"
+link_one "$HOME_DIR/.codex/RTK.md" "$STACK/RTK.md"
+link_one "$HOME_DIR/.grok/RTK.md" "$STACK/RTK.md"
+link_one "$HOME_DIR/.agents/RTK.md" "$STACK/RTK.md"
+[ -d "$HOME_DIR/.pi/agent" ] && link_one "$HOME_DIR/.pi/agent/RTK.md" "$STACK/RTK.md"
+[ -d "$HOME_DIR/.omp/agent" ] && link_one "$HOME_DIR/.omp/agent/RTK.md" "$STACK/RTK.md"
+
+echo "done. Hosts: claude codex grok cursor pi omp home."
+echo "Re-run after 'bd setup codex' if it rewrites ~/.codex/AGENTS.md."

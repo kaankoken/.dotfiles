@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|run_terminal_command|Shell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${HOME}/.dotfiles/agent-stack/hooks/rtk-shell-rewrite.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,5 +1,6 @@
 # Shared agent stack (Grok)
 # Includes resolve next to this file (link.sh installs AGENTS.shared.md + RTK.md).
+# Shell rewrite: ~/.grok/hooks/rtk-shell.json → rtk rewrite (bare modern CLIs allowed).
 
 @AGENTS.shared.md
 @RTK.md
