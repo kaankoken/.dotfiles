@@ -263,6 +263,72 @@ describe("19-agent Pi parity contract", () => {
       expect(raw).not.toMatch(/brainstorming skill\n\n## Overview/i);
     }
   });
+
+  test("implementation milestone review delivery boundaries", () => {
+    const roles = [
+      "implementer",
+      "milestone-organizer",
+      "code-reviewer",
+      "pr-opener",
+    ] as const;
+    for (const name of roles) {
+      const path = join(OMP_ROOT, "agents", `${name}.md`);
+      expect(existsSync(path)).toBe(true);
+      const raw = readFileSync(path, "utf8");
+      const fm = parseOmpAgentFrontmatter(raw);
+      expect(fm.name).toBe(name);
+      expect(Array.isArray(fm.tools)).toBe(true);
+      expect(Array.isArray(fm.spawns)).toBe(true);
+    }
+    const impl = readFileSync(join(OMP_ROOT, "agents/implementer.md"), "utf8");
+    expect(impl).toMatch(/Cannot|cannot/);
+    expect(impl).toMatch(/worktree/i);
+    expect(impl.toLowerCase()).toMatch(/do not create your own|cannot.*create.*worktree/);
+    expect(impl).toMatch(/close Beads|spawn reviewers|open PRs/i);
+
+    const mile = readFileSync(
+      join(OMP_ROOT, "agents/milestone-organizer.md"),
+      "utf8",
+    );
+    expect(mile).toMatch(/fresh command evidence|Milestone PASS/i);
+    expect(mile).toMatch(/code-reviewer/);
+
+    const rev = readFileSync(join(OMP_ROOT, "agents/code-reviewer.md"), "utf8");
+    expect(rev).toMatch(/Read-only|read-only/);
+    expect(rev).toMatch(/Do not load `receiving-code-review`/);
+    expect(rev).not.toMatch(/tools: \[.*write/);
+
+    const pr = readFileSync(join(OMP_ROOT, "agents/pr-opener.md"), "utf8");
+    expect(pr).toMatch(/Milestone gate PASS|Milestone PASS/);
+    expect(pr).toMatch(/Only.*remote mutation|gh pr/i);
+  });
+
+  test("research scouts primary paths and read-only tools", () => {
+    const scouts: Record<string, string> = {
+      "code-graph-scout": "tokensave",
+      "code-search-scout": "ast-search",
+      "docs-scout": "context7",
+      "web-scout": "web_search",
+      "web-browse-scout": "chrome-cdp",
+      "browser-use-scout": "browser-use",
+      "webwright-scout": "webwright",
+      "stack-scout": "stack-skills",
+    };
+    for (const [name, primary] of Object.entries(scouts)) {
+      const path = join(OMP_ROOT, "agents", `${name}.md`);
+      expect(existsSync(path)).toBe(true);
+      const raw = readFileSync(path, "utf8");
+      const fm = parseOmpAgentFrontmatter(raw);
+      expect(fm.name).toBe(name);
+      expect(fm.primaryPath).toBe(primary);
+      expect(fm.tools).not.toContain("write");
+      expect(fm.tools).not.toContain("edit");
+      expect((fm.spawns as string[]).length).toBe(0);
+      expect(raw).toMatch(
+        new RegExp(primary.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"),
+      );
+    }
+  });
 });
 
 function parseOmpAgentFrontmatter(text: string): Record<string, unknown> {

@@ -433,9 +433,7 @@
       "allowedTools": [
         "bash",
         "read",
-        "search",
-        "edit",
-        "write"
+        "search"
       ],
       "forbiddenActions": [
         "broaden-write-scope",
@@ -638,7 +636,8 @@
       "allowedTools": [
         "bash",
         "read",
-        "search"
+        "search",
+        "web_search"
       ],
       "forbiddenActions": [
         "broaden-write-scope",
@@ -688,7 +687,8 @@
       "allowedTools": [
         "bash",
         "read",
-        "search"
+        "search",
+        "web_search"
       ],
       "forbiddenActions": [
         "broaden-write-scope",
