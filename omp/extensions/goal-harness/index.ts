@@ -15,11 +15,29 @@ import {
 } from "./skills";
 import { attestAndUnlock, type CreateGuardOpts } from "./skill-guard";
 import { HARNESS_READ_SKILL_TOOL } from "./skill-tool";
+import {
+  createInterceptor,
+  interceptToolCall,
+  preflightOmpApprovalConfig,
+  type BeadsAuditSink,
+  type OmpToolsConfig,
+  type ToolCallRequest,
+} from "./audit";
+import type { PhaseCapabilityManifest } from "./capabilities";
+import { readFileSync, existsSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 
 export { DEFAULT_GOAL, bindGoal, HARNESS_COMMAND_NAME };
 export { REQUIRED_SKILLS_BY_ROLE, validateRequiredSkillsMapping } from "./skills";
 export { attestAndUnlock, createSkillGuardSession } from "./skill-guard";
 export { harnessReadSkill, HARNESS_READ_SKILL_TOOL } from "./skill-tool";
+export { buildPhaseCapabilities, validatePhaseCapabilities } from "./capabilities";
+export {
+  preflightOmpApprovalConfig,
+  interceptToolCall,
+  createInterceptor,
+} from "./audit";
 export {
   validateReviewResult,
   validateImplementerEvidence,
@@ -79,7 +97,17 @@ export function registerHarnessCommand(api: ExtensionAPI): void {
   api.registerCommand(HARNESS_COMMAND_NAME, {
     description:
       "OMP goal harness. Empty args → default 7 quality goals; otherwise exact override.",
-    handler: async (ctx: { args?: string }) => {
+    handler: async (ctx: {
+      args?: string;
+      toolsConfig?: OmpToolsConfig;
+    }) => {
+      // Soft-sandbox preflight — refuse if approval mode incompatible
+      const pf = preflightHarnessSandbox(
+        ctx.toolsConfig ?? { approvalMode: "always-ask", extensionGuard: true },
+      );
+      if (!pf.ok) {
+        throw new Error(`harness soft-sandbox preflight failed: ${pf.reason}`);
+      }
       const result = handleHarnessCommand(ctx.args ?? "");
       // After preflight, queue exactly one start message (triggerTurn) if supported.
       if (api.sendMessage) {
@@ -129,6 +157,40 @@ export function preflightParentSkills(
     roleTools,
     restrictedTools: [HARNESS_READ_SKILL_TOOL.name, "read"],
   } satisfies CreateGuardOpts);
+}
+
+function loadCompatibilitySettings(): string[] {
+  try {
+    const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
+    const p = join(root, "compatibility.json");
+    if (!existsSync(p)) return ["tools.approvalMode"];
+    const j = JSON.parse(readFileSync(p, "utf8")) as { settings?: string[] };
+    return j.settings ?? ["tools.approvalMode"];
+  } catch {
+    return ["tools.approvalMode"];
+  }
+}
+
+/**
+ * Refuse /harness if OMP approval keys are missing/permissive/incompatible.
+ */
+export function preflightHarnessSandbox(
+  config: OmpToolsConfig,
+): { ok: true } | { ok: false; reason: string } {
+  return preflightOmpApprovalConfig(config, {
+    settings: loadCompatibilitySettings(),
+  });
+}
+
+/**
+ * Fail-closed tool_call interceptor bound to current phase capability manifest.
+ */
+export function registerSandboxToolHandler(
+  manifest: PhaseCapabilityManifest,
+  sink?: BeadsAuditSink,
+): (req: ToolCallRequest) => ReturnType<typeof interceptToolCall> {
+  const state = createInterceptor(manifest, sink);
+  return (req) => interceptToolCall(state, req);
 }
 
 /** Extension load: register commands only — no model resolution or network. */
