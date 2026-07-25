@@ -5,5 +5,8 @@
   "scripts": {
     "test": "bun test tests",
     "typecheck": "bunx tsc --noEmit"
+  },
+  "devDependencies": {
+    "yaml": "^2.9.0"
   }
 }

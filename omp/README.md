@@ -34,5 +34,6 @@ Run `bun test` in this directory after installing `omp`.
 
 ## Not here
 
-Do not install Swarm, OMP TODO, Autolearn backends, Taskplane, or duplicate
-subagent packs via this tree. Shared cross-agent policy stays in `agent-stack/`.
+Do not install extra orchestration packages, built-in TODO trackers, Autolearn
+backends, or duplicate subagent packs via this tree. Shared cross-agent policy
+stays in `agent-stack/`.
