@@ -225,7 +225,7 @@ export async function runTaskReviewSequence(
   },
 ): Promise<LaneReviewState> {
   const max = opts.maxAttempts ?? 3;
-  let state = { ...initial, status: "self_review" as const };
+  let state: LaneReviewState = { ...initial, status: "self_review" };
   let attempts = 0;
 
   while (attempts < max) {

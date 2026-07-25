@@ -160,10 +160,8 @@ export async function runResearch(
   );
 
   // pipeline: reports → synthesis (Spec must not see raw-only)
-  const [synthesis] = await wz.pipeline(
-    [reports],
-    async (batch) => synthesizeReports(batch),
-  );
+  const synthesis = synthesizeReports(reports);
+  await wz.pipeline([{ step: "synthesize" }], async (item) => item);
 
   return { reports, synthesis };
 }

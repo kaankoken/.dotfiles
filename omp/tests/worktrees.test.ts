@@ -162,6 +162,8 @@ describe("worktree lifecycle", () => {
     ensureIgnored(r, ".worktrees");
     const mgr = new WorktreeManager({ repoRoot: r.root });
     const root = mgr.resolveRoot();
+    expect(root.kind).toBe("existing");
+    if (root.kind !== "existing") throw new Error("expected existing root");
     expect(root.dir).toBe(".worktrees");
     const base = r.head();
     const integ = mgr.ensureIntegration("run1", base);
