@@ -21,6 +21,14 @@ import {
   type SkillGuardSession,
 } from "./skill-guard";
 import type { SkillResolveOptions } from "./skills";
+import {
+  buildNativeToolManifest,
+  type NativeToolManifest,
+} from "./native-tools";
+import {
+  prepareStackSkills,
+  type StackSkillPrep,
+} from "./stack-skills";
 
 export { IMPLEMENTER_EVIDENCE_SCHEMA };
 
@@ -78,12 +86,47 @@ export type LaneAssignment = {
   stackSkills?: string[];
 };
 
+export type LaneNativeSessionConfig = {
+  nativeTools: NativeToolManifest;
+  codeGraphFirst: "tokensave";
+  ecosystemFactsFirst: "web_search";
+  grok?: { useHashline: true; effort: "high" };
+  stackPrep?: StackSkillPrep;
+};
+
+/** Build native tool + stack skill config for a lane (before session). */
+export function buildLaneNativeSessionConfig(
+  assignment: LaneAssignment,
+): LaneNativeSessionConfig {
+  const nativeTools = buildNativeToolManifest({
+    modelFamily: assignment.model,
+  });
+  const isGrok = /grok/i.test(assignment.model);
+  let stackPrep: StackSkillPrep | undefined;
+  if (assignment.skillRoots) {
+    stackPrep = prepareStackSkills(
+      assignment.worktreePath,
+      assignment.skillRoots,
+    );
+  }
+  return {
+    nativeTools,
+    codeGraphFirst: "tokensave",
+    ecosystemFactsFirst: "web_search",
+    ...(isGrok
+      ? { grok: { useHashline: true as const, effort: "high" as const } }
+      : {}),
+    stackPrep,
+  };
+}
+
 export type LaneRunResult = {
   sessionOpts: SessionCreateOpts;
   rolePrompt: string;
   evidence: ImplementerEvidenceEnvelope;
   validation: { ok: boolean; reason?: string };
   skillGuard?: SkillGuardSession;
+  nativeConfig?: LaneNativeSessionConfig;
 };
 
 /** Capabilities the child must NOT receive. */
@@ -210,14 +253,31 @@ export async function runLaneImplementer(
 ): Promise<LaneRunResult> {
   if (opts?.forbidden) assertNoForbiddenChildCaps(opts.forbidden);
 
+  // Stack skills + native tools before session; missing stack skills block
+  const nativeConfig = buildLaneNativeSessionConfig(assignment);
+  const stackNames = [
+    ...(assignment.stackSkills ?? []),
+    ...(nativeConfig.stackPrep?.skillNames ?? []),
+  ];
+
   // SDK children start locked until skill attestation (when roots provided)
   let skillGuard: SkillGuardSession | undefined;
   if (assignment.skillRoots) {
     skillGuard = attestAndUnlock({
       role: "implementer",
       skillRoots: assignment.skillRoots,
-      roleTools: ["bash", "read", "search", "edit", "write"],
-      stackSkills: assignment.stackSkills,
+      roleTools: [
+        "bash",
+        "read",
+        "search",
+        "edit",
+        "write",
+        "hashline",
+        "lsp",
+        "ast_search",
+        "web_search",
+      ],
+      stackSkills: stackNames,
     });
   }
 
@@ -227,6 +287,11 @@ export async function runLaneImplementer(
       // Post-hoc fake evidence already reflects after-edit state
       skipStartChecks: Boolean(opts?.fakeEvidence),
     });
+  // Grok: force high effort + hashline when configured
+  if (nativeConfig.grok) {
+    sessionOpts.thinkingLevel = "high";
+    sessionOpts.enableLsp = true;
+  }
 
   let raw: unknown;
   if (opts?.fakeEvidence) {
@@ -268,6 +333,7 @@ export async function runLaneImplementer(
     evidence: raw as ImplementerEvidenceEnvelope,
     validation: { ok: true },
     skillGuard,
+    nativeConfig,
   };
 }
 
