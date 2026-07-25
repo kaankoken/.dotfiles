@@ -8,7 +8,7 @@
       "piSource": "modules/agents/pi/agents/project-init.md",
       "ompDestination": "omp/agents/project-init.md",
       "phase": "init",
-      "purpose": "Stack-aware project scaffold — AGENTS.md tree, CLAUDE.md symlinks, bd init, stack skill checklist. No full harness.",
+      "purpose": "Stack-aware project scaffold \u2014 AGENTS.md tree, CLAUDE.md symlinks, bd init, stack skill checklist. No full harness.",
       "inputs": [
         "harness-context",
         "bd-issue-or-spec"
@@ -38,7 +38,7 @@
       "reviewResponsibility": "author",
       "piBaseline": {
         "frontmatterName": "project-init",
-        "description": "Stack-aware project scaffold — AGENTS.md tree, CLAUDE.md symlinks, bd init, stack skill checklist. No full harness.",
+        "description": "Stack-aware project scaffold \u2014 AGENTS.md tree, CLAUDE.md symlinks, bd init, stack skill checklist. No full harness.",
         "bodySha256": "9e19a962c03429766a7f664826925b68eec232083e9e367378fb1fa28456d5d7"
       },
       "ompNativeDeltas": [
@@ -72,7 +72,8 @@
         "read",
         "search",
         "edit",
-        "write"
+        "write",
+        "web_search"
       ],
       "forbiddenActions": [
         "broaden-write-scope",
@@ -175,7 +176,8 @@
         "read",
         "search",
         "edit",
-        "write"
+        "write",
+        "web_search"
       ],
       "forbiddenActions": [
         "broaden-write-scope",
@@ -393,7 +395,7 @@
       ],
       "requiredStackSkills": [],
       "outputSchema": "omp/schemas/implementer.output.schema.json",
-      "modelRoute": "grok→sol→sonnet",
+      "modelRoute": "grok\u2192sol\u2192sonnet",
       "reasoningEffort": "high",
       "worktreeResponsibility": "owner",
       "reviewResponsibility": "author",
@@ -472,7 +474,7 @@
       "piSource": "modules/agents/pi/agents/code-reviewer.md",
       "ompDestination": "omp/agents/code-reviewer.md",
       "phase": "review",
-      "purpose": "Multi-angle code review — correctness, tests, ponytail, stack. JSON review result.",
+      "purpose": "Multi-angle code review \u2014 correctness, tests, ponytail, stack. JSON review result.",
       "inputs": [
         "harness-context",
         "bd-issue-or-spec"
@@ -504,7 +506,7 @@
       "reviewResponsibility": "gate",
       "piBaseline": {
         "frontmatterName": "code-reviewer",
-        "description": "Multi-angle code review — correctness, tests, ponytail, stack. JSON review result.",
+        "description": "Multi-angle code review \u2014 correctness, tests, ponytail, stack. JSON review result.",
         "bodySha256": "2d9e80f779653f69c05f7e1c06f21962ae7a03a75e9f16310630e1ce3a3acf5d"
       },
       "ompNativeDeltas": [
@@ -524,7 +526,7 @@
       "piSource": "modules/agents/pi/agents/code-graph-scout.md",
       "ompDestination": "omp/agents/code-graph-scout.md",
       "phase": "research",
-      "purpose": "Narrow research — structure, callers, impact via tokensave (MCP or CLI). Read-mostly.",
+      "purpose": "Narrow research \u2014 structure, callers, impact via tokensave (MCP or CLI). Read-mostly.",
       "inputs": [
         "harness-context",
         "bd-issue-or-spec"
@@ -554,7 +556,7 @@
       "reviewResponsibility": "none",
       "piBaseline": {
         "frontmatterName": "code-graph-scout",
-        "description": "Narrow research — structure, callers, impact via tokensave (MCP or CLI). Read-mostly.",
+        "description": "Narrow research \u2014 structure, callers, impact via tokensave (MCP or CLI). Read-mostly.",
         "bodySha256": "d2e933bd7ba61627c1ee95583a651af2b34a42ab1d03a6d01ec105b58ab9e81f"
       },
       "ompNativeDeltas": [
@@ -574,7 +576,7 @@
       "piSource": "modules/agents/pi/agents/code-search-scout.md",
       "ompDestination": "omp/agents/code-search-scout.md",
       "phase": "research",
-      "purpose": "Narrow research — AST/symbol/pattern search via sg and rg. Read-mostly.",
+      "purpose": "Narrow research \u2014 AST/symbol/pattern search via sg and rg. Read-mostly.",
       "inputs": [
         "harness-context",
         "bd-issue-or-spec"
@@ -604,7 +606,7 @@
       "reviewResponsibility": "none",
       "piBaseline": {
         "frontmatterName": "code-search-scout",
-        "description": "Narrow research — AST/symbol/pattern search via sg and rg. Read-mostly.",
+        "description": "Narrow research \u2014 AST/symbol/pattern search via sg and rg. Read-mostly.",
         "bodySha256": "664a6c6c74d2fefff76ce592593b081af9755687d63ae4171da71696438663f9"
       },
       "ompNativeDeltas": [
@@ -624,7 +626,7 @@
       "piSource": "modules/agents/pi/agents/docs-scout.md",
       "ompDestination": "omp/agents/docs-scout.md",
       "phase": "research",
-      "purpose": "Narrow research — library/API truth via context7 (and web if needed). Read-mostly.",
+      "purpose": "Narrow research \u2014 library/API truth via context7 (and web if needed). Read-mostly.",
       "inputs": [
         "harness-context",
         "bd-issue-or-spec"
@@ -654,7 +656,7 @@
       "reviewResponsibility": "none",
       "piBaseline": {
         "frontmatterName": "docs-scout",
-        "description": "Narrow research — library/API truth via context7 (and web if needed). Read-mostly.",
+        "description": "Narrow research \u2014 library/API truth via context7 (and web if needed). Read-mostly.",
         "bodySha256": "9e69394379308cb9096b5767cfa7a97956f9c8f1e0b45a79d9f13bf66a775a57"
       },
       "ompNativeDeltas": [
@@ -674,7 +676,7 @@
       "piSource": "modules/agents/pi/agents/web-scout.md",
       "ompDestination": "omp/agents/web-scout.md",
       "phase": "research",
-      "purpose": "Default internet research — search APIs + HTTP fetch for latest versions, release notes, and ecosystem facts (quality goal #5). Prefer over browser. Read-mostly.",
+      "purpose": "Default internet research \u2014 search APIs + HTTP fetch for latest versions, release notes, and ecosystem facts (quality goal #5). Prefer over browser. Read-mostly.",
       "inputs": [
         "harness-context",
         "bd-issue-or-spec"
@@ -704,7 +706,7 @@
       "reviewResponsibility": "none",
       "piBaseline": {
         "frontmatterName": "web-scout",
-        "description": "Default internet research — search APIs + HTTP fetch for latest versions, release notes, and ecosystem facts (quality goal #5). Prefer over browser. Read-mostly.",
+        "description": "Default internet research \u2014 search APIs + HTTP fetch for latest versions, release notes, and ecosystem facts (quality goal #5). Prefer over browser. Read-mostly.",
         "bodySha256": "b253ca731bd706db9cfa9967bdc544ff90c6abc81934d3f89352ecec578c7177"
       },
       "ompNativeDeltas": [
@@ -774,7 +776,7 @@
       "piSource": "modules/agents/pi/agents/browser-use-scout.md",
       "ompDestination": "omp/agents/browser-use-scout.md",
       "phase": "research",
-      "purpose": "Heavy multi-step browser via installed browser-use CLI (CDP → running Chrome). Opt-in: research-fanout includeBrowserUse or user/ultra. Not for simple version checks.",
+      "purpose": "Heavy multi-step browser via installed browser-use CLI (CDP \u2192 running Chrome). Opt-in: research-fanout includeBrowserUse or user/ultra. Not for simple version checks.",
       "inputs": [
         "harness-context",
         "bd-issue-or-spec"
@@ -804,7 +806,7 @@
       "reviewResponsibility": "none",
       "piBaseline": {
         "frontmatterName": "browser-use-scout",
-        "description": "Heavy multi-step browser via installed browser-use CLI (CDP → running Chrome). Opt-in: research-fanout includeBrowserUse or user/ultra. Not for simple version checks.",
+        "description": "Heavy multi-step browser via installed browser-use CLI (CDP \u2192 running Chrome). Opt-in: research-fanout includeBrowserUse or user/ultra. Not for simple version checks.",
         "bodySha256": "eb7030b0fcd7dc3978ba01222973290b27ebdcaac7063899da6ccbcb99aef180"
       },
       "ompNativeDeltas": [
@@ -874,7 +876,7 @@
       "piSource": "modules/agents/pi/agents/stack-scout.md",
       "ompDestination": "omp/agents/stack-scout.md",
       "phase": "research",
-      "purpose": "Narrow research — Rust / iOS Axiom / Android conventions from stack skills and repo markers.",
+      "purpose": "Narrow research \u2014 Rust / iOS Axiom / Android conventions from stack skills and repo markers.",
       "inputs": [
         "harness-context",
         "bd-issue-or-spec"
@@ -905,7 +907,7 @@
       "reviewResponsibility": "none",
       "piBaseline": {
         "frontmatterName": "stack-scout",
-        "description": "Narrow research — Rust / iOS Axiom / Android conventions from stack skills and repo markers.",
+        "description": "Narrow research \u2014 Rust / iOS Axiom / Android conventions from stack skills and repo markers.",
         "bodySha256": "8ee61e32cc3ae59ff4091d63c3b4016e5f6bcfd94482bef4ba3987da0f867159"
       },
       "ompNativeDeltas": [

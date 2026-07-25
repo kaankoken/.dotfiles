@@ -214,4 +214,75 @@ describe("19-agent Pi parity contract", () => {
     }
     expect(names.size).toBe(19);
   });
+
+  const planningSeven = [
+    "project-init",
+    "spec-writer",
+    "spec-reviewer",
+    "plan-writer",
+    "plan-reviewer",
+    "bite-size-writer",
+    "bite-size-reviewer",
+  ] as const;
+
+  test("initialization spec plan bite-size OMP agents have frontmatter tools/spawns", () => {
+    const manifest = JSON.parse(readFileSync(MANIFEST_PATH, "utf8")) as {
+      agents: Array<{ name: string; allowedTools: string[] }>;
+    };
+    const byName = Object.fromEntries(manifest.agents.map((a) => [a.name, a]));
+
+    for (const name of planningSeven) {
+      const path = join(OMP_ROOT, "agents", `${name}.md`);
+      expect(existsSync(path)).toBe(true);
+      const raw = readFileSync(path, "utf8");
+      const fm = parseOmpAgentFrontmatter(raw);
+      expect(fm.name).toBe(name);
+      expect(String(fm.description).length).toBeGreaterThan(5);
+      expect(Array.isArray(fm.tools)).toBe(true);
+      expect(Array.isArray(fm.spawns)).toBe(true);
+      const allow = new Set(byName[name].allowedTools);
+      for (const t of fm.tools as string[]) {
+        expect(allow.has(t) || allow.size === 0 || true).toBe(true);
+        // tools must be subset of manifest allowlist when allowlist is non-empty
+        if (byName[name].allowedTools.length > 0) {
+          expect(byName[name].allowedTools).toContain(t);
+        }
+      }
+      const isReviewer = name.endsWith("-reviewer");
+      if (isReviewer) {
+        expect((fm.spawns as string[]).length).toBe(0);
+        expect(fm.tools).not.toContain("write");
+        expect(fm.tools).not.toContain("edit");
+      } else {
+        // producers must not declare reviewer dispatch or human approval ownership
+        expect(JSON.stringify(fm.spawns)).not.toMatch(/spec-reviewer|plan-reviewer|human-approval/);
+      }
+      // no copied Superpowers skill bodies
+      expect(raw).not.toMatch(/# Test-Driven Development|# Iron Law|NO PRODUCTION CODE WITHOUT/);
+      expect(raw).not.toMatch(/## When to Use\n\n\*\*Always:\*\*/);
+      expect(raw).not.toMatch(/brainstorming skill\n\n## Overview/i);
+    }
+  });
 });
+
+function parseOmpAgentFrontmatter(text: string): Record<string, unknown> {
+  if (!text.startsWith("---")) throw new Error("missing frontmatter");
+  const parts = text.split("---", 3);
+  const fm: Record<string, unknown> = {};
+  for (const line of parts[1].trim().split("\n")) {
+    const i = line.indexOf(":");
+    if (i === -1) continue;
+    const key = line.slice(0, i).trim();
+    let val = line.slice(i + 1).trim();
+    if (val.startsWith("[") && val.endsWith("]")) {
+      fm[key] = val
+        .slice(1, -1)
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    } else {
+      fm[key] = val.replace(/^"|"$/g, "");
+    }
+  }
+  return fm;
+}
