@@ -49,6 +49,19 @@ import {
   type PrCreateResult,
 } from "./pr";
 import type { RunFreshVerificationOpts } from "../extensions/goal-harness/verification";
+import {
+  routeFailureToDebugging,
+  type DebugSession,
+  type FailureObservation,
+} from "./debugging";
+import {
+  evaluateOptionalCapability,
+  attachOptionalToManifest,
+  isHarnessSpawnAllowed,
+  assertNoForbiddenAutoPath,
+  type CapabilityRequest,
+  type CapabilityDecision,
+} from "../extensions/goal-harness/optional-capabilities";
 
 export type HarnessStartMessage = {
   kind: "goal-harness-start";
@@ -115,6 +128,13 @@ export type RunHarnessOptions = {
     recordPrUrl?: (url: string) => void;
     fakeUrl?: string;
   };
+  /**
+   * Unexpected test/build/runtime failure — routes through systematic debugging
+   * (never model-preference path selection).
+   */
+  unexpectedFailure?: FailureObservation;
+  /** Explicit optional capability requests (Advisor, browser, …). */
+  optionalCapabilities?: CapabilityRequest[];
 };
 
 export type HarnessRunResult = {
@@ -125,6 +145,9 @@ export type HarnessRunResult = {
   integration?: IntegrationResult;
   milestone?: MilestoneResult;
   pr?: PrCreateResult;
+  debugSession?: DebugSession;
+  optionalDecisions?: CapabilityDecision[];
+  optionalManifestNotes?: string[];
 };
 
 export {
@@ -134,6 +157,10 @@ export {
   integrateReviewedLanes,
   runMilestoneGate,
   createCurrentProjectPr,
+  routeFailureToDebugging,
+  evaluateOptionalCapability,
+  isHarnessSpawnAllowed,
+  assertNoForbiddenAutoPath,
 };
 
 /**
@@ -160,10 +187,32 @@ export async function runGoalHarnessDetailed(
   let integration: IntegrationResult | undefined;
   let milestone: MilestoneResult | undefined;
   let pr: PrCreateResult | undefined;
+  let debugSession: DebugSession | undefined;
+  let optionalDecisions: CapabilityDecision[] | undefined;
+  let optionalManifestNotes: string[] | undefined;
+
+  // Explicit optional capabilities — pure decisions attached to phase notes
+  if (opts.optionalCapabilities?.length) {
+    optionalDecisions = opts.optionalCapabilities.map((r) =>
+      evaluateOptionalCapability(r),
+    );
+    optionalManifestNotes = attachOptionalToManifest(optionalDecisions);
+  }
+
+  // Unexpected failure diverts into systematic debugging before other work
+  if (opts.unexpectedFailure) {
+    debugSession = routeFailureToDebugging(opts.unexpectedFailure);
+  }
 
   await runWithAdapter(opts.workflowz, async (wz) => {
     wz.phase("Init");
     snap = applyTransition(snap, { type: "complete", phase: "Init" });
+
+    // If debugging escalated, do not advance harness gates
+    if (debugSession?.status === "escalated") {
+      await wz.pipeline([{ step: 1 }], async (item) => item);
+      return;
+    }
 
     const research = await runResearch(
       wz,
@@ -366,6 +415,9 @@ export async function runGoalHarnessDetailed(
     integration,
     milestone,
     pr,
+    debugSession,
+    optionalDecisions,
+    optionalManifestNotes,
   };
 }
 
