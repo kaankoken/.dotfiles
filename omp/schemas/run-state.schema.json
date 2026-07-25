@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "omp/schemas/run-state.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "runId",
+    "epicId",
+    "boundGoal",
+    "phase",
+    "phases",
+    "modelRoutes",
+    "skillManifest",
+    "humanSpecApproval",
+    "tasks",
+    "integrations",
+    "milestone",
+    "prUrl"
+  ],
+  "properties": {
+    "runId": { "type": "string", "minLength": 1 },
+    "epicId": { "type": "string", "minLength": 1 },
+    "boundGoal": { "type": "string", "minLength": 1 },
+    "phase": {
+      "type": "string",
+      "enum": [
+        "Research",
+        "Spec",
+        "Plan",
+        "BiteSize",
+        "Implement",
+        "Integration",
+        "Milestone",
+        "PR",
+        "Done"
+      ]
+    },
+    "phases": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["issueId", "status"],
+        "properties": {
+          "issueId": { "type": "string" },
+          "status": { "type": "string" },
+          "artifact": {}
+        }
+      }
+    },
+    "modelRoutes": { "type": "object" },
+    "skillManifest": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "path", "sha256"],
+        "properties": {
+          "name": { "type": "string" },
+          "path": { "type": "string" },
+          "sha256": { "type": "string" }
+        }
+      }
+    },
+    "humanSpecApproval": {
+      "type": ["object", "null"],
+      "properties": {
+        "approvedAt": { "type": "string" },
+        "approver": { "type": "string" }
+      }
+    },
+    "tasks": { "type": "array" },
+    "integrations": { "type": "array" },
+    "milestone": { "type": ["object", "null"] },
+    "prUrl": { "type": ["string", "null"] }
+  }
+}
