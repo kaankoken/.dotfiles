@@ -110,6 +110,36 @@ describe("harness command binding", () => {
         if (options.agentName.includes("reviewer")) {
           return { ok: true, feedback: "ok", blocking: [] };
         }
+        if (options.agentName === "plan-writer") {
+          return {
+            steps: [
+              {
+                id: "1",
+                title: "One",
+                paths: ["src/a.ts"],
+                testSurfaces: ["bun test"],
+                dependsOn: [],
+                doneWhen: "green",
+              },
+            ],
+            libraryTruth: ["lib@1"],
+          };
+        }
+        if (options.agentName === "bite-size-writer") {
+          return {
+            tasks: [
+              {
+                id: "t1",
+                title: "Do it",
+                files: ["src/a.ts"],
+                redCheck: "bun test ./a --fail",
+                greenCheck: "bun test ./a",
+                doneWhen: "green",
+                dependsOn: [],
+              },
+            ],
+          };
+        }
         if (options.agentName.includes("writer")) {
           return {
             title: "Spec",

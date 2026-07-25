@@ -10,14 +10,18 @@ import {
   type DurableSnapshot,
 } from "../extensions/goal-harness/phase-machine";
 import {
-  createStrictAgentCall,
   type Workflowz,
   runWithAdapter,
 } from "../extensions/goal-harness/workflow-adapter";
-import { reviewResultSchema } from "../extensions/goal-harness/schemas";
 import { runResearch } from "./research";
 import { createSpecSession, runSpecGate } from "./spec";
+import { runPlanGate, type PlanArtifact } from "./plan";
+import {
+  runBiteSizeGate,
+  type PublishedBiteSize,
+} from "./bite-size";
 import type { HumanGate } from "../extensions/goal-harness/human-gate";
+import type { BeadsBroker } from "../extensions/goal-harness/beads";
 
 export type HarnessStartMessage = {
   kind: "goal-harness-start";
@@ -48,20 +52,45 @@ export type RunHarnessOptions = {
     research?: string;
     spec?: string;
     plan?: string;
+    biteSize?: string;
   };
   researchScope?: "small" | "large";
   /** Optional human gate for Spec; without approval Spec cannot advance to Plan. */
   humanGate?: HumanGate;
+  /**
+   * Controller Beads broker. When present (and Spec passed), Plan + BiteSize
+   * run and the accepted graph is published as claimable issues.
+   * No routine human pause after Plan/BiteSize.
+   */
+  broker?: BeadsBroker;
+};
+
+export type HarnessRunResult = {
+  snapshot: DurableSnapshot;
+  plan?: PlanArtifact;
+  published?: PublishedBiteSize;
 };
 
 /**
- * Drive harness: Init → Research fan-out → Spec gate (+ optional human approval).
+ * Drive harness: Init → Research → Spec (+ optional human) → Plan → BiteSize.
+ * Plan/BiteSize advance only after Spec is passable; BiteSize publishes only
+ * when a controller broker is injected.
  */
 export async function runGoalHarness(
   opts: RunHarnessOptions,
 ): Promise<DurableSnapshot> {
+  const result = await runGoalHarnessDetailed(opts);
+  return result.snapshot;
+}
+
+/** Full result including plan artifact and published issue IDs. */
+export async function runGoalHarnessDetailed(
+  opts: RunHarnessOptions,
+): Promise<HarnessRunResult> {
   let snap =
     opts.snapshot ?? createInitialSnapshot(`run-${Date.now()}`, opts.boundGoal);
+  let plan: PlanArtifact | undefined;
+  let published: PublishedBiteSize | undefined;
 
   await runWithAdapter(opts.workflowz, async (wz) => {
     wz.phase("Init");
@@ -92,6 +121,7 @@ export async function runGoalHarness(
       maxAttempts: 3,
     });
 
+    let specPassed = false;
     if (!gate.review.ok) {
       snap = applyTransition(snap, {
         type: "gate_fail",
@@ -102,16 +132,90 @@ export async function runGoalHarness(
       await opts.humanGate.requestApproval(session);
       if (session.canAdvanceToPlan()) {
         snap = applyTransition(snap, { type: "gate_pass", gate: "Spec" });
+        specPassed = true;
       }
     } else {
       // Tests without humanGate: machine can pass; product path should inject gate
       snap = applyTransition(snap, { type: "gate_pass", gate: "Spec" });
+      specPassed = true;
+    }
+
+    if (specPassed && session.candidate) {
+      const planModel = opts.models?.plan ?? "openai-codex/gpt-5.6-sol";
+      const planReviewer =
+        opts.models?.plan ?? "anthropic/claude-fable-5";
+
+      snap = applyTransition(snap, { type: "begin", phase: "Plan" });
+      const planGate = await runPlanGate(
+        wz,
+        {
+          boundGoal: opts.boundGoal,
+          approvedSpec: session.candidate,
+          research: research.synthesis,
+        },
+        {
+          model: planModel,
+          reviewerModel: planReviewer,
+          maxAttempts: 3,
+          runNarrowResearch: async (w, areas) => {
+            const pass2 = await runResearch(
+              w,
+              {
+                boundGoal: `${opts.boundGoal} [narrow: ${areas.join(", ")}]`,
+                scope: "small",
+                escalateBrowse: false,
+                escalateBrowserUse: false,
+                escalateWebwright: false,
+                goalRule5VersionCheck: true,
+              },
+              { model: opts.models?.research ?? planModel },
+            );
+            return pass2.synthesis;
+          },
+        },
+      );
+      plan = planGate.plan;
+
+      if (!planGate.review.ok) {
+        snap = applyTransition(snap, {
+          type: "gate_fail",
+          gate: "Plan",
+          feedback: planGate.review.feedback,
+        });
+      } else {
+        snap = applyTransition(snap, { type: "gate_pass", gate: "Plan" });
+
+        if (opts.broker) {
+          await opts.broker.recordPlan(snap.runId, plan);
+          snap = applyTransition(snap, { type: "begin", phase: "BiteSize" });
+          try {
+            published = await runBiteSizeGate(wz, plan, {
+              model: opts.models?.biteSize ?? planModel,
+              reviewerModel: opts.models?.biteSize ?? planReviewer,
+              maxAttempts: 2,
+              broker: opts.broker,
+              runId: snap.runId,
+            });
+            snap = applyTransition(snap, {
+              type: "gate_pass",
+              gate: "BiteSize",
+            });
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            snap = applyTransition(snap, {
+              type: "gate_fail",
+              gate: "BiteSize",
+              feedback: msg,
+            });
+          }
+        }
+      }
     }
 
     await wz.pipeline([{ step: 1 }], async (item) => item);
   });
 
-  return snap;
+  return { snapshot: snap, plan, published };
 }
 
 /** Source-path marker for tests. */
