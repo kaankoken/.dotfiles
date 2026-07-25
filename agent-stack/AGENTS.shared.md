@@ -1,6 +1,6 @@
 # Shared agent tooling (all agents)
 
-Same stack for **Claude Code, Codex, Cursor, Grok, Pi, Oh My Pi**, and anything new.
+Same stack for **Claude Code, Codex, Cursor, Grok, Oh My Pi (`omp`)**, and anything new.
 Do **not** invent a parallel workflow per agent.
 
 **Ownership:** this file is the global source of truth in `.dotfiles/agent-stack/`.
@@ -120,7 +120,7 @@ Use both. Not alternatives.
 ```bash
 headroom wrap claude
 headroom wrap codex
-headroom wrap omp    # Oh My Pi when installed
+headroom wrap omp    # Oh My Pi (`omp`) when installed
 ```
 
 Do not configure a second primary code-intelligence MCP alongside tokensave.

@@ -39,6 +39,33 @@ link_one() {
   fi
 
   if [ -e "$_dst" ] || [ -L "$_dst" ]; then
+    # Existing real directory: merge tracked children (do not replace whole dir —
+    # agent-stack may already own extensions/rtk.ts under the same path).
+    if [ -d "$_dst" ] && [ ! -L "$_dst" ] && [ -d "$_src" ]; then
+      for _child in "$_src"/* "$_src"/.[!.]* "$_src"/..?*; do
+        [ -e "$_child" ] || continue
+        _base="$(basename "$_child")"
+        case "$_base" in
+          .|..) continue ;;
+        esac
+        if [ -e "$_dst/$_base" ] || [ -L "$_dst/$_base" ]; then
+          if [ -L "$_dst/$_base" ]; then
+            _want="$(CDPATH= cd -- "$(dirname -- "$_child")" && pwd)/$(basename -- "$_child")"
+            _have="$(readlink "$_dst/$_base")"
+            if [ "$_have" = "$_child" ] || [ "$_have" = "$_want" ]; then
+              continue
+            fi
+            rm -f "$_dst/$_base"
+          else
+            log "keep $_dst/$_base (existing non-link)"
+            continue
+          fi
+        fi
+        ln -s "$_child" "$_dst/$_base"
+        log "linked $_dst/$_base -> $_child"
+      done
+      return 0
+    fi
     if [ -d "$_dst" ] && [ ! -L "$_dst" ]; then
       die "refusing to replace directory: $_dst"
     fi

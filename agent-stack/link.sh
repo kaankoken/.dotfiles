@@ -2,7 +2,7 @@
 # Install global agent instruction symlinks + RTK hooks from .dotfiles/agent-stack.
 # Idempotent. Backs up non-symlink targets once as *.bak-agent-stack.
 #
-# Hosts: Claude Code, Codex, Grok, Cursor, Pi, Oh My Pi (~/.omp), ~/AGENTS.md
+# Hosts: Claude Code, Codex, Grok, Cursor, Oh My Pi (~/.omp), ~/AGENTS.md
 #
 # Usage:
 #   ~/.dotfiles/agent-stack/link.sh
@@ -76,19 +76,13 @@ install_host() {
   link_one "$host_dir/RTK.md" "$STACK/RTK.md"
 }
 
-# Pi / Oh My Pi: instruction files only (do not clobber HM-managed AGENTS when it is a nix store link).
-install_pi_like() {
-  local agent_dir="$1"
-  local label="$2"
-
-  if [ ! -d "$agent_dir" ] && [ "$label" = "omp" ]; then
-    mkdir -p "$agent_dir"
-    echo "mkdir $agent_dir (Oh My Pi)"
-  fi
+# Oh My Pi shared instructions + RTK extension (never create or touch other hosts here).
+install_omp_shared() {
+  local agent_dir="$HOME_DIR/.omp/agent"
 
   if [ ! -d "$agent_dir" ]; then
-    echo "skip $label (no $agent_dir)"
-    return 0
+    mkdir -p "$agent_dir"
+    echo "mkdir $agent_dir (Oh My Pi)"
   fi
 
   link_one "$agent_dir/RTK.md" "$STACK/RTK.md"
@@ -103,7 +97,8 @@ install_pi_like() {
         echo "ok  $agent_dir/AGENTS.md (home-manager; see AGENTS.shared.md + RTK.md)"
         ;;
       *)
-        link_one "$agent_dir/AGENTS.md" "$STACK/AGENTS.md"
+        # Leave omp/link.sh-managed AGENTS.md (dotfiles omp tree) alone if already correct.
+        echo "ok  $agent_dir/AGENTS.md (existing link)"
         ;;
     esac
   elif [ ! -e "$agent_dir/AGENTS.md" ]; then
@@ -112,16 +107,10 @@ install_pi_like() {
     echo "keep $agent_dir/AGENTS.md (existing file)"
   fi
 
-  # RTK extension for Pi-family agents (rewrite via rtk rewrite).
-  if [ -f "$STACK/hooks/rtk-pi-extension.ts" ]; then
+  # RTK extension for OMP (rewrite via rtk rewrite).
+  if [ -f "$STACK/hooks/rtk-omp-extension.ts" ]; then
     mkdir -p "$agent_dir/extensions"
-    link_one "$agent_dir/extensions/rtk.ts" "$STACK/hooks/rtk-pi-extension.ts"
-  elif [ -f "$HOME_DIR/.pi/agent/extensions/rtk.ts" ] && [ "$agent_dir" != "$HOME_DIR/.pi/agent" ]; then
-    mkdir -p "$agent_dir/extensions"
-    if [ ! -e "$agent_dir/extensions/rtk.ts" ]; then
-      cp "$HOME_DIR/.pi/agent/extensions/rtk.ts" "$agent_dir/extensions/rtk.ts"
-      echo "cp  $agent_dir/extensions/rtk.ts (from pi)"
-    fi
+    link_one "$agent_dir/extensions/rtk.ts" "$STACK/hooks/rtk-omp-extension.ts"
   fi
 }
 
@@ -143,10 +132,9 @@ run_rtk_init() {
   fi
 
   # --hook-only: never write RTK.md (rtk init follows symlinks and would clobber agent-stack/RTK.md).
-  echo "rtk init --hook-only (claude / cursor / pi)…"
+  echo "rtk init --hook-only (claude / cursor)…"
   rtk init -g --auto-patch --hook-only || true
   rtk init -g --agent cursor --auto-patch --hook-only || true
-  rtk init -g --agent pi --auto-patch --hook-only || true
   # Codex: do not run rtk init --codex — fights our AGENTS.md symlink; RTK.md via link_one.
 }
 
@@ -174,9 +162,8 @@ link_one "$HOME_DIR/.cursor/rules/shared-agent-stack.mdc" "$STACK/cursor.shared-
 # $HOME AGENTS for home-walking hosts
 install_host "$HOME_DIR" "$STACK/home.AGENTS.md" "AGENTS.md"
 
-# Pi + Oh My Pi
-install_pi_like "$HOME_DIR/.pi/agent" "pi"
-install_pi_like "$HOME_DIR/.omp/agent" "omp"
+# Oh My Pi only (no other agent-host creation)
+install_omp_shared
 
 run_rtk_init
 
@@ -185,8 +172,7 @@ link_one "$HOME_DIR/.claude/RTK.md" "$STACK/RTK.md"
 link_one "$HOME_DIR/.codex/RTK.md" "$STACK/RTK.md"
 link_one "$HOME_DIR/.grok/RTK.md" "$STACK/RTK.md"
 link_one "$HOME_DIR/.agents/RTK.md" "$STACK/RTK.md"
-[ -d "$HOME_DIR/.pi/agent" ] && link_one "$HOME_DIR/.pi/agent/RTK.md" "$STACK/RTK.md"
 [ -d "$HOME_DIR/.omp/agent" ] && link_one "$HOME_DIR/.omp/agent/RTK.md" "$STACK/RTK.md"
 
-echo "done. Hosts: claude codex grok cursor pi omp home."
+echo "done. Hosts: claude codex grok cursor omp home."
 echo "Re-run after 'bd setup codex' if it rewrites ~/.codex/AGENTS.md."
