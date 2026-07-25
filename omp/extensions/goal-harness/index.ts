@@ -27,6 +27,11 @@ import type { PhaseCapabilityManifest } from "./capabilities";
 import { readFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  assertGlobalShakeConfig,
+  parseCompactionConfig,
+  type CompactionConfig,
+} from "./compaction";
 
 export { DEFAULT_GOAL, bindGoal, HARNESS_COMMAND_NAME };
 export { REQUIRED_SKILLS_BY_ROLE, validateRequiredSkillsMapping } from "./skills";
@@ -38,6 +43,17 @@ export {
   interceptToolCall,
   createInterceptor,
 } from "./audit";
+export {
+  planGlobalShake,
+  planSnapcompact,
+  runGlobalShake,
+  runSelectiveSnapcompact,
+  phaseBoundaryCompact,
+  assertGlobalShakeConfig,
+  validateCompactModeArg,
+  validateResumeSource,
+  GLOBAL_STRATEGY,
+} from "./compaction";
 export {
   validateReviewResult,
   validateImplementerEvidence,
@@ -193,7 +209,57 @@ export function registerSandboxToolHandler(
   return (req) => interceptToolCall(state, req);
 }
 
+/**
+ * Load compaction section from omp/config.yml (shake global).
+ */
+export function getHarnessCompactionConfig(): CompactionConfig {
+  const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
+  const path = join(root, "config.yml");
+  const text = readFileSync(path, "utf8");
+  // Minimal YAML parse for compaction block without requiring yaml in runtime path of tests that mock —
+  // prefer full parse when available via dynamic; here regex for lean keys.
+  const enabled = /compaction:\s*\n(?:[^\n]*\n)*?\s*enabled:\s*(true|false)/.exec(
+    text,
+  );
+  const strategy = /compaction:\s*\n(?:[^\n]*\n)*?\s*strategy:\s*(\S+)/.exec(
+    text,
+  );
+  const cfg: CompactionConfig = {
+    enabled: enabled ? enabled[1] === "true" : true,
+    strategy: (strategy?.[1] ?? "shake") as CompactionConfig["strategy"],
+  };
+  // Also support adjacent keys order (enabled then strategy as in tree)
+  if (!strategy) {
+    const s2 = /strategy:\s*(shake|snapcompact|off|handoff|context-full)/.exec(
+      text,
+    );
+    if (s2) cfg.strategy = s2[1] as CompactionConfig["strategy"];
+  }
+  return cfg;
+}
+
+/** Assert config contract at harness load / preflight. */
+export function assertCompactionContract():
+  | { ok: true; config: CompactionConfig }
+  | { ok: false; reason: string } {
+  try {
+    const config = getHarnessCompactionConfig();
+    assertGlobalShakeConfig(config);
+    return { ok: true, config };
+  } catch (e) {
+    return {
+      ok: false,
+      reason: e instanceof Error ? e.message : String(e),
+    };
+  }
+}
+
 /** Extension load: register commands only — no model resolution or network. */
 export default async function (api: ExtensionAPI) {
+  const compaction = assertCompactionContract();
+  if (!compaction.ok) {
+    // Fail closed on misconfigured global strategy (do not start harness soft)
+    throw new Error(`compaction contract: ${compaction.reason}`);
+  }
   registerHarnessCommand(api);
 }

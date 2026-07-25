@@ -4,6 +4,9 @@
 startup:
   quiet: true
 
+# Global strategy is always shake (Beads-safe). Selective snapcompact is
+# controller-only via ctx.compact({ mode: "snapcompact" }) when eligible —
+# never set strategy: snapcompact here.
 compaction:
   enabled: true
   strategy: shake
