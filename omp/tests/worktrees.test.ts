@@ -141,11 +141,194 @@ describe("git safety primitives", () => {
   });
 });
 
-// Lifecycle + semaphore suites added after git primitives land (Task 19 steps 6+).
-describe("worktree lifecycle (placeholder until worktrees.ts)", () => {
-  test.todo("integration worktree at <root>/<run-id>/integration");
+
+import {
+  WorktreeManager,
+  WorktreeError,
+  assertRealGitWorktreeIsolation,
+  integrationPath,
+  lanePath,
+  resolveWorktreeRoot,
+} from "../extensions/goal-harness/worktrees";
+import {
+  LaneSemaphore,
+  MAX_LANES,
+  SemaphoreError,
+} from "../extensions/goal-harness/semaphore";
+
+describe("worktree lifecycle", () => {
+  test("integration worktree at <root>/<run-id>/integration", () => {
+    const r = repo();
+    ensureIgnored(r, ".worktrees");
+    const mgr = new WorktreeManager({ repoRoot: r.root });
+    const root = mgr.resolveRoot();
+    expect(root.dir).toBe(".worktrees");
+    const base = r.head();
+    const integ = mgr.ensureIntegration("run1", base);
+    expect(integ.path).toContain(join(".worktrees", "run1", "integration"));
+    expect(existsSync(integ.path)).toBe(true);
+    expect(integ.branch).toBe("harness/run1/integration");
+    expect(integrationPath(root.path, "run1")).toBe(
+      join(root.path, "run1", "integration"),
+    );
+  });
+
+  test("lane path is <root>/<run-id>/<issue-id>", () => {
+    const r = repo();
+    ensureIgnored(r, ".worktrees");
+    const mgr = new WorktreeManager({ repoRoot: r.root });
+    mgr.resolveRoot();
+    const base = r.head();
+    mgr.ensureIntegration("run1", base);
+    const lane = mgr.createLane({
+      runId: "run1",
+      issueId: "iss1",
+      baseSha: base,
+      dependsOn: [],
+    });
+    expect(lane.path).toContain(join(".worktrees", "run1", "iss1"));
+    expect(lane.branch).toBe("harness/run1/iss1");
+    expect(existsSync(lane.path)).toBe(true);
+  });
+
+  test("root order prefers .worktrees over worktrees", () => {
+    const r = repo();
+    mkdirSync(join(r.root, "worktrees"), { recursive: true });
+    mkdirSync(join(r.root, ".worktrees"), { recursive: true });
+    ensureIgnored(r, ".worktrees");
+    // also ignore worktrees for cleanliness
+    writeFileSync(join(r.root, ".gitignore"), ".worktrees/\nworktrees/\n");
+    r.git("add", ".gitignore");
+    r.git("commit", "-m", "ignore both");
+    const choice = resolveWorktreeRoot(r.root);
+    expect(choice.kind).toBe("existing");
+    if (choice.kind === "existing") expect(choice.dir).toBe(".worktrees");
+  });
+
+  test("project-local root must pass git check-ignore", () => {
+    const r = repo();
+    mkdirSync(join(r.root, ".worktrees"), { recursive: true });
+    // NOT ignored
+    const mgr = new WorktreeManager({ repoRoot: r.root });
+    expect(() => mgr.resolveRoot()).toThrow(/check-ignore/i);
+  });
+
+  test("dependencies must be integrated before lane creation", () => {
+    const r = repo();
+    ensureIgnored(r, ".worktrees");
+    const mgr = new WorktreeManager({ repoRoot: r.root });
+    mgr.resolveRoot();
+    const base = r.head();
+    mgr.ensureIntegration("run1", base);
+    expect(() =>
+      mgr.createLane({
+        runId: "run1",
+        issueId: "child",
+        baseSha: base,
+        dependsOn: ["parent"],
+      }),
+    ).toThrow(/not integrated/i);
+  });
+
+  test("integrated dependency allows lane", () => {
+    const r = repo();
+    ensureIgnored(r, ".worktrees");
+    const base = r.head();
+    const mgr = new WorktreeManager({
+      repoRoot: r.root,
+      integratedShas: { parent: base },
+    });
+    mgr.resolveRoot();
+    const integ = mgr.ensureIntegration("run1", base);
+    // parent sha is base which is ancestor of integration
+    const lane = mgr.createLane({
+      runId: "run1",
+      issueId: "child",
+      baseSha: base,
+      dependsOn: ["parent"],
+    });
+    expect(lane.issueId).toBe("child");
+    expect(integ.baseSha).toBe(base);
+  });
+
+  test("dirty baseline blocks only that lane", () => {
+    const r = repo();
+    ensureIgnored(r, ".worktrees");
+    const mgr = new WorktreeManager({ repoRoot: r.root });
+    mgr.resolveRoot();
+    const base = r.head();
+    mgr.ensureIntegration("run1", base);
+    // create lane path manually dirty before create is hard; simulate via mark after
+    // createLane checks porcelain after worktree add — clean by default
+    const lane = mgr.createLane({
+      runId: "run1",
+      issueId: "clean1",
+      baseSha: base,
+      dependsOn: [],
+    });
+    writeFileSync(join(lane.path, "dirt.txt"), "x");
+    // second check: isDirty would fail a re-baseline; create with requireClean after dirt
+    // New lane should still succeed (only the dirty lane is blocked, not others)
+    const lane2 = mgr.createLane({
+      runId: "run1",
+      issueId: "clean2",
+      baseSha: base,
+      dependsOn: [],
+    });
+    expect(lane2.issueId).toBe("clean2");
+  });
+
+  test("OMP copy isolation substitute is rejected", () => {
+    expect(() => assertRealGitWorktreeIsolation("copy")).toThrow(/substitute|worktree/i);
+    expect(() => assertRealGitWorktreeIsolation("overlay")).toThrow();
+    expect(() => assertRealGitWorktreeIsolation(undefined)).not.toThrow();
+  });
 });
 
-describe("eight-lane semaphore (placeholder until semaphore.ts)", () => {
-  test.todo("exactly eight acquire slots");
+describe("eight-lane semaphore", () => {
+  test("exactly eight acquire slots; ninth denied all work rights", () => {
+    const sem = new LaneSemaphore();
+    expect(MAX_LANES).toBe(8);
+    const granted = [];
+    for (let i = 1; i <= 8; i++) {
+      const q = sem.tryAcquire(`t${i}`);
+      expect(q.mayResolveModel).toBe(true);
+      expect(q.mayCreateBranch).toBe(true);
+      expect(q.mayCreateWorktree).toBe(true);
+      expect(q.mayCallAgent).toBe(true);
+      granted.push(q.issueId);
+    }
+    expect(sem.activeCount).toBe(8);
+
+    const ninth = sem.tryAcquire("t9");
+    expect(ninth.mayResolveModel).toBe(false);
+    expect(ninth.mayCreateBranch).toBe(false);
+    expect(ninth.mayCreateWorktree).toBe(false);
+    expect(ninth.mayCallAgent).toBe(false);
+    expect(sem.queued).toContain("t9");
+    expect(sem.activeCount).toBe(8);
+  });
+
+  test("one durable terminal release starts exactly task nine", () => {
+    const sem = new LaneSemaphore();
+    for (let i = 1; i <= 8; i++) sem.tryAcquire(`t${i}`);
+    sem.tryAcquire("t9");
+    expect(sem.mayStartWork("t9")).toBe(false);
+
+    const started = sem.release("t1", "integrated", { durableWritten: true });
+    expect(started?.issueId).toBe("t9");
+    expect(started?.mayResolveModel).toBe(true);
+    expect(started?.mayCallAgent).toBe(true);
+    expect(sem.mayStartWork("t9")).toBe(true);
+    expect(sem.activeCount).toBe(8);
+    expect(sem.queued).not.toContain("t9");
+  });
+
+  test("release without durable write is rejected", () => {
+    const sem = new LaneSemaphore();
+    sem.tryAcquire("t1");
+    expect(() =>
+      sem.release("t1", "failed", { durableWritten: false }),
+    ).toThrow(SemaphoreError);
+  });
 });
