@@ -35,7 +35,7 @@ describe("project-init scaffold", () => {
     expect(r.worktreeConvention).toMatch(/worktree/i);
     expect(r.stoppedAfterScaffold).toBe(true);
     expect(r.bdInitRan).toBe(true);
-    expect(bdArgs).toEqual([
+    expect(bdArgs!).toEqual([
       "init",
       "--init-if-missing",
       "--non-interactive",
