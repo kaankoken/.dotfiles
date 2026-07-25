@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "version",
+    "agentCount",
+    "agents"
+  ],
+  "properties": {
+    "version": {
+      "type": "integer"
+    },
+    "agentCount": {
+      "const": 19
+    },
+    "piHarnessRootHint": {
+      "type": "string"
+    },
+    "agents": {
+      "type": "array",
+      "minItems": 19,
+      "maxItems": 19,
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "piSource",
+          "ompDestination",
+          "phase",
+          "purpose",
+          "inputs",
+          "outputs",
+          "writeScope",
+          "allowedTools",
+          "forbiddenActions",
+          "requiredSuperpowers",
+          "requiredStackSkills",
+          "outputSchema",
+          "modelRoute",
+          "reasoningEffort",
+          "worktreeResponsibility",
+          "reviewResponsibility",
+          "piBaseline",
+          "ompNativeDeltas"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "piSource": {
+            "type": "string"
+          },
+          "ompDestination": {
+            "type": "string"
+          },
+          "phase": {
+            "type": "string"
+          },
+          "purpose": {
+            "type": "string"
+          },
+          "inputs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "outputs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "writeScope": {
+            "type": "string"
+          },
+          "allowedTools": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "forbiddenActions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "requiredSuperpowers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "requiredStackSkills": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "outputSchema": {
+            "type": "string"
+          },
+          "modelRoute": {
+            "type": "string"
+          },
+          "reasoningEffort": {
+            "type": "string"
+          },
+          "worktreeResponsibility": {
+            "type": "string"
+          },
+          "reviewResponsibility": {
+            "type": "string"
+          },
+          "piBaseline": {
+            "type": "object"
+          },
+          "ompNativeDeltas": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,976 @@
+{
+  "version": 1,
+  "agentCount": 19,
+  "piHarnessRootHint": "modules/agents/pi",
+  "agents": [
+    {
+      "name": "project-init",
+      "piSource": "modules/agents/pi/agents/project-init.md",
+      "ompDestination": "omp/agents/project-init.md",
+      "phase": "init",
+      "purpose": "Stack-aware project scaffold — AGENTS.md tree, CLAUDE.md symlinks, bd init, stack skill checklist. No full harness.",
+      "inputs": [
+        "harness-context",
+        "bd-issue-or-spec"
+      ],
+      "outputs": [
+        "structured-report-or-json"
+      ],
+      "writeScope": "harness-artifacts",
+      "allowedTools": [
+        "bash",
+        "read",
+        "search",
+        "edit",
+        "write"
+      ],
+      "forbiddenActions": [
+        "broaden-write-scope",
+        "copy-superpowers-bodies",
+        "skip-bd"
+      ],
+      "requiredSuperpowers": [],
+      "requiredStackSkills": [],
+      "outputSchema": "omp/schemas/project-init.output.schema.json",
+      "modelRoute": "sol",
+      "reasoningEffort": "high",
+      "worktreeResponsibility": "none",
+      "reviewResponsibility": "author",
+      "piBaseline": {
+        "frontmatterName": "project-init",
+        "description": "Stack-aware project scaffold — AGENTS.md tree, CLAUDE.md symlinks, bd init, stack skill checklist. No full harness.",
+        "bodySha256": "9e19a962c03429766a7f664826925b68eec232083e9e367378fb1fa28456d5d7"
+      },
+      "ompNativeDeltas": [
+        "strict-output-schemas",
+        "fail-closed-post-validation",
+        "narrower-tools-write-scopes",
+        "corrected-superpowers-ownership",
+        "direct-live-skill-md-loading",
+        "omp-native-hashline-lsp-ast-search-web-task",
+        "real-harness-managed-worktrees",
+        "bundled-omp-scout-reviewer-librarian-strengths",
+        "beads-broker-ownership"
+      ]
+    },
+    {
+      "name": "spec-writer",
+      "piSource": "modules/agents/pi/agents/spec-writer.md",
+      "ompDestination": "omp/agents/spec-writer.md",
+      "phase": "spec",
+      "purpose": "Brainstorm and write design/spec from goal + research. Producer for Spec gate. Use brainstorming skill.",
+      "inputs": [
+        "harness-context",
+        "bd-issue-or-spec"
+      ],
+      "outputs": [
+        "structured-report-or-json"
+      ],
+      "writeScope": "harness-artifacts",
+      "allowedTools": [
+        "bash",
+        "read",
+        "search",
+        "edit",
+        "write"
+      ],
+      "forbiddenActions": [
+        "broaden-write-scope",
+        "copy-superpowers-bodies",
+        "skip-bd"
+      ],
+      "requiredSuperpowers": [
+        "brainstorming",
+        "writing-plans"
+      ],
+      "requiredStackSkills": [],
+      "outputSchema": "omp/schemas/spec-writer.output.schema.json",
+      "modelRoute": "fabel+sol",
+      "reasoningEffort": "ultra",
+      "worktreeResponsibility": "none",
+      "reviewResponsibility": "author",
+      "piBaseline": {
+        "frontmatterName": "spec-writer",
+        "description": "Brainstorm and write design/spec from goal + research. Producer for Spec gate. Use brainstorming skill.",
+        "bodySha256": "5a17cdf1bd9124b5d8afcbb586c9784e0651c0a89361f40e5b654c2406f4d3ba"
+      },
+      "ompNativeDeltas": [
+        "strict-output-schemas",
+        "fail-closed-post-validation",
+        "narrower-tools-write-scopes",
+        "corrected-superpowers-ownership",
+        "direct-live-skill-md-loading",
+        "omp-native-hashline-lsp-ast-search-web-task",
+        "real-harness-managed-worktrees",
+        "bundled-omp-scout-reviewer-librarian-strengths",
+        "beads-broker-ownership"
+      ]
+    },
+    {
+      "name": "spec-reviewer",
+      "piSource": "modules/agents/pi/agents/spec-reviewer.md",
+      "ompDestination": "omp/agents/spec-reviewer.md",
+      "phase": "spec",
+      "purpose": "Adversarial review of design/spec. Returns JSON only. Different agent from spec-writer.",
+      "inputs": [
+        "harness-context",
+        "bd-issue-or-spec"
+      ],
+      "outputs": [
+        "structured-report-or-json"
+      ],
+      "writeScope": "none",
+      "allowedTools": [
+        "bash",
+        "read",
+        "search"
+      ],
+      "forbiddenActions": [
+        "broaden-write-scope",
+        "copy-superpowers-bodies",
+        "skip-bd"
+      ],
+      "requiredSuperpowers": [
+        "requesting-code-review"
+      ],
+      "requiredStackSkills": [],
+      "outputSchema": "omp/schemas/spec-reviewer.output.schema.json",
+      "modelRoute": "fabel|sol",
+      "reasoningEffort": "ultra",
+      "worktreeResponsibility": "none",
+      "reviewResponsibility": "gate",
+      "piBaseline": {
+        "frontmatterName": "spec-reviewer",
+        "description": "Adversarial review of design/spec. Returns JSON only. Different agent from spec-writer.",
+        "bodySha256": "42a446eb4c0fef03c3522c3c9d1ebc18bc430e329b123ea033b1fb6217e823f7"
+      },
+      "ompNativeDeltas": [
+        "strict-output-schemas",
+        "fail-closed-post-validation",
+        "narrower-tools-write-scopes",
+        "corrected-superpowers-ownership",
+        "direct-live-skill-md-loading",
+        "omp-native-hashline-lsp-ast-search-web-task",
+        "real-harness-managed-worktrees",
+        "bundled-omp-scout-reviewer-librarian-strengths",
+        "beads-broker-ownership"
+      ]
+    },
+    {
+      "name": "plan-writer",
+      "piSource": "modules/agents/pi/agents/plan-writer.md",
+      "ompDestination": "omp/agents/plan-writer.md",
+      "phase": "plan",
+      "purpose": "Write incremental implementation plan from approved spec. Producer for Plan gate. Use writing-plans skill.",
+      "inputs": [
+        "harness-context",
+        "bd-issue-or-spec"
+      ],
+      "outputs": [
+        "structured-report-or-json"
+      ],
+      "writeScope": "harness-artifacts",
+      "allowedTools": [
+        "bash",
+        "read",
+        "search",
+        "edit",
+        "write"
+      ],
+      "forbiddenActions": [
+        "broaden-write-scope",
+        "copy-superpowers-bodies",
+        "skip-bd"
+      ],
+      "requiredSuperpowers": [
+        "writing-plans"
+      ],
+      "requiredStackSkills": [],
+      "outputSchema": "omp/schemas/plan-writer.output.schema.json",
+      "modelRoute": "fabel+sol",
+      "reasoningEffort": "ultra",
+      "worktreeResponsibility": "none",
+      "reviewResponsibility": "author",
+      "piBaseline": {
+        "frontmatterName": "plan-writer",
+        "description": "Write incremental implementation plan from approved spec. Producer for Plan gate. Use writing-plans skill.",
+        "bodySha256": "edea0911cfae1306c24206d4061980d52e820429718146115a54f38539c0018d"
+      },
+      "ompNativeDeltas": [
+        "strict-output-schemas",
+        "fail-closed-post-validation",
+        "narrower-tools-write-scopes",
+        "corrected-superpowers-ownership",
+        "direct-live-skill-md-loading",
+        "omp-native-hashline-lsp-ast-search-web-task",
+        "real-harness-managed-worktrees",
+        "bundled-omp-scout-reviewer-librarian-strengths",
+        "beads-broker-ownership"
+      ]
+    },
+    {
+      "name": "plan-reviewer",
+      "piSource": "modules/agents/pi/agents/plan-reviewer.md",
+      "ompDestination": "omp/agents/plan-reviewer.md",
+      "phase": "plan",
+      "purpose": "Review implementation plan for ordering, size, risks, testability. JSON only.",
+      "inputs": [
+        "harness-context",
+        "bd-issue-or-spec"
+      ],
+      "outputs": [
+        "structured-report-or-json"
+      ],
+      "writeScope": "none",
+      "allowedTools": [
+        "bash",
+        "read",
+        "search"
+      ],
+      "forbiddenActions": [
+        "broaden-write-scope",
+        "copy-superpowers-bodies",
+        "skip-bd"
+      ],
+      "requiredSuperpowers": [
+        "requesting-code-review"
+      ],
+      "requiredStackSkills": [],
+      "outputSchema": "omp/schemas/plan-reviewer.output.schema.json",
+      "modelRoute": "fabel|sol",
+      "reasoningEffort": "ultra",
+      "worktreeResponsibility": "none",
+      "reviewResponsibility": "gate",
+      "piBaseline": {
+        "frontmatterName": "plan-reviewer",
+        "description": "Review implementation plan for ordering, size, risks, testability. JSON only.",
+        "bodySha256": "6e4d224d287762be7ac8f430f94fbd02df221abec04593c0dde1993aadb96c7b"
+      },
+      "ompNativeDeltas": [
+        "strict-output-schemas",
+        "fail-closed-post-validation",
+        "narrower-tools-write-scopes",
+        "corrected-superpowers-ownership",
+        "direct-live-skill-md-loading",
+        "omp-native-hashline-lsp-ast-search-web-task",
+        "real-harness-managed-worktrees",
+        "bundled-omp-scout-reviewer-librarian-strengths",
+        "beads-broker-ownership"
+      ]
+    },
+    {
+      "name": "bite-size-writer",
+      "piSource": "modules/agents/pi/agents/bite-size-writer.md",
+      "ompDestination": "omp/agents/bite-size-writer.md",
+      "phase": "bitesize",
+      "purpose": "Split plan tasks until each is implementable in one focused worktree pass.",
+      "inputs": [
+        "harness-context",
+        "bd-issue-or-spec"
+      ],
+      "outputs": [
+        "structured-report-or-json"
+      ],
+      "writeScope": "harness-artifacts",
+      "allowedTools": [
+        "bash",
+        "read",
+        "search",
+        "edit",
+        "write"
+      ],
+      "forbiddenActions": [
+        "broaden-write-scope",
+        "copy-superpowers-bodies",
+        "skip-bd"
+      ],
+      "requiredSuperpowers": [
+        "writing-plans"
+      ],
+      "requiredStackSkills": [],
+      "outputSchema": "omp/schemas/bite-size-writer.output.schema.json",
+      "modelRoute": "sol",
+      "reasoningEffort": "high",
+      "worktreeResponsibility": "none",
+      "reviewResponsibility": "author",
+      "piBaseline": {
+        "frontmatterName": "bite-size-writer",
+        "description": "Split plan tasks until each is implementable in one focused worktree pass.",
+        "bodySha256": "934bd390e13178737ea70115092d8167424ccefaf93dd50108653366eafb4189"
+      },
+      "ompNativeDeltas": [
+        "strict-output-schemas",
+        "fail-closed-post-validation",
+        "narrower-tools-write-scopes",
+        "corrected-superpowers-ownership",
+        "direct-live-skill-md-loading",
+        "omp-native-hashline-lsp-ast-search-web-task",
+        "real-harness-managed-worktrees",
+        "bundled-omp-scout-reviewer-librarian-strengths",
+        "beads-broker-ownership"
+      ]
+    },
+    {
+      "name": "bite-size-reviewer",
+      "piSource": "modules/agents/pi/agents/bite-size-reviewer.md",
+      "ompDestination": "omp/agents/bite-size-reviewer.md",
+      "phase": "bitesize",
+      "purpose": "Size gate for bite-sized tasks. JSON only. N=2 attempts.",
+      "inputs": [
+        "harness-context",
+        "bd-issue-or-spec"
+      ],
+      "outputs": [
+        "structured-report-or-json"
+      ],
+      "writeScope": "none",
+      "allowedTools": [
+        "bash",
+        "read",
+        "search"
+      ],
+      "forbiddenActions": [
+        "broaden-write-scope",
+        "copy-superpowers-bodies",
+        "skip-bd"
+      ],
+      "requiredSuperpowers": [
+        "requesting-code-review"
+      ],
+      "requiredStackSkills": [],
+      "outputSchema": "omp/schemas/bite-size-reviewer.output.schema.json",
+      "modelRoute": "sol",
+      "reasoningEffort": "high",
+      "worktreeResponsibility": "none",
+      "reviewResponsibility": "gate",
+      "piBaseline": {
+        "frontmatterName": "bite-size-reviewer",
+        "description": "Size gate for bite-sized tasks. JSON only. N=2 attempts.",
+        "bodySha256": "29de0b9254964d3456b94f06da65294941209c002c755ffad53a8ece37bb6ccd"
+      },
+      "ompNativeDeltas": [
+        "strict-output-schemas",
+        "fail-closed-post-validation",
+        "narrower-tools-write-scopes",
+        "corrected-superpowers-ownership",
+        "direct-live-skill-md-loading",
+        "omp-native-hashline-lsp-ast-search-web-task",
+        "real-harness-managed-worktrees",
+        "bundled-omp-scout-reviewer-librarian-strengths",
+        "beads-broker-ownership"
+      ]
+    },
+    {
+      "name": "implementer",
+      "piSource": "modules/agents/pi/agents/implementer.md",
+      "ompDestination": "omp/agents/implementer.md",
+      "phase": "implement",
+      "purpose": "SDD implementer in git worktree. TDD, ponytail, stack skills auto. Claims bd tasks.",
+      "inputs": [
+        "harness-context",
+        "bd-issue-or-spec"
+      ],
+      "outputs": [
+        "structured-report-or-json"
+      ],
+      "writeScope": "worktree",
+      "allowedTools": [
+        "bash",
+        "read",
+        "search",
+        "edit",
+        "write"
+      ],
+      "forbiddenActions": [
+        "broaden-write-scope",
+        "copy-superpowers-bodies",
+        "skip-bd"
+      ],
+      "requiredSuperpowers": [
+        "test-driven-development",
+        "subagent-driven-development",
+        "using-git-worktrees"
+      ],
+      "requiredStackSkills": [],
+      "outputSchema": "omp/schemas/implementer.output.schema.json",
+      "modelRoute": "grok→sol→sonnet",
+      "reasoningEffort": "high",
+      "worktreeResponsibility": "owner",
+      "reviewResponsibility": "author",
+      "piBaseline": {
+        "frontmatterName": "implementer",
+        "description": "SDD implementer in git worktree. TDD, ponytail, stack skills auto. Claims bd tasks.",
+        "bodySha256": "256d73420ad56d6c494a22800abc7a043b20d470d84c13d9896494b375742a19"
+      },
+      "ompNativeDeltas": [
+        "strict-output-schemas",
+        "fail-closed-post-validation",
+        "narrower-tools-write-scopes",
+        "corrected-superpowers-ownership",
+        "direct-live-skill-md-loading",
+        "omp-native-hashline-lsp-ast-search-web-task",
+        "real-harness-managed-worktrees",
+        "bundled-omp-scout-reviewer-librarian-strengths",
+        "beads-broker-ownership"
+      ]
+    },
+    {
+      "name": "milestone-organizer",
+      "piSource": "modules/agents/pi/agents/milestone-organizer.md",
+      "ompDestination": "omp/agents/milestone-organizer.md",
+      "phase": "milestone",
+      "purpose": "Run multi-angle milestone review workflow; block or advance; coordinate fix loops until N or pass.",
+      "inputs": [
+        "harness-context",
+        "bd-issue-or-spec"
+      ],
+      "outputs": [
+        "structured-report-or-json"
+      ],
+      "writeScope": "harness-artifacts",
+      "allowedTools": [
+        "bash",
+        "read",
+        "search",
+        "edit",
+        "write"
+      ],
+      "forbiddenActions": [
+        "broaden-write-scope",
+        "copy-superpowers-bodies",
+        "skip-bd"
+      ],
+      "requiredSuperpowers": [
+        "requesting-code-review",
+        "subagent-driven-development"
+      ],
+      "requiredStackSkills": [],
+      "outputSchema": "omp/schemas/milestone-organizer.output.schema.json",
+      "modelRoute": "fabel|sol",
+      "reasoningEffort": "ultra",
+      "worktreeResponsibility": "scheduler",
+      "reviewResponsibility": "none",
+      "piBaseline": {
+        "frontmatterName": "milestone-organizer",
+        "description": "Run multi-angle milestone review workflow; block or advance; coordinate fix loops until N or pass.",
+        "bodySha256": "55b6be1bfd7ec81bb6b189b864c6ceb5ae5a96ced90714fa6fe19e6befd0a0a6"
+      },
+      "ompNativeDeltas": [
+        "strict-output-schemas",
+        "fail-closed-post-validation",
+        "narrower-tools-write-scopes",
+        "corrected-superpowers-ownership",
+        "direct-live-skill-md-loading",
+        "omp-native-hashline-lsp-ast-search-web-task",
+        "real-harness-managed-worktrees",
+        "bundled-omp-scout-reviewer-librarian-strengths",
+        "beads-broker-ownership"
+      ]
+    },
+    {
+      "name": "code-reviewer",
+      "piSource": "modules/agents/pi/agents/code-reviewer.md",
+      "ompDestination": "omp/agents/code-reviewer.md",
+      "phase": "review",
+      "purpose": "Multi-angle code review — correctness, tests, ponytail, stack. JSON review result.",
+      "inputs": [
+        "harness-context",
+        "bd-issue-or-spec"
+      ],
+      "outputs": [
+        "structured-report-or-json"
+      ],
+      "writeScope": "none",
+      "allowedTools": [
+        "bash",
+        "read",
+        "search"
+      ],
+      "forbiddenActions": [
+        "broaden-write-scope",
+        "copy-superpowers-bodies",
+        "skip-bd"
+      ],
+      "requiredSuperpowers": [
+        "requesting-code-review"
+      ],
+      "requiredStackSkills": [
+        "ponytail-review"
+      ],
+      "outputSchema": "omp/schemas/code-reviewer.output.schema.json",
+      "modelRoute": "fabel|sol",
+      "reasoningEffort": "ultra",
+      "worktreeResponsibility": "none",
+      "reviewResponsibility": "gate",
+      "piBaseline": {
+        "frontmatterName": "code-reviewer",
+        "description": "Multi-angle code review — correctness, tests, ponytail, stack. JSON review result.",
+        "bodySha256": "2d9e80f779653f69c05f7e1c06f21962ae7a03a75e9f16310630e1ce3a3acf5d"
+      },
+      "ompNativeDeltas": [
+        "strict-output-schemas",
+        "fail-closed-post-validation",
+        "narrower-tools-write-scopes",
+        "corrected-superpowers-ownership",
+        "direct-live-skill-md-loading",
+        "omp-native-hashline-lsp-ast-search-web-task",
+        "real-harness-managed-worktrees",
+        "bundled-omp-scout-reviewer-librarian-strengths",
+        "beads-broker-ownership"
+      ]
+    },
+    {
+      "name": "code-graph-scout",
+      "piSource": "modules/agents/pi/agents/code-graph-scout.md",
+      "ompDestination": "omp/agents/code-graph-scout.md",
+      "phase": "research",
+      "purpose": "Narrow research — structure, callers, impact via tokensave (MCP or CLI). Read-mostly.",
+      "inputs": [
+        "harness-context",
+        "bd-issue-or-spec"
+      ],
+      "outputs": [
+        "structured-report-or-json"
+      ],
+      "writeScope": "none",
+      "allowedTools": [
+        "bash",
+        "read",
+        "search"
+      ],
+      "forbiddenActions": [
+        "broaden-write-scope",
+        "copy-superpowers-bodies",
+        "skip-bd"
+      ],
+      "requiredSuperpowers": [],
+      "requiredStackSkills": [
+        "tokensave"
+      ],
+      "outputSchema": "omp/schemas/code-graph-scout.output.schema.json",
+      "modelRoute": "sol",
+      "reasoningEffort": "medium",
+      "worktreeResponsibility": "none",
+      "reviewResponsibility": "none",
+      "piBaseline": {
+        "frontmatterName": "code-graph-scout",
+        "description": "Narrow research — structure, callers, impact via tokensave (MCP or CLI). Read-mostly.",
+        "bodySha256": "d2e933bd7ba61627c1ee95583a651af2b34a42ab1d03a6d01ec105b58ab9e81f"
+      },
+      "ompNativeDeltas": [
+        "strict-output-schemas",
+        "fail-closed-post-validation",
+        "narrower-tools-write-scopes",
+        "corrected-superpowers-ownership",
+        "direct-live-skill-md-loading",
+        "omp-native-hashline-lsp-ast-search-web-task",
+        "real-harness-managed-worktrees",
+        "bundled-omp-scout-reviewer-librarian-strengths",
+        "beads-broker-ownership"
+      ]
+    },
+    {
+      "name": "code-search-scout",
+      "piSource": "modules/agents/pi/agents/code-search-scout.md",
+      "ompDestination": "omp/agents/code-search-scout.md",
+      "phase": "research",
+      "purpose": "Narrow research — AST/symbol/pattern search via sg and rg. Read-mostly.",
+      "inputs": [
+        "harness-context",
+        "bd-issue-or-spec"
+      ],
+      "outputs": [
+        "structured-report-or-json"
+      ],
+      "writeScope": "none",
+      "allowedTools": [
+        "bash",
+        "read",
+        "search"
+      ],
+      "forbiddenActions": [
+        "broaden-write-scope",
+        "copy-superpowers-bodies",
+        "skip-bd"
+      ],
+      "requiredSuperpowers": [],
+      "requiredStackSkills": [
+        "ast-grep"
+      ],
+      "outputSchema": "omp/schemas/code-search-scout.output.schema.json",
+      "modelRoute": "sol",
+      "reasoningEffort": "medium",
+      "worktreeResponsibility": "none",
+      "reviewResponsibility": "none",
+      "piBaseline": {
+        "frontmatterName": "code-search-scout",
+        "description": "Narrow research — AST/symbol/pattern search via sg and rg. Read-mostly.",
+        "bodySha256": "664a6c6c74d2fefff76ce592593b081af9755687d63ae4171da71696438663f9"
+      },
+      "ompNativeDeltas": [
+        "strict-output-schemas",
+        "fail-closed-post-validation",
+        "narrower-tools-write-scopes",
+        "corrected-superpowers-ownership",
+        "direct-live-skill-md-loading",
+        "omp-native-hashline-lsp-ast-search-web-task",
+        "real-harness-managed-worktrees",
+        "bundled-omp-scout-reviewer-librarian-strengths",
+        "beads-broker-ownership"
+      ]
+    },
+    {
+      "name": "docs-scout",
+      "piSource": "modules/agents/pi/agents/docs-scout.md",
+      "ompDestination": "omp/agents/docs-scout.md",
+      "phase": "research",
+      "purpose": "Narrow research — library/API truth via context7 (and web if needed). Read-mostly.",
+      "inputs": [
+        "harness-context",
+        "bd-issue-or-spec"
+      ],
+      "outputs": [
+        "structured-report-or-json"
+      ],
+      "writeScope": "none",
+      "allowedTools": [
+        "bash",
+        "read",
+        "search"
+      ],
+      "forbiddenActions": [
+        "broaden-write-scope",
+        "copy-superpowers-bodies",
+        "skip-bd"
+      ],
+      "requiredSuperpowers": [],
+      "requiredStackSkills": [
+        "context7"
+      ],
+      "outputSchema": "omp/schemas/docs-scout.output.schema.json",
+      "modelRoute": "sol",
+      "reasoningEffort": "medium",
+      "worktreeResponsibility": "none",
+      "reviewResponsibility": "none",
+      "piBaseline": {
+        "frontmatterName": "docs-scout",
+        "description": "Narrow research — library/API truth via context7 (and web if needed). Read-mostly.",
+        "bodySha256": "9e69394379308cb9096b5767cfa7a97956f9c8f1e0b45a79d9f13bf66a775a57"
+      },
+      "ompNativeDeltas": [
+        "strict-output-schemas",
+        "fail-closed-post-validation",
+        "narrower-tools-write-scopes",
+        "corrected-superpowers-ownership",
+        "direct-live-skill-md-loading",
+        "omp-native-hashline-lsp-ast-search-web-task",
+        "real-harness-managed-worktrees",
+        "bundled-omp-scout-reviewer-librarian-strengths",
+        "beads-broker-ownership"
+      ]
+    },
+    {
+      "name": "web-scout",
+      "piSource": "modules/agents/pi/agents/web-scout.md",
+      "ompDestination": "omp/agents/web-scout.md",
+      "phase": "research",
+      "purpose": "Default internet research — search APIs + HTTP fetch for latest versions, release notes, and ecosystem facts (quality goal #5). Prefer over browser. Read-mostly.",
+      "inputs": [
+        "harness-context",
+        "bd-issue-or-spec"
+      ],
+      "outputs": [
+        "structured-report-or-json"
+      ],
+      "writeScope": "none",
+      "allowedTools": [
+        "bash",
+        "read",
+        "search"
+      ],
+      "forbiddenActions": [
+        "broaden-write-scope",
+        "copy-superpowers-bodies",
+        "skip-bd"
+      ],
+      "requiredSuperpowers": [],
+      "requiredStackSkills": [
+        "web"
+      ],
+      "outputSchema": "omp/schemas/web-scout.output.schema.json",
+      "modelRoute": "sol",
+      "reasoningEffort": "medium",
+      "worktreeResponsibility": "none",
+      "reviewResponsibility": "none",
+      "piBaseline": {
+        "frontmatterName": "web-scout",
+        "description": "Default internet research — search APIs + HTTP fetch for latest versions, release notes, and ecosystem facts (quality goal #5). Prefer over browser. Read-mostly.",
+        "bodySha256": "b253ca731bd706db9cfa9967bdc544ff90c6abc81934d3f89352ecec578c7177"
+      },
+      "ompNativeDeltas": [
+        "strict-output-schemas",
+        "fail-closed-post-validation",
+        "narrower-tools-write-scopes",
+        "corrected-superpowers-ownership",
+        "direct-live-skill-md-loading",
+        "omp-native-hashline-lsp-ast-search-web-task",
+        "real-harness-managed-worktrees",
+        "bundled-omp-scout-reviewer-librarian-strengths",
+        "beads-broker-ownership"
+      ]
+    },
+    {
+      "name": "web-browse-scout",
+      "piSource": "modules/agents/pi/agents/web-browse-scout.md",
+      "ompDestination": "omp/agents/web-browse-scout.md",
+      "phase": "research",
+      "purpose": "Optional headless browser via Chrome CDP / Playwright-style tools. Use when search+fetch cannot read JS-rendered docs or simple multi-page navigation is required.",
+      "inputs": [
+        "harness-context",
+        "bd-issue-or-spec"
+      ],
+      "outputs": [
+        "structured-report-or-json"
+      ],
+      "writeScope": "none",
+      "allowedTools": [
+        "bash",
+        "read",
+        "search"
+      ],
+      "forbiddenActions": [
+        "broaden-write-scope",
+        "copy-superpowers-bodies",
+        "skip-bd"
+      ],
+      "requiredSuperpowers": [],
+      "requiredStackSkills": [
+        "chrome-cdp"
+      ],
+      "outputSchema": "omp/schemas/web-browse-scout.output.schema.json",
+      "modelRoute": "sol",
+      "reasoningEffort": "medium",
+      "worktreeResponsibility": "none",
+      "reviewResponsibility": "none",
+      "piBaseline": {
+        "frontmatterName": "web-browse-scout",
+        "description": "Optional headless browser via Chrome CDP / Playwright-style tools. Use when search+fetch cannot read JS-rendered docs or simple multi-page navigation is required.",
+        "bodySha256": "ae0a95e46971c17b46a4063dd1f09e2148b97371c057e69979ad1cbe7a7425d0"
+      },
+      "ompNativeDeltas": [
+        "strict-output-schemas",
+        "fail-closed-post-validation",
+        "narrower-tools-write-scopes",
+        "corrected-superpowers-ownership",
+        "direct-live-skill-md-loading",
+        "omp-native-hashline-lsp-ast-search-web-task",
+        "real-harness-managed-worktrees",
+        "bundled-omp-scout-reviewer-librarian-strengths",
+        "beads-broker-ownership"
+      ]
+    },
+    {
+      "name": "browser-use-scout",
+      "piSource": "modules/agents/pi/agents/browser-use-scout.md",
+      "ompDestination": "omp/agents/browser-use-scout.md",
+      "phase": "research",
+      "purpose": "Heavy multi-step browser via installed browser-use CLI (CDP → running Chrome). Opt-in: research-fanout includeBrowserUse or user/ultra. Not for simple version checks.",
+      "inputs": [
+        "harness-context",
+        "bd-issue-or-spec"
+      ],
+      "outputs": [
+        "structured-report-or-json"
+      ],
+      "writeScope": "none",
+      "allowedTools": [
+        "bash",
+        "read",
+        "search"
+      ],
+      "forbiddenActions": [
+        "broaden-write-scope",
+        "copy-superpowers-bodies",
+        "skip-bd"
+      ],
+      "requiredSuperpowers": [],
+      "requiredStackSkills": [
+        "browser-use"
+      ],
+      "outputSchema": "omp/schemas/browser-use-scout.output.schema.json",
+      "modelRoute": "sol",
+      "reasoningEffort": "medium",
+      "worktreeResponsibility": "none",
+      "reviewResponsibility": "none",
+      "piBaseline": {
+        "frontmatterName": "browser-use-scout",
+        "description": "Heavy multi-step browser via installed browser-use CLI (CDP → running Chrome). Opt-in: research-fanout includeBrowserUse or user/ultra. Not for simple version checks.",
+        "bodySha256": "eb7030b0fcd7dc3978ba01222973290b27ebdcaac7063899da6ccbcb99aef180"
+      },
+      "ompNativeDeltas": [
+        "strict-output-schemas",
+        "fail-closed-post-validation",
+        "narrower-tools-write-scopes",
+        "corrected-superpowers-ownership",
+        "direct-live-skill-md-loading",
+        "omp-native-hashline-lsp-ast-search-web-task",
+        "real-harness-managed-worktrees",
+        "bundled-omp-scout-reviewer-librarian-strengths",
+        "beads-broker-ownership"
+      ]
+    },
+    {
+      "name": "webwright-scout",
+      "piSource": "modules/agents/pi/agents/webwright-scout.md",
+      "ompDestination": "omp/agents/webwright-scout.md",
+      "phase": "research",
+      "purpose": "Optional long-horizon web tasks via Microsoft Webwright (code-as-action Playwright scripts). Use when includeWebwright is true or multi-step web work should become a rerunnable script. Complements browser-use (live CDP); does not replace search+fetch or short CDP.",
+      "inputs": [
+        "harness-context",
+        "bd-issue-or-spec"
+      ],
+      "outputs": [
+        "structured-report-or-json"
+      ],
+      "writeScope": "none",
+      "allowedTools": [
+        "bash",
+        "read",
+        "search"
+      ],
+      "forbiddenActions": [
+        "broaden-write-scope",
+        "copy-superpowers-bodies",
+        "skip-bd"
+      ],
+      "requiredSuperpowers": [],
+      "requiredStackSkills": [
+        "webwright"
+      ],
+      "outputSchema": "omp/schemas/webwright-scout.output.schema.json",
+      "modelRoute": "sol",
+      "reasoningEffort": "medium",
+      "worktreeResponsibility": "none",
+      "reviewResponsibility": "none",
+      "piBaseline": {
+        "frontmatterName": "webwright-scout",
+        "description": "Optional long-horizon web tasks via Microsoft Webwright (code-as-action Playwright scripts). Use when includeWebwright is true or multi-step web work should become a rerunnable script. Complements browser-use (live CDP); does not replace search+fetch or short CDP.",
+        "bodySha256": "5d981d3ce24786246266b3300999ac723431e1ce4c9932f578a7d18138e858ad"
+      },
+      "ompNativeDeltas": [
+        "strict-output-schemas",
+        "fail-closed-post-validation",
+        "narrower-tools-write-scopes",
+        "corrected-superpowers-ownership",
+        "direct-live-skill-md-loading",
+        "omp-native-hashline-lsp-ast-search-web-task",
+        "real-harness-managed-worktrees",
+        "bundled-omp-scout-reviewer-librarian-strengths",
+        "beads-broker-ownership"
+      ]
+    },
+    {
+      "name": "stack-scout",
+      "piSource": "modules/agents/pi/agents/stack-scout.md",
+      "ompDestination": "omp/agents/stack-scout.md",
+      "phase": "research",
+      "purpose": "Narrow research — Rust / iOS Axiom / Android conventions from stack skills and repo markers.",
+      "inputs": [
+        "harness-context",
+        "bd-issue-or-spec"
+      ],
+      "outputs": [
+        "structured-report-or-json"
+      ],
+      "writeScope": "none",
+      "allowedTools": [
+        "bash",
+        "read",
+        "search"
+      ],
+      "forbiddenActions": [
+        "broaden-write-scope",
+        "copy-superpowers-bodies",
+        "skip-bd"
+      ],
+      "requiredSuperpowers": [],
+      "requiredStackSkills": [
+        "rust-skills",
+        "axiom"
+      ],
+      "outputSchema": "omp/schemas/stack-scout.output.schema.json",
+      "modelRoute": "sol",
+      "reasoningEffort": "medium",
+      "worktreeResponsibility": "none",
+      "reviewResponsibility": "none",
+      "piBaseline": {
+        "frontmatterName": "stack-scout",
+        "description": "Narrow research — Rust / iOS Axiom / Android conventions from stack skills and repo markers.",
+        "bodySha256": "8ee61e32cc3ae59ff4091d63c3b4016e5f6bcfd94482bef4ba3987da0f867159"
+      },
+      "ompNativeDeltas": [
+        "strict-output-schemas",
+        "fail-closed-post-validation",
+        "narrower-tools-write-scopes",
+        "corrected-superpowers-ownership",
+        "direct-live-skill-md-loading",
+        "omp-native-hashline-lsp-ast-search-web-task",
+        "real-harness-managed-worktrees",
+        "bundled-omp-scout-reviewer-librarian-strengths",
+        "beads-broker-ownership"
+      ]
+    },
+    {
+      "name": "pr-opener",
+      "piSource": "modules/agents/pi/agents/pr-opener.md",
+      "ompDestination": "omp/agents/pr-opener.md",
+      "phase": "delivery",
+      "purpose": "Open PR after milestone PASS. gh CLI. Body = goal checklist + bd links.",
+      "inputs": [
+        "harness-context",
+        "bd-issue-or-spec"
+      ],
+      "outputs": [
+        "structured-report-or-json"
+      ],
+      "writeScope": "harness-artifacts",
+      "allowedTools": [
+        "bash",
+        "read",
+        "search",
+        "edit",
+        "write"
+      ],
+      "forbiddenActions": [
+        "broaden-write-scope",
+        "copy-superpowers-bodies",
+        "skip-bd"
+      ],
+      "requiredSuperpowers": [
+        "finishing-a-development-branch"
+      ],
+      "requiredStackSkills": [],
+      "outputSchema": "omp/schemas/pr-opener.output.schema.json",
+      "modelRoute": "sol",
+      "reasoningEffort": "medium",
+      "worktreeResponsibility": "none",
+      "reviewResponsibility": "author",
+      "piBaseline": {
+        "frontmatterName": "pr-opener",
+        "description": "Open PR after milestone PASS. gh CLI. Body = goal checklist + bd links.",
+        "bodySha256": "d12e555326d89fe39a24cadb3cf5585123714923b5a5ab75255751b786184da8"
+      },
+      "ompNativeDeltas": [
+        "strict-output-schemas",
+        "fail-closed-post-validation",
+        "narrower-tools-write-scopes",
+        "corrected-superpowers-ownership",
+        "direct-live-skill-md-loading",
+        "omp-native-hashline-lsp-ast-search-web-task",
+        "real-harness-managed-worktrees",
+        "bundled-omp-scout-reviewer-librarian-strengths",
+        "beads-broker-ownership"
+      ]
+    }
+  ]
+}
