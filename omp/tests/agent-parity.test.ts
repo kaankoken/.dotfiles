@@ -107,9 +107,19 @@ function parseFrontmatter(text: string): {
 }
 
 function piRoot(): string {
-  const env = process.env.PI_HARNESS_ROOT;
-  expect(env && env.length > 0).toBe(true);
-  return env!;
+  const candidates = [
+    process.env.PI_HARNESS_ROOT,
+    // nixup worktree (migration)
+    "/Users/legolas/Desktop/personal/.worktrees/nixup-omp-goal-harness-migration/modules/agents/pi",
+    // primary nix-setup checkout
+    "/Users/legolas/Desktop/personal/nix-setup/modules/agents/pi",
+  ].filter((p): p is string => Boolean(p && p.length > 0));
+  for (const c of candidates) {
+    if (existsSync(join(c, "agents"))) return c;
+  }
+  throw new Error(
+    "PI_HARNESS_ROOT not set and no local Pi agents dir found (set PI_HARNESS_ROOT)",
+  );
 }
 
 describe("19-agent Pi parity contract", () => {
