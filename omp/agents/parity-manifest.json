@@ -32,8 +32,8 @@
       "requiredSuperpowers": [],
       "requiredStackSkills": [],
       "outputSchema": "omp/schemas/project-init.output.schema.json",
-      "modelRoute": "sol",
-      "reasoningEffort": "high",
+      "modelRoute": "sol\u2192sonnet",
+      "reasoningEffort": "medium",
       "worktreeResponsibility": "none",
       "reviewResponsibility": "author",
       "piBaseline": {
@@ -86,8 +86,8 @@
       ],
       "requiredStackSkills": [],
       "outputSchema": "omp/schemas/spec-writer.output.schema.json",
-      "modelRoute": "fabel+sol",
-      "reasoningEffort": "ultra",
+      "modelRoute": "sol\u2192fable\u2192opus",
+      "reasoningEffort": "ultra|max",
       "worktreeResponsibility": "none",
       "reviewResponsibility": "author",
       "piBaseline": {
@@ -136,8 +136,8 @@
       ],
       "requiredStackSkills": [],
       "outputSchema": "omp/schemas/spec-reviewer.output.schema.json",
-      "modelRoute": "fabel|sol",
-      "reasoningEffort": "ultra",
+      "modelRoute": "sol\u2192fable\u2192opus",
+      "reasoningEffort": "ultra|max",
       "worktreeResponsibility": "none",
       "reviewResponsibility": "gate",
       "piBaseline": {
@@ -189,8 +189,8 @@
       ],
       "requiredStackSkills": [],
       "outputSchema": "omp/schemas/plan-writer.output.schema.json",
-      "modelRoute": "fabel+sol",
-      "reasoningEffort": "ultra",
+      "modelRoute": "sol\u2192fable\u2192opus",
+      "reasoningEffort": "ultra|max",
       "worktreeResponsibility": "none",
       "reviewResponsibility": "author",
       "piBaseline": {
@@ -239,8 +239,8 @@
       ],
       "requiredStackSkills": [],
       "outputSchema": "omp/schemas/plan-reviewer.output.schema.json",
-      "modelRoute": "fabel|sol",
-      "reasoningEffort": "ultra",
+      "modelRoute": "sol\u2192fable\u2192opus",
+      "reasoningEffort": "ultra|max",
       "worktreeResponsibility": "none",
       "reviewResponsibility": "gate",
       "piBaseline": {
@@ -291,8 +291,8 @@
       ],
       "requiredStackSkills": [],
       "outputSchema": "omp/schemas/bite-size-writer.output.schema.json",
-      "modelRoute": "sol",
-      "reasoningEffort": "high",
+      "modelRoute": "sol\u2192fable\u2192opus",
+      "reasoningEffort": "ultra|max",
       "worktreeResponsibility": "none",
       "reviewResponsibility": "author",
       "piBaseline": {
@@ -341,8 +341,8 @@
       ],
       "requiredStackSkills": [],
       "outputSchema": "omp/schemas/bite-size-reviewer.output.schema.json",
-      "modelRoute": "sol",
-      "reasoningEffort": "high",
+      "modelRoute": "sol\u2192fable\u2192opus",
+      "reasoningEffort": "ultra|max",
       "worktreeResponsibility": "none",
       "reviewResponsibility": "gate",
       "piBaseline": {
@@ -395,7 +395,7 @@
       ],
       "requiredStackSkills": [],
       "outputSchema": "omp/schemas/implementer.output.schema.json",
-      "modelRoute": "grok\u2192sol\u2192sonnet",
+      "modelRoute": "grok\u2192composer(if-no-grok)\u2192sol\u2192sonnet",
       "reasoningEffort": "high",
       "worktreeResponsibility": "owner",
       "reviewResponsibility": "author",
@@ -446,8 +446,8 @@
       ],
       "requiredStackSkills": [],
       "outputSchema": "omp/schemas/milestone-organizer.output.schema.json",
-      "modelRoute": "fabel|sol",
-      "reasoningEffort": "ultra",
+      "modelRoute": "sol\u2192fable\u2192opus",
+      "reasoningEffort": "ultra|max",
       "worktreeResponsibility": "scheduler",
       "reviewResponsibility": "none",
       "piBaseline": {
@@ -498,8 +498,8 @@
         "ponytail-review"
       ],
       "outputSchema": "omp/schemas/code-reviewer.output.schema.json",
-      "modelRoute": "fabel|sol",
-      "reasoningEffort": "ultra",
+      "modelRoute": "sol\u2192fable\u2192opus",
+      "reasoningEffort": "ultra|max",
       "worktreeResponsibility": "none",
       "reviewResponsibility": "gate",
       "piBaseline": {
@@ -548,8 +548,8 @@
         "tokensave"
       ],
       "outputSchema": "omp/schemas/code-graph-scout.output.schema.json",
-      "modelRoute": "sol",
-      "reasoningEffort": "medium",
+      "modelRoute": "sol|grok",
+      "reasoningEffort": "medium|high",
       "worktreeResponsibility": "none",
       "reviewResponsibility": "none",
       "piBaseline": {
@@ -598,8 +598,8 @@
         "ast-grep"
       ],
       "outputSchema": "omp/schemas/code-search-scout.output.schema.json",
-      "modelRoute": "sol",
-      "reasoningEffort": "medium",
+      "modelRoute": "sol|grok",
+      "reasoningEffort": "medium|high",
       "worktreeResponsibility": "none",
       "reviewResponsibility": "none",
       "piBaseline": {
@@ -649,8 +649,8 @@
         "context7"
       ],
       "outputSchema": "omp/schemas/docs-scout.output.schema.json",
-      "modelRoute": "sol",
-      "reasoningEffort": "medium",
+      "modelRoute": "sol|grok",
+      "reasoningEffort": "medium|high",
       "worktreeResponsibility": "none",
       "reviewResponsibility": "none",
       "piBaseline": {
@@ -700,8 +700,8 @@
         "web"
       ],
       "outputSchema": "omp/schemas/web-scout.output.schema.json",
-      "modelRoute": "sol",
-      "reasoningEffort": "medium",
+      "modelRoute": "sol|grok",
+      "reasoningEffort": "medium|high",
       "worktreeResponsibility": "none",
       "reviewResponsibility": "none",
       "piBaseline": {
@@ -750,8 +750,8 @@
         "chrome-cdp"
       ],
       "outputSchema": "omp/schemas/web-browse-scout.output.schema.json",
-      "modelRoute": "sol",
-      "reasoningEffort": "medium",
+      "modelRoute": "sol|grok",
+      "reasoningEffort": "medium|high",
       "worktreeResponsibility": "none",
       "reviewResponsibility": "none",
       "piBaseline": {
@@ -800,8 +800,8 @@
         "browser-use"
       ],
       "outputSchema": "omp/schemas/browser-use-scout.output.schema.json",
-      "modelRoute": "sol",
-      "reasoningEffort": "medium",
+      "modelRoute": "sol|grok",
+      "reasoningEffort": "medium|high",
       "worktreeResponsibility": "none",
       "reviewResponsibility": "none",
       "piBaseline": {
@@ -850,8 +850,8 @@
         "webwright"
       ],
       "outputSchema": "omp/schemas/webwright-scout.output.schema.json",
-      "modelRoute": "sol",
-      "reasoningEffort": "medium",
+      "modelRoute": "sol|grok",
+      "reasoningEffort": "medium|high",
       "worktreeResponsibility": "none",
       "reviewResponsibility": "none",
       "piBaseline": {
@@ -901,8 +901,8 @@
         "axiom"
       ],
       "outputSchema": "omp/schemas/stack-scout.output.schema.json",
-      "modelRoute": "sol",
-      "reasoningEffort": "medium",
+      "modelRoute": "sol|grok",
+      "reasoningEffort": "medium|high",
       "worktreeResponsibility": "none",
       "reviewResponsibility": "none",
       "piBaseline": {
@@ -953,7 +953,7 @@
       ],
       "requiredStackSkills": [],
       "outputSchema": "omp/schemas/pr-opener.output.schema.json",
-      "modelRoute": "sol",
+      "modelRoute": "sol\u2192sonnet",
       "reasoningEffort": "medium",
       "worktreeResponsibility": "none",
       "reviewResponsibility": "author",
