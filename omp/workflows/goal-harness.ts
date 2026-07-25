@@ -27,6 +27,17 @@ import type {
   LaneAssignment,
 } from "../extensions/goal-harness/lane-runner";
 import { runAssignedLane } from "../extensions/goal-harness/lane-runner";
+import {
+  runTaskReviewSequence,
+  createLaneReviewState,
+  isLaneApproved,
+  type LaneReviewState,
+} from "../extensions/goal-harness/task-review";
+import {
+  integrateReviewedLanes,
+  type ReviewedRange,
+  type IntegrationResult,
+} from "../extensions/goal-harness/integration";
 
 export type HarnessStartMessage = {
   kind: "goal-harness-start";
@@ -75,12 +86,29 @@ export type RunHarnessOptions = {
   activeApi?: ActiveExtensionApi;
   /** Optional pre-built lane assignments for Implement phase tests. */
   laneAssignments?: LaneAssignment[];
+  /** Optional reviewed ranges for Integration phase. */
+  integration?: {
+    ranges: ReviewedRange[];
+    integrationWorktreePath: string;
+    integrationBranch: string;
+    repoRoot: string;
+    prOpen?: boolean;
+  };
 };
 
 export type HarnessRunResult = {
   snapshot: DurableSnapshot;
   plan?: PlanArtifact;
   published?: PublishedBiteSize;
+  reviews?: LaneReviewState[];
+  integration?: IntegrationResult;
+};
+
+export {
+  createLaneReviewState,
+  runTaskReviewSequence,
+  isLaneApproved,
+  integrateReviewedLanes,
 };
 
 /**
@@ -103,6 +131,8 @@ export async function runGoalHarnessDetailed(
     opts.snapshot ?? createInitialSnapshot(`run-${Date.now()}`, opts.boundGoal);
   let plan: PlanArtifact | undefined;
   let published: PublishedBiteSize | undefined;
+  const reviews: LaneReviewState[] = [];
+  let integration: IntegrationResult | undefined;
 
   await runWithAdapter(opts.workflowz, async (wz) => {
     wz.phase("Init");
@@ -235,14 +265,39 @@ export async function runGoalHarnessDetailed(
       snap = applyTransition(snap, { type: "begin", phase: "Implement" });
       for (const assignment of opts.laneAssignments) {
         await runAssignedLane(opts.activeApi, assignment);
+        let review = createLaneReviewState({
+          issueId: assignment.issueId,
+          baseSha: assignment.baseSha,
+          headSha: assignment.baseSha,
+        });
+        review = await runTaskReviewSequence(wz, review, {
+          model: assignment.model,
+        });
+        reviews.push(review);
       }
       snap = applyTransition(snap, { type: "complete", phase: "Implement" });
+    }
+
+    if (
+      opts.integration?.ranges.length &&
+      snap.completed.includes("Implement")
+    ) {
+      wz.phase("Integration");
+      snap = applyTransition(snap, { type: "begin", phase: "Integration" });
+      integration = integrateReviewedLanes({
+        repoRoot: opts.integration.repoRoot,
+        integrationWorktreePath: opts.integration.integrationWorktreePath,
+        integrationBranch: opts.integration.integrationBranch,
+        ranges: opts.integration.ranges,
+        prOpen: opts.integration.prOpen,
+      });
+      snap = applyTransition(snap, { type: "complete", phase: "Integration" });
     }
 
     await wz.pipeline([{ step: 1 }], async (item) => item);
   });
 
-  return { snapshot: snap, plan, published };
+  return { snapshot: snap, plan, published, reviews, integration };
 }
 
 /** Source-path marker for tests. */
