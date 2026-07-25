@@ -38,6 +38,17 @@ import {
   type ReviewedRange,
   type IntegrationResult,
 } from "../extensions/goal-harness/integration";
+import {
+  runMilestoneGate,
+  type MilestoneResult,
+} from "./milestone";
+import {
+  createCurrentProjectPr,
+  recordPrOnEpic,
+  type PrPreconditions,
+  type PrCreateResult,
+} from "./pr";
+import type { RunFreshVerificationOpts } from "../extensions/goal-harness/verification";
 
 export type HarnessStartMessage = {
   kind: "goal-harness-start";
@@ -94,6 +105,16 @@ export type RunHarnessOptions = {
     repoRoot: string;
     prOpen?: boolean;
   };
+  /** Milestone: fresh verification + parallel angle reviews. */
+  milestone?: {
+    verification: RunFreshVerificationOpts;
+    context?: string;
+  };
+  /** Current-project PR after Milestone PASS only. */
+  pr?: PrPreconditions & {
+    recordPrUrl?: (url: string) => void;
+    fakeUrl?: string;
+  };
 };
 
 export type HarnessRunResult = {
@@ -102,6 +123,8 @@ export type HarnessRunResult = {
   published?: PublishedBiteSize;
   reviews?: LaneReviewState[];
   integration?: IntegrationResult;
+  milestone?: MilestoneResult;
+  pr?: PrCreateResult;
 };
 
 export {
@@ -109,6 +132,8 @@ export {
   runTaskReviewSequence,
   isLaneApproved,
   integrateReviewedLanes,
+  runMilestoneGate,
+  createCurrentProjectPr,
 };
 
 /**
@@ -133,6 +158,8 @@ export async function runGoalHarnessDetailed(
   let published: PublishedBiteSize | undefined;
   const reviews: LaneReviewState[] = [];
   let integration: IntegrationResult | undefined;
+  let milestone: MilestoneResult | undefined;
+  let pr: PrCreateResult | undefined;
 
   await runWithAdapter(opts.workflowz, async (wz) => {
     wz.phase("Init");
@@ -294,10 +321,52 @@ export async function runGoalHarnessDetailed(
       snap = applyTransition(snap, { type: "complete", phase: "Integration" });
     }
 
+    // Milestone requires Integration complete (or tests inject completed snapshot)
+    if (opts.milestone && snap.completed.includes("Integration")) {
+      snap = applyTransition(snap, { type: "begin", phase: "Milestone" });
+      milestone = await runMilestoneGate(wz, {
+        model: opts.models?.plan ?? "openai-codex/gpt-5.6-sol",
+        context: opts.milestone.context ?? opts.boundGoal,
+        verification: opts.milestone.verification,
+        maxAttempts: 3,
+      });
+      if (milestone.ok) {
+        snap = applyTransition(snap, { type: "gate_pass", gate: "Milestone" });
+      } else {
+        snap = applyTransition(snap, {
+          type: "gate_fail",
+          gate: "Milestone",
+          feedback: milestone.blocking.join("; "),
+        });
+      }
+    }
+
+    // PR only after Milestone PASS — never on failed/stale verification
+    if (opts.pr && milestone?.ok && snap.completed.includes("Milestone")) {
+      wz.phase("PR");
+      snap = applyTransition(snap, { type: "begin", phase: "PR" });
+      pr = createCurrentProjectPr(opts.pr, { fakeUrl: opts.pr.fakeUrl });
+      if (opts.pr.recordPrUrl) {
+        recordPrOnEpic(opts.pr.recordPrUrl, pr.url);
+      }
+      if (opts.broker) {
+        await opts.broker.recordPr(snap.runId, pr.url);
+      }
+      snap = applyTransition(snap, { type: "complete", phase: "PR" });
+    }
+
     await wz.pipeline([{ step: 1 }], async (item) => item);
   });
 
-  return { snapshot: snap, plan, published, reviews, integration };
+  return {
+    snapshot: snap,
+    plan,
+    published,
+    reviews,
+    integration,
+    milestone,
+    pr,
+  };
 }
 
 /** Source-path marker for tests. */
