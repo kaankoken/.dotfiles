@@ -1,5 +1,5 @@
 # Lean OMP config — binary from Nix; everything else from this tree via link.sh.
-# No extra orchestration packages, memory backends, Autolearn, or built-in TODO.
+# No extra orchestration packages, memory backends, Autolearn, or built-in task list.
 
 startup:
   quiet: true
