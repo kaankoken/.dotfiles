@@ -16,6 +16,11 @@ import {
   type ImplementerEvidenceEnvelope,
 } from "./evidence";
 import { assertRealGitWorktreeIsolation } from "./worktrees";
+import {
+  attestAndUnlock,
+  type SkillGuardSession,
+} from "./skill-guard";
+import type { SkillResolveOptions } from "./skills";
 
 export { IMPLEMENTER_EVIDENCE_SCHEMA };
 
@@ -68,6 +73,9 @@ export type LaneAssignment = {
   planContext: string;
   model: string;
   effort: string;
+  /** Optional skill roots for implementer attestation before tools unlock. */
+  skillRoots?: SkillResolveOptions;
+  stackSkills?: string[];
 };
 
 export type LaneRunResult = {
@@ -75,6 +83,7 @@ export type LaneRunResult = {
   rolePrompt: string;
   evidence: ImplementerEvidenceEnvelope;
   validation: { ok: boolean; reason?: string };
+  skillGuard?: SkillGuardSession;
 };
 
 /** Capabilities the child must NOT receive. */
@@ -201,6 +210,17 @@ export async function runLaneImplementer(
 ): Promise<LaneRunResult> {
   if (opts?.forbidden) assertNoForbiddenChildCaps(opts.forbidden);
 
+  // SDK children start locked until skill attestation (when roots provided)
+  let skillGuard: SkillGuardSession | undefined;
+  if (assignment.skillRoots) {
+    skillGuard = attestAndUnlock({
+      role: "implementer",
+      skillRoots: assignment.skillRoots,
+      roleTools: ["bash", "read", "search", "edit", "write"],
+      stackSkills: assignment.stackSkills,
+    });
+  }
+
   const { session, sessionOpts, rolePrompt, userPrompt } =
     await createLaneSession(api, assignment, {
       agentsDir: opts?.agentsDir,
@@ -247,6 +267,7 @@ export async function runLaneImplementer(
     rolePrompt,
     evidence: raw as ImplementerEvidenceEnvelope,
     validation: { ok: true },
+    skillGuard,
   };
 }
 

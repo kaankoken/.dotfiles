@@ -9,8 +9,17 @@ import {
   type ActiveExtensionApi,
   type LaneAssignment,
 } from "./lane-runner";
+import {
+  REQUIRED_SKILLS_BY_ROLE,
+  validateRequiredSkillsMapping,
+} from "./skills";
+import { attestAndUnlock, type CreateGuardOpts } from "./skill-guard";
+import { HARNESS_READ_SKILL_TOOL } from "./skill-tool";
 
 export { DEFAULT_GOAL, bindGoal, HARNESS_COMMAND_NAME };
+export { REQUIRED_SKILLS_BY_ROLE, validateRequiredSkillsMapping } from "./skills";
+export { attestAndUnlock, createSkillGuardSession } from "./skill-guard";
+export { harnessReadSkill, HARNESS_READ_SKILL_TOOL } from "./skill-tool";
 export {
   validateReviewResult,
   validateImplementerEvidence,
@@ -100,6 +109,26 @@ export async function runLaneWithActiveApi(
   }
   const active: ActiveExtensionApi = { pi: api.pi };
   return runAssignedLane(active, assignment);
+}
+
+/**
+ * Parent /harness entry: restrict to skill tool until attestation unlocks role tools.
+ * Never vendors Superpowers bodies — live SKILL.md only.
+ */
+export function preflightParentSkills(
+  skillRoots: string[],
+  roleTools: string[] = ["bash", "read", "search", "agent"],
+) {
+  const mapping = validateRequiredSkillsMapping();
+  if (!mapping.ok) {
+    throw new Error(`REQUIRED_SKILLS_BY_ROLE invalid: ${mapping.reason}`);
+  }
+  return attestAndUnlock({
+    role: "parent-orchestrator",
+    skillRoots: { customDirectories: skillRoots },
+    roleTools,
+    restrictedTools: [HARNESS_READ_SKILL_TOOL.name, "read"],
+  } satisfies CreateGuardOpts);
 }
 
 /** Extension load: register commands only — no model resolution or network. */
