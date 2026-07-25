@@ -15,6 +15,9 @@ import {
   runWithAdapter,
 } from "../extensions/goal-harness/workflow-adapter";
 import { reviewResultSchema } from "../extensions/goal-harness/schemas";
+import { runResearch } from "./research";
+import { createSpecSession, runSpecGate } from "./spec";
+import type { HumanGate } from "../extensions/goal-harness/human-gate";
 
 export type HarnessStartMessage = {
   kind: "goal-harness-start";
@@ -46,11 +49,13 @@ export type RunHarnessOptions = {
     spec?: string;
     plan?: string;
   };
+  researchScope?: "small" | "large";
+  /** Optional human gate for Spec; without approval Spec cannot advance to Plan. */
+  humanGate?: HumanGate;
 };
 
 /**
- * Drive a minimal harness skeleton: Init → Research → Spec gate sample.
- * Full phase bodies land in later tasks; this proves entry + primitives.
+ * Drive harness: Init → Research fan-out → Spec gate (+ optional human approval).
  */
 export async function runGoalHarness(
   opts: RunHarnessOptions,
@@ -62,68 +67,48 @@ export async function runGoalHarness(
     wz.phase("Init");
     snap = applyTransition(snap, { type: "complete", phase: "Init" });
 
-    wz.phase("Research");
-    await wz.parallel([
-      async () => {
-        const call = createStrictAgentCall({
-          agentName: "code-graph-scout",
-          model: opts.models?.research ?? "openai-codex/gpt-5.6-sol",
-          effort: "medium",
-          schema: { type: "object", additionalProperties: true },
-          schemaMode: "strict",
-        });
-        return call(wz, `Research for: ${opts.boundGoal}`);
+    const research = await runResearch(
+      wz,
+      {
+        boundGoal: opts.boundGoal,
+        scope: opts.researchScope ?? "large",
+        escalateBrowse: false,
+        escalateBrowserUse: false,
+        escalateWebwright: false,
+        goalRule5VersionCheck: true,
       },
-      async () => {
-        const call = createStrictAgentCall({
-          agentName: "web-scout",
-          model: opts.models?.research ?? "openai-codex/gpt-5.6-sol",
-          effort: "medium",
-          schema: { type: "object", additionalProperties: true },
-          schemaMode: "strict",
-        });
-        return call(wz, `Web research for: ${opts.boundGoal}`);
-      },
-    ]);
+      { model: opts.models?.research ?? "openai-codex/gpt-5.6-sol" },
+    );
     snap = applyTransition(snap, { type: "complete", phase: "Research" });
 
     wz.phase("Spec");
     snap = applyTransition(snap, { type: "begin", phase: "Spec" });
-    const producer = createStrictAgentCall({
-      agentName: "spec-writer",
+    const session = createSpecSession(opts.boundGoal, research.synthesis);
+    const gate = await runSpecGate(wz, session, {
       model: opts.models?.spec ?? "openai-codex/gpt-5.6-sol",
-      effort: "ultra",
-      schema: reviewResultSchema,
-      schemaMode: "strict",
+      reviewerModel: opts.models?.spec
+        ? opts.models.spec
+        : "anthropic/claude-fable-5",
+      maxAttempts: 3,
     });
-    // Spec producer returns design object; adapter only requires object shape
-    await producer(wz, `Write spec for boundGoal (separate from controllerPolicy)`);
 
-    const reviewer = createStrictAgentCall({
-      agentName: "spec-reviewer",
-      model: opts.models?.spec ?? "anthropic/claude-fable-5",
-      effort: "max",
-      schema: reviewResultSchema,
-      schemaMode: "strict",
-    });
-    const review = (await reviewer(wz, "Review the spec")) as {
-      ok?: boolean;
-    };
-    if (review && review.ok === false) {
+    if (!gate.review.ok) {
       snap = applyTransition(snap, {
         type: "gate_fail",
         gate: "Spec",
-        feedback: "review failed",
+        feedback: gate.review.feedback,
       });
+    } else if (opts.humanGate) {
+      await opts.humanGate.requestApproval(session);
+      if (session.canAdvanceToPlan()) {
+        snap = applyTransition(snap, { type: "gate_pass", gate: "Spec" });
+      }
     } else {
+      // Tests without humanGate: machine can pass; product path should inject gate
       snap = applyTransition(snap, { type: "gate_pass", gate: "Spec" });
     }
 
-    // Demonstrate pipeline primitive
-    await wz.pipeline(
-      [{ step: 1 }],
-      async (item) => item,
-    );
+    await wz.pipeline([{ step: 1 }], async (item) => item);
   });
 
   return snap;

@@ -99,6 +99,24 @@ describe("harness command binding", () => {
         expect(options.agentName).toBeTruthy();
         expect(options.model).toBeTruthy();
         expect(options.outputSchema).toBeTruthy();
+        if (options.agentName.includes("scout")) {
+          return {
+            scout: options.agentName,
+            findings: ["ok"],
+            sources: [`src://${options.agentName}`],
+            structured: true,
+          };
+        }
+        if (options.agentName.includes("reviewer")) {
+          return { ok: true, feedback: "ok", blocking: [] };
+        }
+        if (options.agentName.includes("writer")) {
+          return {
+            title: "Spec",
+            sections: { problem: "p" },
+            sources: ["s1"],
+          };
+        }
         return { ok: true, feedback: "ok", blocking: [] };
       },
       async parallel(jobs) {
