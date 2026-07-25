@@ -4,6 +4,11 @@ import {
   bindGoal,
 } from "./constants";
 import { buildStartMessage } from "../../workflows/goal-harness";
+import {
+  runAssignedLane,
+  type ActiveExtensionApi,
+  type LaneAssignment,
+} from "./lane-runner";
 
 export { DEFAULT_GOAL, bindGoal, HARNESS_COMMAND_NAME };
 export {
@@ -13,6 +18,9 @@ export {
 export { reviewResultSchema, implementerEvidenceSchema } from "./schemas";
 export { buildStartMessage } from "../../workflows/goal-harness";
 export type { HarnessStartMessage } from "../../workflows/goal-harness";
+export { runAssignedLane } from "./lane-runner";
+export type { ActiveExtensionApi, LaneAssignment } from "./lane-runner";
+export { IMPLEMENTER_EVIDENCE_SCHEMA } from "./evidence";
 
 /** Minimal ExtensionAPI surface used by this extension (OMP runtime). */
 export type ExtensionAPI = {
@@ -21,6 +29,8 @@ export type ExtensionAPI = {
     text: string,
     opts?: { triggerTurn?: boolean },
   ) => void | Promise<void>;
+  /** Active OMP SDK (pi.createAgentSession) when host provides it. */
+  pi?: ActiveExtensionApi["pi"];
 };
 
 export type HarnessHandlerResult = {
@@ -73,6 +83,23 @@ export function registerHarnessCommand(api: ExtensionAPI): void {
       return result;
     },
   });
+}
+
+/**
+ * Controller helper: run implementer in assigned worktree via active API.
+ * Passes only the lane assignment — never a Beads write broker or worktree controller.
+ */
+export async function runLaneWithActiveApi(
+  api: ExtensionAPI,
+  assignment: LaneAssignment,
+) {
+  if (!api.pi?.createAgentSession || !api.pi?.SessionManager?.inMemory) {
+    throw new Error(
+      "active ExtensionAPI.pi.createAgentSession + SessionManager.inMemory required",
+    );
+  }
+  const active: ActiveExtensionApi = { pi: api.pi };
+  return runAssignedLane(active, assignment);
 }
 
 /** Extension load: register commands only — no model resolution or network. */

@@ -22,6 +22,11 @@ import {
 } from "./bite-size";
 import type { HumanGate } from "../extensions/goal-harness/human-gate";
 import type { BeadsBroker } from "../extensions/goal-harness/beads";
+import type {
+  ActiveExtensionApi,
+  LaneAssignment,
+} from "../extensions/goal-harness/lane-runner";
+import { runAssignedLane } from "../extensions/goal-harness/lane-runner";
 
 export type HarnessStartMessage = {
   kind: "goal-harness-start";
@@ -63,6 +68,13 @@ export type RunHarnessOptions = {
    * No routine human pause after Plan/BiteSize.
    */
   broker?: BeadsBroker;
+  /**
+   * Active OMP SDK for implementer lanes. Children receive only LaneAssignment
+   * context — never the broker or worktree controller.
+   */
+  activeApi?: ActiveExtensionApi;
+  /** Optional pre-built lane assignments for Implement phase tests. */
+  laneAssignments?: LaneAssignment[];
 };
 
 export type HarnessRunResult = {
@@ -210,6 +222,21 @@ export async function runGoalHarnessDetailed(
           }
         }
       }
+    }
+
+    // Implement phase: only when active API + assignments provided (Task 20+).
+    // Each lane gets issue/spec/plan slice only — no broker, no worktree mgr.
+    if (
+      opts.activeApi &&
+      opts.laneAssignments?.length &&
+      snap.completed.includes("BiteSize")
+    ) {
+      wz.phase("Implement");
+      snap = applyTransition(snap, { type: "begin", phase: "Implement" });
+      for (const assignment of opts.laneAssignments) {
+        await runAssignedLane(opts.activeApi, assignment);
+      }
+      snap = applyTransition(snap, { type: "complete", phase: "Implement" });
     }
 
     await wz.pipeline([{ step: 1 }], async (item) => item);
