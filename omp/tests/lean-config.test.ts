@@ -123,10 +123,9 @@ describe("lean OMP configuration", () => {
     const files = walkFiles(OMP_ROOT);
     for (const f of files) {
       if (f.endsWith("SKILL.md")) {
-        // fail if any skill body vendored
+        // Superpowers must not be vendored; OMP goal-harness skill is allowed
         expect(f).not.toMatch(/superpowers/i);
-        // still ban any SKILL.md under omp except none expected
-        throw new Error(`unexpected SKILL.md under omp: ${f}`);
+        expect(f).toMatch(/skills\/goal-harness\/SKILL\.md$/);
       }
     }
   });
