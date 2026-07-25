@@ -53,7 +53,13 @@ function tmp(): string {
   return d;
 }
 
-function baseRoots(repo: string) {
+function baseRoots(repo: string): {
+  repo: string;
+  worktree: string;
+  runTemp: string;
+  integration?: string;
+  migrationTargets?: string[];
+} {
   const worktree = join(repo, "lane");
   const runTemp = join(repo, "tmp");
   mkdirSync(worktree, { recursive: true });
@@ -362,7 +368,9 @@ describe("preflight audit approval cache", () => {
     const m = implManifest(repo);
     const notes: string[] = [];
     const state = createInterceptor(m, {
-      appendNotes: (_i, n) => notes.push(n),
+      appendNotes: (_i, n) => {
+        notes.push(n);
+      },
     });
     const req = {
       tool: "bash",
@@ -403,7 +411,9 @@ describe("preflight audit approval cache", () => {
 
     const notes: string[] = [];
     const handler = registerSandboxToolHandler(m, {
-      appendNotes: (_i, n) => notes.push(n),
+      appendNotes: (_i, n) => {
+        notes.push(n);
+      },
     });
     const d = handler({ tool: "bash", argv: ["git", "reset", "--hard"] });
     expect(d.allow).toBe(false);
