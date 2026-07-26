@@ -1,318 +1,39 @@
-# --- Headroom proxy (auto-injected by headroom wrap codex) ---
-model_provider = "headroom"
-openai_base_url = "http://127.0.0.1:8787/v1"
-# --- end Headroom ---
-
-model = "gpt-5.6-sol"
-model_reasoning_effort = "xhigh"
 approvals_reviewer = "guardian_subagent"
+model = "gpt-5.6-sol"
+model_provider = "headroom"
+model_reasoning_effort = "max"
+notify = [
+    "/Users/legolas/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient",
+    "turn-ended",
+]
+openai_base_url = "http://127.0.0.1:8787/v1"
+plan_mode_reasoning_effort = "xhigh"
 service_tier = "default"
 
-notify = ["/Users/legolas/.codex/computer-use/Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient", "turn-ended"]
-plan_mode_reasoning_effort = "xhigh"
-
-[mcp_servers.pencil]
-command = "/Applications/Pencil.app/Contents/Resources/app.asar.unpacked/out/mcp-server-darwin-arm64"
-args = [ "--app", "desktop" ]
-
-[mcp_servers.codebase-memory-mcp]
-command = "/Users/legolas/.local/bin/codebase-memory-mcp"
-
-[mcp_servers.node_repl]
-args = []
-command = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
-startup_timeout_sec = 120
-
-[mcp_servers.node_repl.env]
-NODE_REPL_NATIVE_PIPE_CONNECT_TIMEOUT_MS = "1000"
-NODE_REPL_NODE_MODULE_DIRS = "/Applications/ChatGPT.app/Contents/Resources/cua_node/lib/node_modules"
-NODE_REPL_NODE_PATH = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"
-NODE_REPL_TRUSTED_CODE_PATHS = "/Users/legolas/.codex"
-CODEX_HOME = "/Users/legolas/.codex"
-NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "6d25aa7656feac858f3a3bdaea5bcbab0dbfd426c9de8e6931ce90c399ee8e4f,e2cad16d8d9f60f09c9f0951ec7dfdd9e8f59dedd06045c0b6827dc8fa8322f0"
-BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
-NODE_REPL_INSTRUCTIONS_USE_CASE_BROWSER = "Control the in-app browser in conjunction with the Browser Plugin."
-NODE_REPL_INSTRUCTIONS_USE_CASE_CHROME = "Control the Chrome browser in conjunction with the Chrome Plugin. Prefer this method of controlling Chrome over alternatives (such as Computer Use) unless the user explicitly mentions an alternative."
-NODE_REPL_INSTRUCTIONS_USE_CASE_COMPUTER_USE = "Control desktop apps on macOS through Computer Use."
-BROWSER_USE_CODEX_APP_BUILD_FLAVOR = "prod"
-BROWSER_USE_CODEX_APP_VERSION = "26.707.62119"
-CODEX_CLI_PATH = "/Applications/ChatGPT.app/Contents/Resources/codex"
-
-[mcp_servers.computer-use]
-command = "./Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient"
-args = ["mcp"]
-cwd = "."
-enabled = false
-
-[projects."/Users/legolas/.dotfiles"]
-trust_level = "trusted"
-
-[projects."/Users/legolas/Desktop/personal/career-ops"]
-trust_level = "trusted"
-
-[projects."/Users/legolas/Desktop/personal"]
-trust_level = "trusted"
-
-[projects."/Users/legolas/Desktop/personal/interview-xebia"]
-trust_level = "trusted"
-
-[projects."/Users/legolas/Desktop/voluble/coati"]
-trust_level = "trusted"
-
-[projects."/Users/legolas/Desktop/personal/elevenlabs_rs"]
-trust_level = "trusted"
-
-[projects."/Users/legolas"]
-trust_level = "trusted"
-
-[projects."/Users/legolas/Documents/Codex/2026-07-10/i-wa"]
-trust_level = "trusted"
-
-[projects."/Users/legolas/Documents/Codex/2026-07-10/i-want-you-to-create-a"]
-trust_level = "trusted"
-
-[projects."/Users/legolas/Documents/Codex/2026-07-10/i-have-uploaded-images-of-him"]
-trust_level = "trusted"
-
-[projects."/Users/legolas/Documents/Codex/2026-07-10/i-have-uploaded-images-of-him-2"]
-trust_level = "trusted"
-
-[projects."/Users/legolas/Documents/Codex/2026-07-10/i-have-uploaded-images-of-him-3"]
-trust_level = "trusted"
-
-[projects."/Users/legolas/Documents/Codex/2026-07-10/i-have-uploaded-images-of-him-4"]
-trust_level = "trusted"
-
-[projects."/Users/legolas/Documents/Codex/2026-07-10/hatch-pet-users-legolas-codex-skills"]
-trust_level = "trusted"
-
-[projects."/Users/legolas/Documents/Codex/2026-07-10/new-chat"]
-trust_level = "trusted"
-
-[projects."/Users/legolas/Documents/Codex/2026-07-10/hatch-pet-users-legolas-codex-skills-2"]
-trust_level = "trusted"
-
-[projects."/Users/legolas/Documents/Codex/2026-07-10/hatch-pet-users-legolas-codex-skills-3"]
-trust_level = "trusted"
-
-[projects."/Users/legolas/Documents/Codex/2026-07-10/hatch-pet-users-legolas-codex-skills-4"]
-trust_level = "trusted"
-
-[projects."/Users/legolas/Documents/Codex/2026-07-10/i"]
-trust_level = "trusted"
-
-[projects."/Users/legolas/Documents/Codex/2026-07-10/hatch-pet-users-legolas-codex-skills-5"]
-trust_level = "trusted"
-
-[projects."/Users/legolas/Documents/Codex/2026-07-10/hatch-pet-users-legolas-codex-skills-6"]
-trust_level = "trusted"
-
-[projects."/Users/legolas/Documents/Codex/2026-07-10/hatch-pet-users-legolas-codex-skills-7"]
-trust_level = "trusted"
-
-[projects."/Users/legolas/Documents/Codex/2026-07-13/i"]
-trust_level = "trusted"
-
-[projects."/Users/legolas/Desktop/personal/nix-setup"]
-trust_level = "trusted"
-
-[features]
-shell_snapshot = true
-multi_agent = true
-apps = true
-plugin_hooks = true
-hooks = true
-js_repl = false
-
-[tui]
-theme = "one-half-dark"
-status_line = [ "model-with-reasoning", "current-dir", "model", "context-used", "five-hour-limit", "weekly-limit" ]
-pet = "custom:loki-cli"
-
-[tui.model_availability_nux]
-"gpt-5.5" = 4
-"gpt-5.6-sol" = 4
-
-[notice.model_migrations]
-"gpt-5.3-codex" = "gpt-5.4"
-"gpt-5.4" = "gpt-5.5"
-
-[plugins."build-ios-apps@openai-curated"]
-enabled = true
-
-[plugins."codex-security@openai-curated"]
-enabled = true
-
-[plugins."rust-skills@coati-local"]
-enabled = true
-
-[plugins."swiftui-expert@coati-local"]
-enabled = true
-
-[plugins."understand-anything@coati-local"]
-enabled = true
-
-[plugins."context-mode@context-mode"]
-enabled = true
-
-[plugins."playwright@career-ops-codex-plugins"]
-enabled = true
-
-[plugins."webwright@webwright"]
-enabled = true
-
-[plugins."outlook-calendar@openai-curated"]
-enabled = true
-
-[plugins."teams@openai-curated"]
-enabled = true
-
-[plugins."visualize@openai-bundled"]
-enabled = true
-
-[plugins."documents@openai-primary-runtime"]
-enabled = true
-
-[plugins."pdf@openai-primary-runtime"]
-enabled = true
-
-[plugins."spreadsheets@openai-primary-runtime"]
-enabled = true
-
-[plugins."presentations@openai-primary-runtime"]
-enabled = true
-
-[plugins."template-creator@openai-primary-runtime"]
-enabled = true
-
-[plugins."browser@openai-bundled"]
-enabled = true
-
-[marketplaces.coati-local]
-last_updated = "2026-05-12T16:03:38Z"
-source_type = "local"
-source = "/Users/legolas/Desktop/voluble/coati"
-
-[marketplaces.context-mode]
-last_updated = "2026-07-16T14:31:10Z"
-last_revision = "b6f25a6feeca09e8ee0407c7d77be5b805f55d44"
-source_type = "git"
-source = "https://github.com/mksglu/context-mode.git"
-
-[marketplaces.webwright]
-last_updated = "2026-06-03T09:32:08Z"
-source_type = "local"
-source = "/Users/legolas/.codex/marketplaces/webwright"
-
-[marketplaces.openai-bundled]
-last_updated = "2026-07-13T17:02:14Z"
-source_type = "local"
-source = "/Users/legolas/.codex/.tmp/bundled-marketplaces/openai-bundled"
-
-[marketplaces.openai-primary-runtime]
-last_updated = "2026-07-10T09:39:08Z"
-source_type = "local"
-source = "/Users/legolas/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
-
-[hooks.state]
-
-[hooks.state."understand-anything@coati-local:hooks/hooks.json:post_tool_use:0:0"]
-trusted_hash = "sha256:3cd146a10ffa13b3064770ba6a044aabe8bbb71cd0621167964edaa221425e9c"
-enabled = true
-
-[hooks.state."understand-anything@coati-local:hooks/hooks.json:session_start:0:0"]
-trusted_hash = "sha256:51f9f37fba6701f908ff2ad08c6bd11d9719c7172742124467e3ff56065cc030"
-
-[hooks.state."context-mode@context-mode:.codex-plugin/hooks.json:pre_tool_use:0:0"]
-trusted_hash = "sha256:56da0c4249dc7af048f42ae458fb83931926a8af41ec6fab5ae819ff3a8c83ae"
-
-[hooks.state."context-mode@context-mode:.codex-plugin/hooks.json:post_tool_use:0:0"]
-trusted_hash = "sha256:0d237345f8d46110d36cd0ef08e79b55fa151a07691dee36d492aa6f64bc0efd"
-
-[hooks.state."context-mode@context-mode:.codex-plugin/hooks.json:pre_compact:0:0"]
-trusted_hash = "sha256:ac1f9e5eb71ca262492150381d8f078b897056fc691f9973fc56d7b1b402e648"
-
-[hooks.state."context-mode@context-mode:.codex-plugin/hooks.json:session_start:0:0"]
-trusted_hash = "sha256:a6cc6a322d0931bdd68a5969e523cd71e6eedccab4850e8996c8948311173618"
-
-[hooks.state."context-mode@context-mode:.codex-plugin/hooks.json:user_prompt_submit:0:0"]
-trusted_hash = "sha256:114549c484c131b94782d3424527dd1042d48bc3a8616a11299acdf60b112572"
-
-[hooks.state."context-mode@context-mode:.codex-plugin/hooks.json:stop:0:0"]
-trusted_hash = "sha256:9205c1763e40c0256ab334e2e96c037c1cdf5b8bfaddba31ed19d93d3388586a"
-
-[hooks.state."/Users/legolas/.codex/config.toml:session_start:0:0"]
-trusted_hash = "sha256:ed997f3f9766959ba56dc2243cd02468d6eadad80d92b7f5a650e6fc0fb0c050"
-
-[hooks.state."/Users/legolas/.codex/hooks.json:post_tool_use:0:0"]
-trusted_hash = "sha256:e832990bcb3004bfedcb1268a69c09b97f301fd4186ef9ed965b0f84fbe01276"
-
-[hooks.state."/Users/legolas/.codex/hooks.json:post_tool_use:1:0"]
-trusted_hash = "sha256:2f9a236e49f7107e14c6c1d8eb0bef56d1f37145dd6a5c865e0db834dd69992e"
-
-[hooks.state."/Users/legolas/.codex/hooks.json:pre_compact:0:0"]
-trusted_hash = "sha256:1f647821c1b2d16b397ca09bb1c76c71f74b04e8e13abf4abcd044a1ae82e0f7"
-
-[hooks.state."/Users/legolas/.codex/hooks.json:post_compact:0:0"]
-trusted_hash = "sha256:53280fbd74d122ef0607f320dacf407b21cba0e448f2cf5982c6d5b1074933c8"
-
-[hooks.state."/Users/legolas/.codex/hooks.json:session_start:0:0"]
-trusted_hash = "sha256:392a61a090ba7d6aab6ab0fb0f82f3df3d6a380ee81f60f00af3bd42025d51a9"
-enabled = true
-
-[hooks.state."/Users/legolas/.codex/hooks.json:user_prompt_submit:0:0"]
-trusted_hash = "sha256:61bc468420addc4d83d288a4311e1409cc89cbbd9f44fec2e1039512d20fab86"
-
-[hooks.state."/Users/legolas/.codex/hooks.json:user_prompt_submit:1:0"]
-trusted_hash = "sha256:a5eabd92a88e8f2cadee4720a20059943ae988ed1ca2d60a2a3d16728e5a6151"
-
-[hooks.state."/Users/legolas/.codex/hooks.json:stop:0:0"]
-trusted_hash = "sha256:bb940ba9d9ad163f1cdad136e09b0b180b700430132d08d0450df02f8322385c"
-
-[hooks.state."/Users/legolas/Desktop/voluble/coati/.codex/hooks.json:post_tool_use:0:0"]
-trusted_hash = "sha256:15f63d0af6910c0fe7825cce7a07313b00a04fd92b0b988431cfff776a20b65e"
-
-[hooks.state."/Users/legolas/Desktop/voluble/coati/.codex/hooks.json:post_tool_use:1:0"]
-trusted_hash = "sha256:8fbbd49bbdefa0637b915f6e45366fe618fade04c8a99852fe045b0c61353000"
-
-[hooks.state."/Users/legolas/Desktop/voluble/coati/.codex/hooks.json:pre_compact:0:0"]
-trusted_hash = "sha256:1f647821c1b2d16b397ca09bb1c76c71f74b04e8e13abf4abcd044a1ae82e0f7"
-
-[hooks.state."/Users/legolas/Desktop/voluble/coati/.codex/hooks.json:post_compact:0:0"]
-trusted_hash = "sha256:53280fbd74d122ef0607f320dacf407b21cba0e448f2cf5982c6d5b1074933c8"
-
-[hooks.state."/Users/legolas/Desktop/voluble/coati/.codex/hooks.json:session_start:0:0"]
-trusted_hash = "sha256:392a61a090ba7d6aab6ab0fb0f82f3df3d6a380ee81f60f00af3bd42025d51a9"
-
-[hooks.state."/Users/legolas/Desktop/voluble/coati/.codex/hooks.json:user_prompt_submit:0:0"]
-trusted_hash = "sha256:61bc468420addc4d83d288a4311e1409cc89cbbd9f44fec2e1039512d20fab86"
-
-[hooks.state."/Users/legolas/Desktop/voluble/coati/.codex/hooks.json:user_prompt_submit:0:1"]
-trusted_hash = "sha256:850ebfdcc626472862323d3f08ed7de5eee041d79b6a0110c60e0f157fe044c9"
-
-[hooks.state."/Users/legolas/Desktop/voluble/coati/.codex/hooks.json:stop:0:0"]
-trusted_hash = "sha256:0cb696ca3b6dad39a09563ef8f422959da89068190959569cdc11d1500c540a9"
-
-[hooks.state."/Users/legolas/.dotfiles/.codex/config.toml:session_start:0:0"]
-trusted_hash = "sha256:ed997f3f9766959ba56dc2243cd02468d6eadad80d92b7f5a650e6fc0fb0c050"
-
-[[hooks.SessionStart]]
-matcher = "startup|resume|clear|compact"
-
-[[hooks.SessionStart.hooks]]
-type = "command"
-command = "echo \"Code discovery: prefer codebase-memory-mcp (search_graph, trace_path, get_code_snippet, query_graph, search_code) over grep/file-read; run index_repository first if the project is not indexed.\""
-
 [desktop]
-conversationDetailMode = "STEPS_PROSE"
 ambient-suggestions-enabled = true
-appearanceLightCodeThemeId = "catppuccin"
 appearanceDarkCodeThemeId = "tokyo-night"
+appearanceLightCodeThemeId = "catppuccin"
+avatar-overlay-mascot-width-px = 110
+conversationDetailMode = "STEPS_PROSE"
+followUpQueueMode = "queue"
 open-link-in-target-preference = "external-browser"
 open-local-url-in-target-preference = "external-browser"
-avatar-overlay-mascot-width-px = 110
 selected-avatar-id = "custom:loki"
-followUpQueueMode = "queue"
+
+[desktop.appearanceDarkChromeTheme]
+accent = "#3d59a1"
+contrast = 60
+ink = "#a9b1d6"
+opaqueWindows = true
+surface = "#1a1b26"
+
+[desktop.appearanceDarkChromeTheme.fonts]
+
+[desktop.appearanceDarkChromeTheme.semanticColors]
+diffAdded = "#449dab"
+diffRemoved = "#914c54"
+skill = "#9d7cd8"
 
 [desktop.appearanceLightChromeTheme]
 accent = "#8839ef"
@@ -328,36 +49,636 @@ diffAdded = "#40a02b"
 diffRemoved = "#d20f39"
 skill = "#8839ef"
 
-[desktop.appearanceDarkChromeTheme]
-accent = "#3d59a1"
-contrast = 60
-ink = "#a9b1d6"
-opaqueWindows = true
-surface = "#1a1b26"
+[features]
+apps = true
+hooks = true
+js_repl = false
+multi_agent = true
+plugin_hooks = true
+shell_snapshot = true
 
-[desktop.appearanceDarkChromeTheme.fonts]
+[hooks.state."/Users/legolas/.codex/hooks.json:post_compact:0:0"]
+trusted_hash = "sha256:53280fbd74d122ef0607f320dacf407b21cba0e448f2cf5982c6d5b1074933c8"
 
-[desktop.appearanceDarkChromeTheme.semanticColors]
-diffAdded = "#449dab"
-diffRemoved = "#914c54"
-skill = "#9d7cd8"
-# --- Headroom MCP server ---
+[hooks.state."/Users/legolas/.codex/hooks.json:post_tool_use:0:0"]
+trusted_hash = "sha256:e832990bcb3004bfedcb1268a69c09b97f301fd4186ef9ed965b0f84fbe01276"
+
+[hooks.state."/Users/legolas/.codex/hooks.json:post_tool_use:1:0"]
+trusted_hash = "sha256:2f9a236e49f7107e14c6c1d8eb0bef56d1f37145dd6a5c865e0db834dd69992e"
+
+[hooks.state."/Users/legolas/.codex/hooks.json:pre_compact:0:0"]
+trusted_hash = "sha256:1f647821c1b2d16b397ca09bb1c76c71f74b04e8e13abf4abcd044a1ae82e0f7"
+
+[hooks.state."/Users/legolas/.codex/hooks.json:session_start:0:0"]
+enabled = true
+trusted_hash = "sha256:392a61a090ba7d6aab6ab0fb0f82f3df3d6a380ee81f60f00af3bd42025d51a9"
+
+[hooks.state."/Users/legolas/.codex/hooks.json:stop:0:0"]
+trusted_hash = "sha256:bb940ba9d9ad163f1cdad136e09b0b180b700430132d08d0450df02f8322385c"
+
+[hooks.state."/Users/legolas/.codex/hooks.json:user_prompt_submit:0:0"]
+trusted_hash = "sha256:a5eabd92a88e8f2cadee4720a20059943ae988ed1ca2d60a2a3d16728e5a6151"
+
+[hooks.state."/Users/legolas/.codex/hooks.json:user_prompt_submit:1:0"]
+trusted_hash = "sha256:61bc468420addc4d83d288a4311e1409cc89cbbd9f44fec2e1039512d20fab86"
+
+[hooks.state."/Users/legolas/.dotfiles/.codex/config.toml:session_start:0:0"]
+trusted_hash = "sha256:ed997f3f9766959ba56dc2243cd02468d6eadad80d92b7f5a650e6fc0fb0c050"
+
+[hooks.state."/Users/legolas/Desktop/voluble/coati/.codex/hooks.json:post_compact:0:0"]
+trusted_hash = "sha256:53280fbd74d122ef0607f320dacf407b21cba0e448f2cf5982c6d5b1074933c8"
+
+[hooks.state."/Users/legolas/Desktop/voluble/coati/.codex/hooks.json:post_tool_use:0:0"]
+trusted_hash = "sha256:15f63d0af6910c0fe7825cce7a07313b00a04fd92b0b988431cfff776a20b65e"
+
+[hooks.state."/Users/legolas/Desktop/voluble/coati/.codex/hooks.json:post_tool_use:1:0"]
+trusted_hash = "sha256:8fbbd49bbdefa0637b915f6e45366fe618fade04c8a99852fe045b0c61353000"
+
+[hooks.state."/Users/legolas/Desktop/voluble/coati/.codex/hooks.json:pre_compact:0:0"]
+trusted_hash = "sha256:1f647821c1b2d16b397ca09bb1c76c71f74b04e8e13abf4abcd044a1ae82e0f7"
+
+[hooks.state."/Users/legolas/Desktop/voluble/coati/.codex/hooks.json:session_start:0:0"]
+trusted_hash = "sha256:392a61a090ba7d6aab6ab0fb0f82f3df3d6a380ee81f60f00af3bd42025d51a9"
+
+[hooks.state."/Users/legolas/Desktop/voluble/coati/.codex/hooks.json:stop:0:0"]
+trusted_hash = "sha256:0cb696ca3b6dad39a09563ef8f422959da89068190959569cdc11d1500c540a9"
+
+[hooks.state."/Users/legolas/Desktop/voluble/coati/.codex/hooks.json:user_prompt_submit:0:0"]
+trusted_hash = "sha256:61bc468420addc4d83d288a4311e1409cc89cbbd9f44fec2e1039512d20fab86"
+
+[hooks.state."/Users/legolas/Desktop/voluble/coati/.codex/hooks.json:user_prompt_submit:0:1"]
+trusted_hash = "sha256:850ebfdcc626472862323d3f08ed7de5eee041d79b6a0110c60e0f157fe044c9"
+
+[hooks.state."axiom@axiom-marketplace:hooks/hooks.json:post_tool_use:0:0"]
+trusted_hash = "sha256:0d29c68614bf769c10866787d8a142c349dc1cb4ff220a937ac3f9642547951c"
+
+[hooks.state."axiom@axiom-marketplace:hooks/hooks.json:post_tool_use:1:0"]
+trusted_hash = "sha256:a65e17abb96fa0651ead99bf83c5f8c7a225f51c5ec710cdf4c170716c89f472"
+
+[hooks.state."axiom@axiom-marketplace:hooks/hooks.json:session_start:0:0"]
+trusted_hash = "sha256:0af8710fcc60e1bd432c45649877f8e4f3ca20c6793129219846a13a9f1e839b"
+
+[hooks.state."axiom@axiom-marketplace:hooks/hooks.json:subagent_start:0:0"]
+trusted_hash = "sha256:8ab409f40f69fa5b271b343d2d502a176e582d583494ff49a185d459686415a8"
+
+[hooks.state."axiom@axiom-marketplace:hooks/hooks.json:user_prompt_submit:0:0"]
+trusted_hash = "sha256:ad487287d4d76f7cccba6375405d0787d10152d381e06fffc8757fa7d20f9365"
+
+[hooks.state."context-mode@context-mode:.codex-plugin/hooks.json:post_tool_use:0:0"]
+trusted_hash = "sha256:0d237345f8d46110d36cd0ef08e79b55fa151a07691dee36d492aa6f64bc0efd"
+
+[hooks.state."context-mode@context-mode:.codex-plugin/hooks.json:pre_compact:0:0"]
+trusted_hash = "sha256:ac1f9e5eb71ca262492150381d8f078b897056fc691f9973fc56d7b1b402e648"
+
+[hooks.state."context-mode@context-mode:.codex-plugin/hooks.json:pre_tool_use:0:0"]
+trusted_hash = "sha256:56da0c4249dc7af048f42ae458fb83931926a8af41ec6fab5ae819ff3a8c83ae"
+
+[hooks.state."context-mode@context-mode:.codex-plugin/hooks.json:session_start:0:0"]
+trusted_hash = "sha256:a6cc6a322d0931bdd68a5969e523cd71e6eedccab4850e8996c8948311173618"
+
+[hooks.state."context-mode@context-mode:.codex-plugin/hooks.json:stop:0:0"]
+trusted_hash = "sha256:9205c1763e40c0256ab334e2e96c037c1cdf5b8bfaddba31ed19d93d3388586a"
+
+[hooks.state."context-mode@context-mode:.codex-plugin/hooks.json:user_prompt_submit:0:0"]
+trusted_hash = "sha256:114549c484c131b94782d3424527dd1042d48bc3a8616a11299acdf60b112572"
+
+[hooks.state."ponytail@ponytail:hooks/claude-codex-hooks.json:session_start:0:0"]
+trusted_hash = "sha256:5f81d38f47448a1581c08ec877e044d9e04dd6f814dce3f2671f7a8edadd719b"
+
+[hooks.state."ponytail@ponytail:hooks/claude-codex-hooks.json:subagent_start:0:0"]
+trusted_hash = "sha256:1423b56c1322f96c8f74c51c1e7ae9a047b904c1fa43ee9165d462fd7a6e70ef"
+
+[hooks.state."ponytail@ponytail:hooks/claude-codex-hooks.json:user_prompt_submit:0:0"]
+trusted_hash = "sha256:6a6f42bc3b58d6262db38bfd74d7f340fcca2b09cdb134aad365063f0bfefca4"
+
+[hooks.state."understand-anything@coati-local:hooks/hooks.json:post_tool_use:0:0"]
+enabled = true
+trusted_hash = "sha256:3cd146a10ffa13b3064770ba6a044aabe8bbb71cd0621167964edaa221425e9c"
+
+[hooks.state."understand-anything@coati-local:hooks/hooks.json:session_start:0:0"]
+trusted_hash = "sha256:51f9f37fba6701f908ff2ad08c6bd11d9719c7172742124467e3ff56065cc030"
+
+[marketplaces.axiom-marketplace]
+last_updated = "2026-07-25T12:06:57Z"
+last_revision = "6d0da7b6e8238fdd39c71f2d7f5439930077363b"
+source_type = "git"
+source = "https://github.com/CharlesWiltgen/Axiom.git"
+
+[marketplaces.coati-local]
+last_updated = "2026-05-12T16:03:38Z"
+source = "/Users/legolas/Desktop/voluble/coati"
+source_type = "local"
+
+[marketplaces.context-mode]
+last_updated = "2026-07-25T12:07:00Z"
+last_revision = "895e98dc84ded770c8a2adc1b5b50b6ee8d9e9f2"
+source_type = "git"
+source = "https://github.com/mksglu/context-mode.git"
+
+[marketplaces.openai-bundled]
+last_updated = "2026-07-25T12:06:56Z"
+source_type = "local"
+source = "/Users/legolas/.codex/.tmp/bundled-marketplaces/openai-bundled"
+
+[marketplaces.openai-primary-runtime]
+last_updated = "2026-07-25T12:58:47Z"
+source_type = "local"
+source = "/Users/legolas/.cache/codex-runtimes/codex-primary-runtime/plugins/openai-primary-runtime"
+
+[marketplaces.ponytail]
+last_revision = "16f29800fd2681bdf24f3eb4ccffe38be3baec6b"
+last_updated = "2026-07-23T18:58:34Z"
+source = "https://github.com/DietrichGebert/ponytail.git"
+source_type = "git"
+
+[marketplaces.webwright]
+last_updated = "2026-06-03T09:32:08Z"
+source = "/Users/legolas/.codex/marketplaces/webwright"
+source_type = "local"
+
+[mcp_servers.computer-use]
+args = ["mcp"]
+command = "./Codex Computer Use.app/Contents/SharedSupport/SkyComputerUseClient.app/Contents/MacOS/SkyComputerUseClient"
+cwd = "."
+enabled = false
+
+[mcp_servers.context-mode]
+command = "/Users/legolas/.local/bin/context-mode"
+
+[mcp_servers.context7]
+args = [
+    "x",
+    "-y",
+    "@upstash/context7-mcp",
+]
+command = "/Users/legolas/.bun/bin/bun"
+
 [mcp_servers.headroom]
+args = [
+    "mcp",
+    "serve",
+]
 command = "/Users/legolas/.local/bin/headroom"
-args = ["mcp", "serve"]
-# --- end Headroom MCP server ---
 
-# --- Headroom MCP server: tokensave ---
+[mcp_servers.node_repl]
+args = []
+command = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node_repl"
+startup_timeout_sec = 120
+
+[mcp_servers.node_repl.env]
+NODE_REPL_NATIVE_PIPE_CONNECT_TIMEOUT_MS = "1000"
+NODE_REPL_NODE_MODULE_DIRS = "/Applications/ChatGPT.app/Contents/Resources/cua_node/lib/node_modules"
+NODE_REPL_NODE_PATH = "/Applications/ChatGPT.app/Contents/Resources/cua_node/bin/node"
+NODE_REPL_TRUSTED_CODE_PATHS = "/Users/legolas/.codex"
+CODEX_HOME = "/Users/legolas/.codex"
+NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "583bf903a6cfb9b00a01e1583381ce921c71d7585085c6fa6b805baa0f60230b,6d25aa7656feac858f3a3bdaea5bcbab0dbfd426c9de8e6931ce90c399ee8e4f"
+BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
+NODE_REPL_INSTRUCTIONS_USE_CASE_BROWSER = "Control the in-app browser in conjunction with the Browser Plugin."
+NODE_REPL_INSTRUCTIONS_USE_CASE_CHROME = "Control the Chrome browser in conjunction with the Chrome Plugin. Prefer this method of controlling Chrome over alternatives (such as Computer Use) unless the user explicitly mentions an alternative."
+NODE_REPL_INSTRUCTIONS_USE_CASE_COMPUTER_USE = "Control desktop apps on macOS through Computer Use."
+BROWSER_USE_CODEX_APP_BUILD_FLAVOR = "prod"
+BROWSER_USE_CODEX_APP_VERSION = "26.715.52143"
+CODEX_CLI_PATH = "/Applications/ChatGPT.app/Contents/Resources/codex"
+
 [mcp_servers.tokensave]
-command = "/Users/legolas/.local/bin/tokensave"
 args = ["serve"]
-# --- end Headroom MCP server: tokensave ---
+command = "/Users/legolas/.local/bin/tokensave"
 
-# --- Headroom proxy (auto-injected by headroom wrap codex) ---
+[mcp_servers.tokensave.tools.tokensave_affected]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_annotations]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_blame]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_body]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_branch_diff]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_branch_list]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_branch_search]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_by_qualified_name]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_call_chain]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_callees]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_callers]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_callers_for]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_changelog]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_circular]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_commit_context]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_complexity]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_config]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_constructors]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_context]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_coupling]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_dead_code]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_dependencies]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_dependency_depth]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_derives]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_diagnose]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_diagnostics]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_diff]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_diff_context]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_distribution]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_doc_coverage]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_dsm]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_entities]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_field_sites]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_file_dependents]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_files]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_find_exact_symbol]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_gini]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_god_class]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_health]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_hotspots]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_impact]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_implementations]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_impls]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_inheritance_depth]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_insert_at]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_insert_at_symbol]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_largest]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_log]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_module_api]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_multi_str_replace]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_node]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_port_order]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_port_status]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_pr_context]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_rank]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_read]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_record_code_area]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_record_decision]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_recursion]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_redundancy]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_rename_preview]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_replace_symbol]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_run_affected_tests]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_runtime]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_search]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_session_end]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_session_recall]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_session_start]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_signature]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_signature_search]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_similar]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_simplify_scan]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_status]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_str_replace]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_test_coverage]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_test_map]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_test_risk]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_todos]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_type_hierarchy]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_unsafe_patterns]
+approval_mode = "auto"
+
+[mcp_servers.tokensave.tools.tokensave_unused_imports]
+approval_mode = "auto"
+
 [model_providers.headroom]
-name = "OpenAI via Headroom proxy"
 base_url = "http://127.0.0.1:8787/v1"
-supports_websockets = true
+name = "OpenAI via Headroom proxy"
 requires_openai_auth = true
-env_http_headers = { "X-Headroom-Project" = "HEADROOM_PROJECT" }
-# --- end Headroom ---
+supports_websockets = true
+
+[model_providers.headroom.env_http_headers]
+X-Headroom-Project = "HEADROOM_PROJECT"
+
+[notice.model_migrations]
+"gpt-5.3-codex" = "gpt-5.4"
+"gpt-5.4" = "gpt-5.5"
+
+[plugins."axiom@axiom-marketplace"]
+enabled = false
+
+[plugins."build-ios-apps@openai-curated"]
+enabled = true
+
+[plugins."codex-security@openai-curated"]
+enabled = true
+
+[plugins."context-mode@context-mode"]
+enabled = true
+
+[plugins."documents@openai-primary-runtime"]
+enabled = true
+
+[plugins."outlook-calendar@openai-curated"]
+enabled = true
+
+[plugins."pdf@openai-primary-runtime"]
+enabled = true
+
+[plugins."playwright@career-ops-codex-plugins"]
+enabled = false
+
+[plugins."ponytail@ponytail"]
+enabled = true
+
+[plugins."presentations@openai-primary-runtime"]
+enabled = true
+
+[plugins."rust-skills@coati-local"]
+enabled = true
+
+[plugins."spreadsheets@openai-primary-runtime"]
+enabled = true
+
+[plugins."swiftui-expert@coati-local"]
+enabled = true
+
+[plugins."teams@openai-curated"]
+enabled = true
+
+[plugins."template-creator@openai-primary-runtime"]
+enabled = true
+
+[plugins."understand-anything@coati-local"]
+enabled = true
+
+[plugins."visualize@openai-bundled"]
+enabled = true
+
+[plugins."webwright@webwright"]
+enabled = true
+
+[plugins."sites@openai-bundled"]
+enabled = true
+
+[plugins."browser@openai-bundled"]
+enabled = true
+
+[projects."/Users/legolas"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/.dotfiles"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Desktop/personal"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Desktop/personal/apt"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Desktop/personal/career-ops"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Desktop/personal/digital-garden"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Desktop/personal/elevenlabs_rs"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Desktop/personal/interview-xebia"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Desktop/personal/keylore"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Desktop/personal/nix-setup"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Desktop/personal/yazelix-zellij"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Desktop/personal/zellij"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Desktop/voluble/coati"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Documents/Codex/2026-07-10/hatch-pet-users-legolas-codex-skills"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Documents/Codex/2026-07-10/hatch-pet-users-legolas-codex-skills-2"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Documents/Codex/2026-07-10/hatch-pet-users-legolas-codex-skills-3"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Documents/Codex/2026-07-10/hatch-pet-users-legolas-codex-skills-4"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Documents/Codex/2026-07-10/hatch-pet-users-legolas-codex-skills-5"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Documents/Codex/2026-07-10/hatch-pet-users-legolas-codex-skills-6"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Documents/Codex/2026-07-10/hatch-pet-users-legolas-codex-skills-7"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Documents/Codex/2026-07-10/i"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Documents/Codex/2026-07-10/i-have-uploaded-images-of-him"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Documents/Codex/2026-07-10/i-have-uploaded-images-of-him-2"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Documents/Codex/2026-07-10/i-have-uploaded-images-of-him-3"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Documents/Codex/2026-07-10/i-have-uploaded-images-of-him-4"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Documents/Codex/2026-07-10/i-wa"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Documents/Codex/2026-07-10/i-want-you-to-create-a"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Documents/Codex/2026-07-10/new-chat"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Documents/Codex/2026-07-13/i"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Documents/Codex/2026-07-20/dear-kaan-your-understanding-is-correct"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Documents/Codex/2026-07-20/i"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Library/Application Support/Open Design/namespaces/release-stable/data/projects/40e83c56-7bcc-4d5a-843c-8b53a86fd3e6"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/.codex/.chatgpt-projects/g-p-6a64a6f607908191857c42d65940d2f0"]
+trust_level = "trusted"
+
+[projects."/Users/legolas/Documents/Codex/2026-07-25/this-initial-spec-is-done-by"]
+trust_level = "trusted"
+
+[tui]
+pet = "custom:loki-cli"
+status_line = [
+    "model-with-reasoning",
+    "current-dir",
+    "model",
+    "context-used",
+    "five-hour-limit",
+    "weekly-limit",
+]
+theme = "one-half-dark"
+
+[tui.model_availability_nux]
+"gpt-5.5" = 4
+"gpt-5.6-sol" = 4
+
+[shell_environment_policy.set]
+BROWSER_USE_AVAILABLE_BACKENDS = "chrome,iab"
+NODE_REPL_TRUSTED_BROWSER_CLIENT_SHA256S = "583bf903a6cfb9b00a01e1583381ce921c71d7585085c6fa6b805baa0f60230b,6d25aa7656feac858f3a3bdaea5bcbab0dbfd426c9de8e6931ce90c399ee8e4f"
+NODE_REPL_TRUSTED_CODE_PATHS = "/Users/legolas/.codex"

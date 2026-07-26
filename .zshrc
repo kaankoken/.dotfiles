@@ -54,3 +54,7 @@ export JAVA_HOME=/Applications/Android\ Studio.app/Contents/jbr/Contents/Home
 if [[ -n $GHOSTTY_RESOURCES_DIR ]]; then
   source "$GHOSTTY_RESOURCES_DIR"/shell-integration/zsh/ghostty-integration
 fi
+
+
+# Added by Antigravity CLI installer
+export PATH="/Users/legolas/.local/bin:$PATH"
