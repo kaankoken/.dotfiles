@@ -88,3 +88,9 @@ OMP_LIVE_SMOKE=1 bash tests/smoke-omp-harness.sh
 Do not install extra orchestration packages, built-in TODO trackers, Autolearn
 backends, or duplicate subagent packs via this tree. Shared cross-agent policy
 stays in `agent-stack/`.
+
+## Cross-repo smoke (from nixup)
+
+```bash
+DOTFILES_ROOT=/path/to/this/dotfiles bash /path/to/nixup/scripts/smoke-omp-migration.sh
+```

@@ -319,3 +319,12 @@ nvm install --lts
 ```bash
 brew install pnpm
 ```
+
+## OMP daily harness
+
+```bash
+./agent-stack/link.sh
+./omp/link.sh
+# then: omp ; /harness
+cd omp && bun test && bash tests/smoke-omp-harness.sh
+```

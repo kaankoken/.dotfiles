@@ -48,3 +48,8 @@ What `link.sh` does:
 - Prefer `rtk …` for compression when available.
 - **Bare modern tools are allowed** (no mandatory `rtk` prefix on those binaries).
 - Legacy `cat`/`grep`/`find`/… get rewritten by hooks where the host supports it.
+
+## OMP-only stack
+
+This tree is shared policy for all agents. OMP config/harness is sibling `../omp/`.
+Do not reintroduce Pi host links.
