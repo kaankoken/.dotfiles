@@ -21,13 +21,16 @@ describe("harness command binding", () => {
     expect(bindGoal("  preserve spaces  ")).toBe("  preserve spaces  ");
   });
 
-  test("DEFAULT_GOAL is exact seven lines", () => {
+  test("DEFAULT_GOAL is exact eight lines", () => {
     const lines = DEFAULT_GOAL.split("\n");
-    expect(lines.length).toBe(7);
+    expect(lines.length).toBe(8);
     expect(lines[0]).toBe("1. No errors, warnings, test failures");
     expect(lines[6]).toBe("7. Specs/plans always tracked in bd (SoT)");
+    expect(lines[7]).toMatch(
+      /^8\. Do not add unnecessary docstrings or comments/,
+    );
     expect(DEFAULT_GOAL).not.toMatch(/heading|Default goal|quality bar/i);
-    expect(lines.some((l) => l.startsWith("8."))).toBe(false);
+    expect(lines.some((l) => l.startsWith("9."))).toBe(false);
   });
 
   test("registers only harness", () => {

@@ -158,7 +158,7 @@ function renderRootAgents(opts: {
 
 Project-local agent instructions for the shared agent stack (Claude / Codex / Cursor / Grok / Oh My Pi).
 
-## Quality rules (1–7)
+## Quality rules (1–8)
 
 1. No errors, warnings, test failures
 2. No warning suppressions in production (tests OK)
@@ -167,6 +167,7 @@ Project-local agent instructions for the shared agent stack (Claude / Codex / Cu
 5. Always latest deps — check web
 6. Do all tasks from superpowers specs & plans
 7. Specs/plans always tracked in bd (SoT)
+8. Do not add unnecessary docstrings or comments to the codebase. You can add only explanatory comments to the codebase for methods/functions, or other stuff. This is not a notebook that you made for yourself.
 
 ## Tools
 
@@ -292,11 +293,15 @@ export function runProjectInit(opts: ProjectInitOptions): ProjectInitResult {
     preserved.push(rootAgents);
     // merge: append marker if not present
     const existing = readFileSync(rootAgents, "utf8");
-    if (!existing.includes("Quality rules (1–7)") && !existing.includes("Quality goals")) {
+    if (
+      !existing.includes("Quality rules (1–7)") &&
+      !existing.includes("Quality rules (1–8)") &&
+      !existing.includes("Quality goals")
+    ) {
       writeFileSync(
         rootAgents,
         existing.trimEnd() +
-          "\n\n<!-- project-init merge: quality 1–7 + stack -->\n" +
+          "\n\n<!-- project-init merge: quality 1–8 + stack -->\n" +
           renderRootAgents({
             description,
             stack,

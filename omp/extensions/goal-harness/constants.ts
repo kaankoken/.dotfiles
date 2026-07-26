@@ -6,6 +6,7 @@ export const DEFAULT_GOAL = [
   "5. Always latest deps — check web, don't trust training/context-mode",
   "6. Do all tasks from superpowers specs & plans",
   "7. Specs/plans always tracked in bd (SoT)",
+  "8. Do not add unnecessary docstrings or comments to the codebase. You can add only explanatory comments to the codebase for methods/functions, or other stuff. This is not a notebook that you made for yourself.",
 ].join("\n");
 
 /** Bind /harness args: empty → DEFAULT_GOAL; otherwise exact args (preserve spaces). */

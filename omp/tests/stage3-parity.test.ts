@@ -173,7 +173,7 @@ describe("Stage 3: /harness /init /goal unshadowed", () => {
   test("/harness default and custom binding is exact", () => {
     expect(HARNESS_COMMAND_NAME).toBe("harness");
     expect(bindGoal("")).toBe(DEFAULT_GOAL);
-    expect(DEFAULT_GOAL.split("\n")).toHaveLength(7);
+    expect(DEFAULT_GOAL.split("\n")).toHaveLength(8);
     expect(bindGoal("custom goal with spaces")).toBe("custom goal with spaces");
     const h = handleHarnessCommand("");
     expect(h.boundGoal).toBe(DEFAULT_GOAL);

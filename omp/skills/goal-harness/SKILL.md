@@ -11,7 +11,7 @@ description: >
 Process engine: **Superpowers** (read live `SKILL.md` by path + SHA). Named roles:
 `omp/agents/*.md` (19-role parity manifest). Do not run two competing full harness chains.
 
-## Default goal (no `/harness` args → exactly these 7 lines)
+## Default goal (no `/harness` args → exactly these 8 lines)
 
 1. No errors, no warnings, no test failures.
 2. No warning suppressions in production (test-only OK with reason).
@@ -20,8 +20,9 @@ Process engine: **Superpowers** (read live `SKILL.md` by path + SHA). Named role
 5. Latest dependencies — verify on the web (not training data alone).
 6. Complete all superpowers-derived spec/plan tasks.
 7. Specs, plans, goals, updates tracked in **bd** (SoT).
+8. Do not add unnecessary docstrings or comments to the codebase. You can add only explanatory comments to the codebase for methods/functions, or other stuff. This is not a notebook that you made for yourself.
 
-With arguments: replace 1–7 completely with that text.
+With arguments: replace 1–8 completely with that text.
 
 ## Phases
 

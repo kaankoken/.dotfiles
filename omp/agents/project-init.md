@@ -30,7 +30,7 @@ Prefer OMP templates (after Stage 2+ link):
 
 ## Produce
 
-1. Root **AGENTS.md** with description, CLI contract, stack tools, structure, nested AGENTS map, quality goals 1–7.
+1. Root **AGENTS.md** with description, CLI contract, stack tools, structure, nested AGENTS map, quality goals 1–8.
 2. Root `ln -sfn AGENTS.md CLAUDE.md` (symlink only).
 3. Meaningful subdirs: nested AGENTS + CLAUDE.md symlink.
 4. `bd init` if needed; epic for scaffold.
