@@ -1,0 +1,71 @@
+{
+  "ompVersion": "omp/17.1.2",
+  "upstreamCommit": "0491f2961a54994ac625d3e3bb6bfc8a4ed9fdb6",
+  "verifiedAt": "2026-07-24T18:30:00.000Z",
+  "settings": [
+    "autolearn.enabled",
+    "compaction.strategy",
+    "edit.mode",
+    "lsp.enabled",
+    "memory.backend",
+    "task.maxConcurrency",
+    "todo.enabled",
+    "tools.approvalMode"
+  ],
+  "sdkOptions": [
+    "cwd",
+    "model",
+    "thinkingLevel",
+    "outputSchema",
+    "outputSchemaMode",
+    "requireYieldTool",
+    "enableLsp",
+    "sessionManager"
+  ],
+  "taskFields": [
+    "context",
+    "tasks",
+    "agent",
+    "task",
+    "outputSchema",
+    "schemaMode",
+    "isolated"
+  ],
+  "agentFrontmatter": [
+    "name",
+    "description",
+    "tools",
+    "spawns",
+    "model",
+    "thinkingLevel",
+    "output",
+    "blocking",
+    "autoloadSkills",
+    "read-summarize",
+    "prewalk"
+  ],
+  "extensionApis": [
+    "on",
+    "registerCommand",
+    "registerTool",
+    "sendMessage",
+    "sendUserMessage",
+    "setActiveTools",
+    "exec",
+    "ctx.compact",
+    "pi.createAgentSession",
+    "pi.SessionManager.inMemory"
+  ],
+  "compactionStrategies": [
+    "context-full",
+    "handoff",
+    "shake",
+    "snapcompact",
+    "off"
+  ],
+  "compactModes": [
+    "soft",
+    "remote",
+    "snapcompact"
+  ]
+}

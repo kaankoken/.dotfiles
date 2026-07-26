@@ -3,7 +3,7 @@
 **RTK** (Rust Token Killer) compresses shell output before it hits the model.
 **Modern CLI toolkit** is what you run *under* RTK (or bare when needed).
 
-Hosts: **Claude Code · Codex · Grok · Cursor · Pi · Oh My Pi (`omp`)**.
+Hosts: **Claude Code · Codex · Grok · Cursor · Oh My Pi (`omp`)**.
 
 ---
 
@@ -97,8 +97,7 @@ rtk hook check '<cmd>'
 | **Cursor** | `~/.cursor/rules/shared-agent-stack.mdc` | `rtk hook cursor` in `hooks.json` |
 | **Codex** | `~/.codex/AGENTS.md` + `RTK.md` | no native rewrite — follow this file; bare modern OK |
 | **Grok** | `~/.grok/Agents.md` + Claude-compat hooks | `~/.grok/hooks/rtk-shell.json` (+ Claude `settings` scan) |
-| **Pi** | `~/.pi/agent/AGENTS.md` (HM) + linked `RTK.md` | `extensions/rtk.ts` → `rtk rewrite` |
-| **Oh My Pi** | `~/.omp/agent/` (same layout as Pi when present) | link `RTK.md` + `rtk.ts` when agent dir exists |
+| **Oh My Pi** | `~/.omp/agent/` | `RTK.md` + `extensions/rtk.ts` → `rtk-omp-extension.ts` |
 
 Refresh instruction symlinks + hooks:
 
@@ -111,7 +110,6 @@ Install / refresh RTK **hooks only** (do not let `rtk init` overwrite this RTK.m
 ```bash
 rtk init -g --auto-patch --hook-only
 rtk init -g --agent cursor --auto-patch --hook-only
-rtk init -g --agent pi --auto-patch --hook-only
 ```
 
 ---

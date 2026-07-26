@@ -1,0 +1,77 @@
+# Lean OMP config — binary from Nix; everything else from this tree via link.sh.
+# No extra orchestration packages, memory backends, Autolearn, or built-in task list.
+
+startup:
+  quiet: true
+
+# Global strategy is always shake (Beads-safe). Selective snapcompact is
+# controller-only via ctx.compact({ mode: "snapcompact" }) when eligible —
+# never set strategy: snapcompact here.
+compaction:
+  enabled: true
+  strategy: shake
+
+memory:
+  backend: off
+
+todo:
+  enabled: false
+
+autolearn:
+  enabled: false
+
+edit:
+  mode: hashline
+
+lsp:
+  enabled: true
+  lazy: true
+  diagnosticsOnWrite: true
+
+task:
+  batch: true
+  maxConcurrency: 8
+
+tools:
+  approvalMode: always-ask
+  approval:
+    read: allow
+    search: allow
+    find: allow
+    lsp: allow
+    web_search: prompt
+    bash: prompt
+    edit: prompt
+    write: prompt
+
+# Skill discovery: direct Superpowers root + portable shared skills + OMP-local.
+# Foreign host trees (Claude/Codex/Pi user skills) stay off.
+skills:
+  enabled: true
+  enableClaudeUser: false
+  enableClaudeProject: false
+  enableCodexUser: false
+  enablePiUser: false
+  enablePiProject: false
+  enableAgentsUser: true
+  enableAgentsProject: true
+  enableSkillCommands: true
+  customDirectories:
+    # Immediate children are Superpowers skill dirs (brainstorming, …)
+    - ~/.agents/skills/superpowers
+    # Portable shared skills (caveman, ponytail, webwright, …)
+    - ~/.agents/skills
+    # This tree's goal-harness skill (when present)
+    - ~/.omp/agent/skills
+  includeSkills:
+    - superpowers
+    - goal-harness
+    - caveman
+    - ponytail
+    - rust-skills
+    - axiom
+    - android
+    - compose-performance
+    - android-testing
+    - webwright
+  ignoredSkills: []

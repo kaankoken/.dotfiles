@@ -1,6 +1,6 @@
 # agent-stack
 
-Global agent instruction files for **Claude Code, Codex, Cursor, Grok, Pi, Oh My Pi**.
+Global agent instruction files for **Claude Code, Codex, Cursor, Grok, Oh My Pi (`omp`)**.
 
 Not managed by Nix. Packages/MCP installers stay in **nix-setup**; prose rules + RTK hooks live here.
 
@@ -17,7 +17,7 @@ Not managed by Nix. Packages/MCP installers stay in **nix-setup**; prose rules +
 | `cursor.shared-stack.mdc` | alwaysApply Cursor rule |
 | `hooks/rtk-shell-rewrite.sh` | PreToolUse rewrite (Grok + reusable) |
 | `hooks/grok-rtk.json` | Grok hook registration |
-| `hooks/rtk-pi-extension.ts` | Pi / Oh My Pi `rtk rewrite` extension |
+| `hooks/rtk-omp-extension.ts` | Oh My Pi (`omp`) `rtk rewrite` extension |
 | `link.sh` | Install/refresh symlinks + RTK vendor hooks |
 
 ## Install / refresh
@@ -33,9 +33,9 @@ Idempotent. Replaces host files with symlinks; first replacement is backed up as
 What `link.sh` does:
 
 1. Symlinks instructions into Claude, Codex, Grok, Cursor, `~/AGENTS.md`, `~/.agents/`.
-2. Links `RTK.md` (+ `AGENTS.shared.md`) into `~/.pi/agent` and `~/.omp/agent` (creates omp dir if missing).
+2. Links `RTK.md` (+ `AGENTS.shared.md`) into `~/.omp/agent` (creates dir if missing).
 3. Installs Grok PreToolUse hook → `rtk rewrite`.
-4. Runs `rtk init -g` for Claude / Cursor / Pi (hook registration).
+4. Runs `rtk init -g` for Claude / Cursor (hook registration).
 5. Re-asserts our `RTK.md` symlinks if vendor init wrote a plain file.
 
 ## After `bd setup codex`
@@ -48,3 +48,8 @@ What `link.sh` does:
 - Prefer `rtk …` for compression when available.
 - **Bare modern tools are allowed** (no mandatory `rtk` prefix on those binaries).
 - Legacy `cat`/`grep`/`find`/… get rewritten by hooks where the host supports it.
+
+## OMP-only stack
+
+This tree is shared policy for all agents. OMP config/harness is sibling `../omp/`.
+Do not reintroduce Pi host links.

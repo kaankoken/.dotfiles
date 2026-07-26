@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "omp/schemas/review-result.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["ok", "feedback", "blocking"],
+  "properties": {
+    "ok": { "type": "boolean" },
+    "feedback": { "type": "string" },
+    "blocking": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  }
+}

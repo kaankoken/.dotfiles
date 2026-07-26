@@ -1,0 +1,68 @@
+# {{DESCRIPTION}}
+
+Project-local agent instructions for the **shared agent stack** (Claude / Codex / Cursor / Grok / Oh My Pi). Do **not** invent a parallel workflow. **Never** wire or use codebase-memory.
+
+> Scaffold rule: if an `AGENTS.md` or `CLAUDE.md` already exists, **preserve** it — do not overwrite without explicit user approval. Prefer merge notes or nested files.
+
+## CLI contract (prefer these)
+
+| Layer | Tool | How |
+|-------|------|-----|
+| Shell output | **RTK** (`rtk`) | Prefix shell with `rtk` when useful. See `RTK.md`. |
+| Tasks / memory | **beads (`bd`)** | SoT: `bd ready`, `bd update --claim`, `bd close`. |
+| Traffic compress | **headroom** | `headroom wrap …` when available. |
+| Code structure | **tokensave only** | context/search/callers/impact. **Never codebase-memory.** |
+| Tool/MCP flood | **context-mode** | Large reads → sandbox. |
+| Structural edits | **ast-grep** (`sg`) | AST over regex sed. |
+| External docs | **context7** | Library docs. |
+| Output brevity | **caveman** | `/caveman` |
+| Code minimalism | **ponytail** | `/ponytail` |
+
+## Stack tools
+
+{{STACK_TOOLS}}
+
+## Structure
+
+{{STRUCTURE}}
+
+## Nested AGENTS map
+
+| Path | Scope |
+|------|--------|
+| `/AGENTS.md` (this file) | Repo-wide CLI contract, quality bar, stack |
+| *(fill after scaffold)* | Per-subdir scope |
+
+`CLAUDE.md` at every level is a **symlink** to sibling `AGENTS.md`:
+
+```bash
+ln -sfn AGENTS.md CLAUDE.md
+```
+
+## Quality goals (default 1–8)
+
+Used when `/harness` runs without override text:
+
+1. No errors, no warnings, no test failures.
+2. No warning suppressions in production (test-only OK with reason).
+3. Everything wired — no stubs, TODO/TBD/FIXME, unfinished work.
+4. Mandated skills: superpowers + stack + caveman + ponytail.
+5. Latest dependencies — verify on the web.
+6. Complete all superpowers-derived spec/plan tasks.
+7. Specs/plans/goals tracked in **bd** (SoT).
+8. Do not add unnecessary docstrings or comments to the codebase. You can add only explanatory comments to the codebase for methods/functions, or other stuff. This is not a notebook that you made for yourself.
+
+## Skills
+
+- **superpowers** (process)
+- **caveman**, **ponytail**
+- Stack skills under Stack tools
+- OMP: **goal-harness** when using `/harness` / `/init` under Oh My Pi
+
+## OMP harness (when using omp)
+
+| Command | Behavior |
+|---------|----------|
+| `/harness [text]` | Full harness; default 7 goals if empty |
+| `/init` | Project scaffold only |
+| `/goal`, `/guided-goal` | Native OMP — unchanged |

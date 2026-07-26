@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "omp/schemas/required-skills.schema.json",
+  "title": "REQUIRED_SKILLS_BY_ROLE",
+  "description": "Names and manifest references only — never skill content bodies.",
+  "type": "object",
+  "additionalProperties": false,
+  "minProperties": 1,
+  "patternProperties": {
+    "^.+$": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["skills"],
+      "properties": {
+        "skills": {
+          "type": "array",
+          "minItems": 0,
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "fromParityManifest": {
+          "type": "boolean",
+          "description": "When true, also pull requiredSuperpowers/stack from parity-manifest for that agent"
+        },
+        "parityAgent": {
+          "type": "string",
+          "description": "Agent name in parity-manifest when fromParityManifest is true"
+        },
+        "forbid": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Skill names that must not be required for this role"
+        },
+        "includeAutomaticStackSkills": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}
