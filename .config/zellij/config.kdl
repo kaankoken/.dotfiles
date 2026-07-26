@@ -81,6 +81,15 @@ keybinds clear-defaults=true {
         // Move pane sub-mode
         bind "w" { SwitchToMode "move"; }
 
+        // zj-agents sidebar (named plugin alias; no Alt — Turkish Q policy)
+        bind "a" {
+            LaunchOrFocusPlugin "zj-agents-sidebar" {
+                floating true
+                move_to_focused_tab true
+            }
+            SwitchToMode "normal"
+        }
+
         // Cheatsheet
         bind "i" {
             Run "/Users/legolas/.dotfiles/bin/show-keybinds" "zellij" {
@@ -153,9 +162,20 @@ plugins {
     welcome-screen location="zellij:session-manager" {
         welcome_screen true
     }
+    // Custom: install WASM into ~/.config/zellij/plugins/ (see zj-agents scripts/install.nu)
+    zj-agents-engine location="file:~/.config/zellij/plugins/zj-agents-engine.wasm"
+    zj-agents-sidebar location="file:~/.config/zellij/plugins/zj-agents-sidebar.wasm"
 }
 
+// Background engine for coding-agent pane state (zj-agents).
+// Install: from the zj-agents repo run `nu scripts/install.nu`
+// Requires `zellij` on the server PATH. Grant permission batches once.
 load_plugins {
+    zj-agents-engine {
+        notify true
+        // notify_command "[\"osascript\",\"-e\",\"on run argv\",\"-e\",\"display notification (item 2 of argv) with title (item 1 of argv)\",\"-e\",\"end run\",\"--\",\"{title}\",\"{body}\"]"
+        // manifest_dir "~/…/custom-agent-detection"
+    }
 }
 
 theme "gruvbox-dark"

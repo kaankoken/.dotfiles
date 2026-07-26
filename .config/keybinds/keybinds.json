@@ -28,28 +28,112 @@
         "direct": "Cmd",
         "leader": "Cmd+;"
       },
-      "help_keys": ["Cmd+/", "Cmd+; i", "Cmd+; /"],
+      "help_keys": [
+        "Cmd+/",
+        "Cmd+; i",
+        "Cmd+; /"
+      ],
       "bindings": [
-        { "keys": "Cmd+h/j/k/l", "action": "Focus window left/down/up/right", "group": "focus" },
-        { "keys": "Cmd+Shift+h/j/k/l", "action": "Move window left/down/up/right", "group": "move" },
-        { "keys": "Cmd+1 … Cmd+7", "action": "Go to workspace N", "group": "workspace" },
-        { "keys": "Cmd+Shift+1 … Cmd+Shift+7", "action": "Send window to workspace N", "group": "workspace" },
-        { "keys": "Cmd+Shift+p / Cmd+Shift+n", "action": "Workspace prev / next", "group": "workspace" },
-        { "keys": "Cmd+Shift+Tab", "action": "Workspace back and forth", "group": "workspace" },
-        { "keys": "Cmd+- / Cmd+=", "action": "Resize smart − / +", "group": "resize" },
-        { "keys": "Cmd+Ctrl+s / Cmd+Ctrl+g", "action": "Focus monitor left / right", "group": "monitor" },
-        { "keys": "Cmd+/", "action": "Show cheatsheet (this app)", "group": "help" },
-        { "keys": "Cmd+;", "action": "Leader mode", "group": "leader" },
-        { "keys": "Cmd+; h/j/k/l", "action": "Join/merge with direction", "group": "leader" },
-        { "keys": "Cmd+; s / v / o", "action": "Layout h_tiles / v_tiles / toggle tiles orientation", "group": "leader" },
-        { "keys": "Cmd+; w then h/j/k/l", "action": "Swap with direction", "group": "leader" },
-        { "keys": "Cmd+; f", "action": "Toggle floating / tiling", "group": "leader" },
-        { "keys": "Cmd+; m", "action": "Fullscreen", "group": "leader" },
-        { "keys": "Cmd+; e", "action": "Balance sizes", "group": "leader" },
-        { "keys": "Cmd+; r", "action": "Reload config", "group": "leader" },
-        { "keys": "Cmd+; b", "action": "Close all windows but current", "group": "leader" },
-        { "keys": "Cmd+; i or /", "action": "Show cheatsheet", "group": "help" },
-        { "keys": "Esc (in leader)", "action": "Leave leader mode", "group": "leader" }
+        {
+          "keys": "Cmd+h/j/k/l",
+          "action": "Focus window left/down/up/right",
+          "group": "focus"
+        },
+        {
+          "keys": "Cmd+Shift+h/j/k/l",
+          "action": "Move window left/down/up/right",
+          "group": "move"
+        },
+        {
+          "keys": "Cmd+1 \u2026 Cmd+7",
+          "action": "Go to workspace N",
+          "group": "workspace"
+        },
+        {
+          "keys": "Cmd+Shift+1 \u2026 Cmd+Shift+7",
+          "action": "Send window to workspace N",
+          "group": "workspace"
+        },
+        {
+          "keys": "Cmd+Shift+p / Cmd+Shift+n",
+          "action": "Workspace prev / next",
+          "group": "workspace"
+        },
+        {
+          "keys": "Cmd+Shift+Tab",
+          "action": "Workspace back and forth",
+          "group": "workspace"
+        },
+        {
+          "keys": "Cmd+- / Cmd+=",
+          "action": "Resize smart \u2212 / +",
+          "group": "resize"
+        },
+        {
+          "keys": "Cmd+Ctrl+s / Cmd+Ctrl+g",
+          "action": "Focus monitor left / right",
+          "group": "monitor"
+        },
+        {
+          "keys": "Cmd+/",
+          "action": "Show cheatsheet (this app)",
+          "group": "help"
+        },
+        {
+          "keys": "Cmd+;",
+          "action": "Leader mode",
+          "group": "leader"
+        },
+        {
+          "keys": "Cmd+; h/j/k/l",
+          "action": "Join/merge with direction",
+          "group": "leader"
+        },
+        {
+          "keys": "Cmd+; s / v / o",
+          "action": "Layout h_tiles / v_tiles / toggle tiles orientation",
+          "group": "leader"
+        },
+        {
+          "keys": "Cmd+; w then h/j/k/l",
+          "action": "Swap with direction",
+          "group": "leader"
+        },
+        {
+          "keys": "Cmd+; f",
+          "action": "Toggle floating / tiling",
+          "group": "leader"
+        },
+        {
+          "keys": "Cmd+; m",
+          "action": "Fullscreen",
+          "group": "leader"
+        },
+        {
+          "keys": "Cmd+; e",
+          "action": "Balance sizes",
+          "group": "leader"
+        },
+        {
+          "keys": "Cmd+; r",
+          "action": "Reload config",
+          "group": "leader"
+        },
+        {
+          "keys": "Cmd+; b",
+          "action": "Close all windows but current",
+          "group": "leader"
+        },
+        {
+          "keys": "Cmd+; i or /",
+          "action": "Show cheatsheet",
+          "group": "help"
+        },
+        {
+          "keys": "Esc (in leader)",
+          "action": "Leave leader mode",
+          "group": "leader"
+        }
       ]
     },
     "zellij": {
@@ -60,32 +144,137 @@
         "direct": "Ctrl",
         "leader": "Ctrl+a"
       },
-      "help_keys": ["Ctrl+/", "Ctrl+a i", "Ctrl+a /"],
+      "help_keys": [
+        "Ctrl+/",
+        "Ctrl+a i",
+        "Ctrl+a /"
+      ],
       "bindings": [
-        { "keys": "Ctrl+h/j/k/l", "action": "Focus pane left/down/up/right", "group": "focus" },
-        { "keys": "Ctrl+Shift+h/j/k/l", "action": "Move pane left/down/up/right", "group": "move" },
-        { "keys": "Ctrl+1 … Ctrl+5", "action": "Go to tab N", "group": "tabs" },
-        { "keys": "Ctrl+[ / Ctrl+]", "action": "Previous / next tab (recommended)", "group": "tabs" },
-        { "keys": "Ctrl+Shift+Left / Ctrl+Shift+Right", "action": "Previous / next tab", "group": "tabs" },
-        { "keys": "Ctrl+Left / Ctrl+Right", "action": "Previous / next tab (often stolen by macOS Spaces)", "group": "tabs" },
-        { "keys": "Ctrl+t", "action": "New tab", "group": "tabs" },
-        { "keys": "Ctrl+w", "action": "Close focused pane", "group": "pane" },
-        { "keys": "Ctrl+- / Ctrl+=", "action": "Resize decrease / increase", "group": "resize" },
-        { "keys": "Ctrl+g", "action": "Toggle lock (pass keys to app)", "group": "session" },
-        { "keys": "Ctrl+/", "action": "Show cheatsheet (this app)", "group": "help" },
-        { "keys": "Ctrl+a", "action": "Leader mode (status bar may say tmux — internal name only)", "group": "leader" },
-        { "keys": "Ctrl+a h/j/k/l", "action": "Split (new pane) in direction", "group": "leader" },
-        { "keys": "Ctrl+a n", "action": "New pane (default)", "group": "leader" },
-        { "keys": "Ctrl+a x", "action": "Close pane", "group": "leader" },
-        { "keys": "Ctrl+a f", "action": "Toggle floating panes", "group": "leader" },
-        { "keys": "Ctrl+a z", "action": "Zoom / fullscreen pane", "group": "leader" },
-        { "keys": "Ctrl+a r", "action": "Rename current tab", "group": "leader" },
-        { "keys": "Ctrl+a w then h/j/k/l", "action": "Move pane in direction", "group": "leader" },
-        { "keys": "Ctrl+a i or /", "action": "Show cheatsheet", "group": "help" },
-        { "keys": "Esc (in leader)", "action": "Leave leader mode", "group": "leader" },
-        { "keys": "Ctrl+o", "action": "Session mode", "group": "session" },
-        { "keys": "Ctrl+o then w or s", "action": "Session manager (switch/attach UI)", "group": "session" },
-        { "keys": "Ctrl+o then d", "action": "Detach session", "group": "session" }
+        {
+          "keys": "Ctrl+h/j/k/l",
+          "action": "Focus pane left/down/up/right",
+          "group": "focus"
+        },
+        {
+          "keys": "Ctrl+Shift+h/j/k/l",
+          "action": "Move pane left/down/up/right",
+          "group": "move"
+        },
+        {
+          "keys": "Ctrl+1 \u2026 Ctrl+5",
+          "action": "Go to tab N",
+          "group": "tabs"
+        },
+        {
+          "keys": "Ctrl+[ / Ctrl+]",
+          "action": "Previous / next tab (recommended)",
+          "group": "tabs"
+        },
+        {
+          "keys": "Ctrl+Shift+Left / Ctrl+Shift+Right",
+          "action": "Previous / next tab",
+          "group": "tabs"
+        },
+        {
+          "keys": "Ctrl+Left / Ctrl+Right",
+          "action": "Previous / next tab (often stolen by macOS Spaces)",
+          "group": "tabs"
+        },
+        {
+          "keys": "Ctrl+t",
+          "action": "New tab",
+          "group": "tabs"
+        },
+        {
+          "keys": "Ctrl+w",
+          "action": "Close focused pane",
+          "group": "pane"
+        },
+        {
+          "keys": "Ctrl+- / Ctrl+=",
+          "action": "Resize decrease / increase",
+          "group": "resize"
+        },
+        {
+          "keys": "Ctrl+g",
+          "action": "Toggle lock (pass keys to app)",
+          "group": "session"
+        },
+        {
+          "keys": "Ctrl+/",
+          "action": "Show cheatsheet (this app)",
+          "group": "help"
+        },
+        {
+          "keys": "Ctrl+a",
+          "action": "Leader mode (status bar may say tmux \u2014 internal name only)",
+          "group": "leader"
+        },
+        {
+          "keys": "Ctrl+a h/j/k/l",
+          "action": "Split (new pane) in direction",
+          "group": "leader"
+        },
+        {
+          "keys": "Ctrl+a n",
+          "action": "New pane (default)",
+          "group": "leader"
+        },
+        {
+          "keys": "Ctrl+a x",
+          "action": "Close pane",
+          "group": "leader"
+        },
+        {
+          "keys": "Ctrl+a f",
+          "action": "Toggle floating panes",
+          "group": "leader"
+        },
+        {
+          "keys": "Ctrl+a z",
+          "action": "Zoom / fullscreen pane",
+          "group": "leader"
+        },
+        {
+          "keys": "Ctrl+a r",
+          "action": "Rename current tab",
+          "group": "leader"
+        },
+        {
+          "keys": "Ctrl+a a",
+          "action": "Open zj-agents sidebar (floating agent list)",
+          "group": "leader"
+        },
+        {
+          "keys": "Ctrl+a w then h/j/k/l",
+          "action": "Move pane in direction",
+          "group": "leader"
+        },
+        {
+          "keys": "Ctrl+a i or /",
+          "action": "Show cheatsheet",
+          "group": "help"
+        },
+        {
+          "keys": "Esc (in leader)",
+          "action": "Leave leader mode",
+          "group": "leader"
+        },
+        {
+          "keys": "Ctrl+o",
+          "action": "Session mode",
+          "group": "session"
+        },
+        {
+          "keys": "Ctrl+o then w or s",
+          "action": "Session manager (switch/attach UI)",
+          "group": "session"
+        },
+        {
+          "keys": "Ctrl+o then d",
+          "action": "Detach session",
+          "group": "session"
+        }
       ]
     },
     "ghostty": {
@@ -95,29 +284,71 @@
       ],
       "help_keys": [],
       "bindings": [
-        { "keys": "(Cmd chords)", "action": "Passed through to AeroSpace (ignore)", "group": "passthrough" },
-        { "keys": "Right Option", "action": "Alt/Meta for terminal (Left Option stays typing)", "group": "input" },
-        { "keys": "Shift+Enter", "action": "Insert newline", "group": "input" },
-        { "keys": "—", "action": "No native splits; use Zellij", "group": "note" }
+        {
+          "keys": "(Cmd chords)",
+          "action": "Passed through to AeroSpace (ignore)",
+          "group": "passthrough"
+        },
+        {
+          "keys": "Right Option",
+          "action": "Alt/Meta for terminal (Left Option stays typing)",
+          "group": "input"
+        },
+        {
+          "keys": "Shift+Enter",
+          "action": "Insert newline",
+          "group": "input"
+        },
+        {
+          "keys": "\u2014",
+          "action": "No native splits; use Zellij",
+          "group": "note"
+        }
       ]
     },
     "nvim": {
       "title": "Neovim",
       "frontmost_bundle_ids": [],
-      "help_keys": ["<Leader>?"],
+      "help_keys": [
+        "<Leader>?"
+      ],
       "bindings": [
-        { "keys": "Space", "action": "Leader (AstroNvim / which-key)", "group": "leader" },
-        { "keys": ",", "action": "Local leader", "group": "leader" },
-        { "keys": "—", "action": "Avoid new Ctrl maps that fight Zellij; prefer Leader", "group": "note" }
+        {
+          "keys": "Space",
+          "action": "Leader (AstroNvim / which-key)",
+          "group": "leader"
+        },
+        {
+          "keys": ",",
+          "action": "Local leader",
+          "group": "leader"
+        },
+        {
+          "keys": "\u2014",
+          "action": "Avoid new Ctrl maps that fight Zellij; prefer Leader",
+          "group": "note"
+        }
       ]
     },
     "shell": {
       "title": "Nushell tools",
       "help_keys": [],
       "bindings": [
-        { "keys": "ls / ll / la", "action": "eza listings (after tools module)", "group": "fs" },
-        { "keys": "z / zi", "action": "zoxide jump", "group": "nav" },
-        { "keys": "claude", "action": "Personal Claude via headroom", "group": "ai" }
+        {
+          "keys": "ls / ll / la",
+          "action": "eza listings (after tools module)",
+          "group": "fs"
+        },
+        {
+          "keys": "z / zi",
+          "action": "zoxide jump",
+          "group": "nav"
+        },
+        {
+          "keys": "claude",
+          "action": "Personal Claude via headroom",
+          "group": "ai"
+        }
       ]
     }
   }

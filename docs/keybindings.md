@@ -85,6 +85,7 @@ Launcher: `bin/show-keybinds <app>` (Swift cheatsheet app when installed)
 | `f` | Floating |
 | `z` | Zoom |
 | `r` | Rename current tab |
+| `a` | zj-agents sidebar (floating agent list) |
 | `w` then `h/j/k/l` | Move pane |
 | `i` or `/` | Cheatsheet |
 | `Esc` | Cancel |
