@@ -53,6 +53,36 @@ Fixture project: `tests/fixtures/harness-project/`.
 
 **Pi remains installed until Stage 3 + Stage 4 gates pass.**
 
+## Stage 4 native acceptance (Pi removal eligibility)
+
+After Stage 3, prove full OMP-native harness behavior before removing Pi:
+
+```bash
+cd ~/.dotfiles/omp   # or this tree
+bun test tests/stage4-native.test.ts
+bash tests/smoke-omp-harness.sh
+bun test              # full suite
+bash tests/link.test.sh
+bash tests/shared-stack.test.sh
+bunx tsc -p tsconfig.json --noEmit
+# optional live (omp + providers authenticated):
+OMP_LIVE_SMOKE=1 bash tests/smoke-omp-harness.sh
+```
+
+`tests/stage4-native.test.ts` extends Stage 3 with:
+
+- live Superpowers skill resolution failures (missing/duplicate/unreadable/changed/claimed-only)
+- Grok Hashline + high effort; LSP/AST typed fixtures; TokenSave-first code graph
+- implementer RED/GREEN evidence + dual task reviews
+- fresh verification on real integration worktree
+- global `shake` + selective `snapcompact` / `context-full` policy
+- Advisor cannot advance gates
+- soft-sandbox positive/adversarial conformance
+- harness spawn allowlist (no bundled sonic/scout/… spawns)
+- zero foreign Pi workflow orchestration packages in runtime sources
+
+**Only after Stage 4 PASS is Pi removal (Tasks 30–31) eligible.**
+
 ## Not here
 
 Do not install extra orchestration packages, built-in TODO trackers, Autolearn
