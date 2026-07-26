@@ -112,7 +112,7 @@ export function handleHarnessCommand(args: string): HarnessHandlerResult {
 export function registerHarnessCommand(api: ExtensionAPI): void {
   api.registerCommand(HARNESS_COMMAND_NAME, {
     description:
-      "OMP goal harness. Empty args → default 7 quality goals; otherwise exact override.",
+      "OMP goal harness. Empty args → default 8 quality goals; otherwise exact override.",
     handler: async (ctx: {
       args?: string;
       toolsConfig?: OmpToolsConfig;
