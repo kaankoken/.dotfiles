@@ -316,7 +316,7 @@ describe("Stage 3: Beads restart survival", () => {
       const i = args[0] === "-C" ? 2 : 0;
       const cmd = args.slice(i);
       if (cmd[0] === "where") {
-        return { exitCode: 0, stdout: "/repo/.beads\n", stderr: "" };
+        return { exitCode: 0, stdout: "/repo/.beads\n  prefix: repo\n  database: /repo/.beads/embeddeddolt\n", stderr: "" };
       }
       if (cmd[0] === "create") {
         n++;

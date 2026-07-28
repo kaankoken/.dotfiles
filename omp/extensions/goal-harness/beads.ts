@@ -12,6 +12,11 @@ import {
   assertPhaseOrder,
   emptyRunState,
 } from "./run-state";
+import {
+  BeadsWorkspaceError,
+  assertBeadsWorkspaceMatchesRoot,
+  beadsIssuePrefixForRoot,
+} from "./beads-workspace";
 
 export type BdExecResult = {
   exitCode: number;
@@ -112,14 +117,30 @@ export class BeadsBroker {
     return await this.exec(full, { cwd: this.repoCwd, json });
   }
 
-  async ensureWorkspace(): Promise<{ where: string }> {
+  /**
+   * Fail-closed beads preflight. Does **not** run `bd init` (bare or otherwise).
+   * Harness must never create a workspace mid-run — use /init → project-init
+   * (safe prefix init) first.
+   */
+  async ensureWorkspace(): Promise<{ where: string; prefix: string }> {
     const res = await this.bd(["where"]);
     if (res.exitCode !== 0 || !res.stdout.trim()) {
+      const expected = beadsIssuePrefixForRoot(this.repoCwd);
       throw new BeadsBrokerError(
-        "bd where missing — stop before durable work (run bd init in repo)",
+        "bd where missing — stop before durable work. " +
+          "Do not bare-init from /harness. Run /init (project-init) or: " +
+          `bd init --prefix ${expected} --non-interactive --skip-agents`,
       );
     }
-    return { where: res.stdout.trim() };
+    try {
+      const info = assertBeadsWorkspaceMatchesRoot(res.stdout, this.repoCwd);
+      return { where: info.raw, prefix: info.prefix };
+    } catch (e) {
+      if (e instanceof BeadsWorkspaceError) {
+        throw new BeadsBrokerError(e.message);
+      }
+      throw e;
+    }
   }
 
   async createRunEpic(input: CreateRunEpicInput): Promise<RunState> {

@@ -1,40 +1,26 @@
-# Lean OMP config — binary from Nix; everything else from this tree via link.sh.
-# No extra orchestration packages, memory backends, Autolearn, or built-in task list.
-
-startup:
+startup: 
   quiet: true
-
-# Global strategy is always shake (Beads-safe). Selective snapcompact is
-# controller-only via ctx.compact({ mode: "snapcompact" }) when eligible —
-# never set strategy: snapcompact here.
-compaction:
+compaction: 
   enabled: true
   strategy: shake
-
-memory:
-  backend: off
-
-todo:
+memory: 
+  backend: "off"
+todo: 
   enabled: false
-
-autolearn:
+autolearn: 
   enabled: false
-
-edit:
+edit: 
   mode: hashline
-
-lsp:
+lsp: 
   enabled: true
   lazy: true
   diagnosticsOnWrite: true
-
-task:
+task: 
   batch: true
   maxConcurrency: 8
-
-tools:
+tools: 
   approvalMode: always-ask
-  approval:
+  approval: 
     read: allow
     search: allow
     find: allow
@@ -43,10 +29,7 @@ tools:
     bash: prompt
     edit: prompt
     write: prompt
-
-# Skill discovery: direct Superpowers root + portable shared skills + OMP-local.
-# Foreign host trees (Claude/Codex/Pi user skills) stay off.
-skills:
+skills: 
   enabled: true
   enableClaudeUser: false
   enableClaudeProject: false
@@ -56,22 +39,117 @@ skills:
   enableAgentsUser: true
   enableAgentsProject: true
   enableSkillCommands: true
+  # Each entry is a parent of skill dirs (name/SKILL.md). OMP scans direct
+  # children only — point at pack *skills/* roots, not package labels.
+  # One root per pack (duplicate realpaths for the same skill.name fail closed).
   customDirectories:
-    # Immediate children are Superpowers skill dirs (brainstorming, …)
     - ~/.agents/skills/superpowers
-    # Portable shared skills (caveman, ponytail, webwright, …)
     - ~/.agents/skills
-    # This tree's goal-harness skill (when present)
     - ~/.omp/agent/skills
+    - ~/.claude/plugins/marketplaces/caveman/skills
+    - ~/.claude/plugins/marketplaces/rust-skills/skills
+    - ~/.claude/plugins/marketplaces/axiom-marketplace/axiom-codex/skills
+  # includeSkills is a Bun.Glob allowlist on *skill directory names*, not pack
+  # labels. "superpowers" never matched using-superpowers / requesting-code-review.
   includeSkills:
-    - superpowers
+    # Superpowers (live under ~/.agents/skills/superpowers)
+    - using-superpowers
+    - brainstorming
+    - writing-plans
+    - writing-skills
+    - requesting-code-review
+    - receiving-code-review
+    - systematic-debugging
+    - test-driven-development
+    - subagent-driven-development
+    - using-git-worktrees
+    - verification-before-completion
+    - finishing-a-development-branch
+    - dispatching-parallel-agents
+    - executing-plans
+    # OMP harness
     - goal-harness
+    - beads
+    # Caveman + ponytail + webwright
     - caveman
+    - caveman-*
+    - cavecrew
     - ponytail
-    - rust-skills
-    - axiom
-    - android
-    - compose-performance
-    - android-testing
+    - ponytail-*
     - webwright
-  ignoredSkills: []
+    # Rust-skills pack (marketplace …/rust-skills/skills)
+    - coding-guidelines
+    - core-*
+    - domain-*
+    - m0*
+    - m1*
+    - meta-cognition-parallel
+    - rust-*
+    - unsafe-checker
+    # Axiom iOS pack (marketplace …/axiom-codex/skills)
+    - axiom-*
+    # Android agents skills (flat under ~/.agents/skills — no single "android" skill)
+    - adaptive
+    - agp-9-upgrade
+    - android-cli
+    - appfunctions
+    - camera1-to-camerax
+    - display-*
+    - edge-to-edge
+    - engage-sdk-integration
+    - migrate-xml-views-to-jetpack-compose
+    - navigation-3
+    - perfetto-*
+    - play-billing-library-version-upgrade
+    - r8-analyzer
+    - styles
+    - testing-setup
+    - verified-email
+  ignoredSkills:
+    []
+providers: 
+  webSearchOrder: 
+    - xai
+    - perplexity
+    - gemini
+    - anthropic
+    - codex
+    - zai
+    - exa
+    - tinyfish
+    - jina
+    - kagi
+    - tavily
+    - firecrawl
+    - brave
+    - kimi
+    - parallel
+    - synthetic
+    - searxng
+    - startpage
+    - duckduckgo
+    - ecosia
+    - google
+    - mojeek
+    - public
+modelRoles: 
+  default: openai-codex/gpt-5.6-sol:xhigh
+symbolPreset: nerd
+theme: 
+  dark: dark-tokyo-night
+setupVersion: 1
+statusLine: 
+  separator: powerline-thin
+tui: 
+  textSizing: true
+  imeSafeCursor: true
+display: 
+  showTokenUsage: true
+images: 
+  blockImages: false
+generate_image: 
+  enabled: true
+inspect_image: 
+  mode: "on"
+github: 
+  enabled: true

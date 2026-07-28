@@ -35,12 +35,14 @@ describe("project-init scaffold", () => {
     expect(r.worktreeConvention).toMatch(/worktree/i);
     expect(r.stoppedAfterScaffold).toBe(true);
     expect(r.bdInitRan).toBe(true);
-    expect(bdArgs!).toEqual([
-      "init",
-      "--init-if-missing",
-      "--non-interactive",
-      "--skip-agents",
-    ]);
+    expect(bdArgs![0]).toBe("init");
+    // Never bare bd init — always explicit --prefix from repo basename.
+    expect(bdArgs!.some((a) => a.startsWith("--prefix="))).toBe(true);
+    expect(bdArgs!).toContain("--init-if-missing");
+    expect(bdArgs!).toContain("--non-interactive");
+    expect(bdArgs!).toContain("--skip-agents");
+    expect(bdArgs!).not.toContain("--remote");
+    expect(bdArgs!.length).toBeGreaterThan(1);
     const agents = readFileSync(join(root, "AGENTS.md"), "utf8");
     expect(agents).toMatch(/Demo rust crate|Quality rules/);
     expect(agents).toMatch(/Nested AGENTS map/);
@@ -113,6 +115,7 @@ describe("project-init scaffold", () => {
     const r = runProjectInit({
       root,
       description: "has beads",
+      skipBeadsAssert: true, // fixture is a marker only
       runBdInit: () => {
         called = true;
         return { exitCode: 0, stdout: "" };
@@ -120,6 +123,40 @@ describe("project-init scaffold", () => {
     });
     expect(called).toBe(false);
     expect(r.bdInitRan).toBe(false);
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  test("refuses existing .beads with foreign prefix", () => {
+    const root = cloneFixture("with-beads");
+    expect(() =>
+      runProjectInit({
+        root,
+        description: "contaminated",
+        runBdInit: () => ({ exitCode: 0, stdout: "" }),
+        readBdWhere: () => ({
+          exitCode: 0,
+          stdout:
+            `${root}/.beads\n  prefix: dotfiles\n  database: ${root}/.beads/embeddeddolt\n`,
+        }),
+      }),
+    ).toThrow(/prefix "dotfiles"|does not match|foreign|dotfiles/);
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  test("refuses init stdout that bootstrapped from remote", () => {
+    const root = cloneFixture("empty-rust");
+    expect(() =>
+      runProjectInit({
+        root,
+        description: "remote clone",
+        runBdInit: () => ({
+          exitCode: 0,
+          stdout:
+            "Bootstrapped from remote: git+ssh://example/.dotfiles.git\n" +
+            "Adopted project identity from existing database\n",
+        }),
+      }),
+    ).toThrow(/foreign remote|Bootstrapped|contaminated/);
     rmSync(root, { recursive: true, force: true });
   });
 

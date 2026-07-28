@@ -33,6 +33,14 @@ Prefer OMP templates (after Stage 2+ link):
 1. Root **AGENTS.md** with description, CLI contract, stack tools, structure, nested AGENTS map, quality goals 1–8.
 2. Root `ln -sfn AGENTS.md CLAUDE.md` (symlink only).
 3. Meaningful subdirs: nested AGENTS + CLAUDE.md symlink.
-4. `bd init` if needed; epic for scaffold.
+4. **Beads (if `.beads` missing)** — never bare `bd init`:
+   ```bash
+   bd init --prefix "$(basename "$PWD" | tr '[:upper:]' '[:lower:]')" --init-if-missing --non-interactive --skip-agents
+   ```
+   Prefer the TypeScript path `runProjectInit` / `runSafeBdInit` (isolated HOME so
+   global `~/.beads` `sync.remote` cannot clone foreign Dolt history).
+   After init: `bd where` must show **prefix = this repo basename**. If prefix is
+   `dotfiles` (or any other project) **STOP** — do not create issues.
+   Never pass `--remote` from another repo. Never create Spec/Plan/Implement epics here.
 5. Stack skill checklist (Rust/iOS/Android) soft-fail network.
 6. Soft sandbox: project tree only. Never codebase-memory. Summarize and stop.

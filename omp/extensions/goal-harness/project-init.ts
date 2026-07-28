@@ -5,14 +5,36 @@
 
 import { mkdirSync, readdirSync, readFileSync, statSync, symlinkSync, writeFileSync, existsSync, lstatSync } from "node:fs";
 import { join, relative, resolve, dirname } from "node:path";
+import {
+  BeadsWorkspaceError,
+  assertBeadsWorkspaceMatchesRoot,
+  assertExistingBeadsWorkspace,
+  buildSafeBdInitArgs,
+  initOutputLooksLikeRemoteBootstrap,
+  runSafeBdInit,
+} from "./beads-workspace";
 
 export type StackKind = "rust" | "ios" | "android" | "mixed" | "unknown";
 
 export type ProjectInitOptions = {
   root: string;
   description?: string;
-  /** Injected for tests */
-  runBdInit?: (args: string[]) => { exitCode: number; stdout: string };
+  /**
+   * Injected for tests. Production default is {@link runSafeBdInit}
+   * (prefix + isolated HOME — never bare `bd init`).
+   */
+  runBdInit?: (args: string[]) => {
+    exitCode: number;
+    stdout: string;
+    stderr?: string;
+  };
+  /**
+   * When .beads already exists, optional `bd where` stdout for fail-closed
+   * prefix check. Injected in tests; production uses real `bd where`.
+   */
+  readBdWhere?: () => { exitCode: number; stdout: string; stderr?: string };
+  /** Skip beads assert on existing workspace (tests with stub .beads only). */
+  skipBeadsAssert?: boolean;
   askScope?: () => string;
 };
 
@@ -341,19 +363,39 @@ export function runProjectInit(opts: ProjectInitOptions): ProjectInitResult {
 
   let bdInitRan = false;
   if (!beadsAlreadyInit(root)) {
-    const run =
-      opts.runBdInit ??
-      (() => ({
-        exitCode: 0,
-        stdout: "init",
-      }));
-    const res = run([
-      "init",
-      "--init-if-missing",
-      "--non-interactive",
-      "--skip-agents",
-    ]);
-    if (res.exitCode === 0) bdInitRan = true;
+    // Never bare `bd init` — always --prefix + no --remote (see beads-workspace).
+    const args = buildSafeBdInitArgs(root);
+    if (opts.runBdInit) {
+      const res = opts.runBdInit(args);
+      if (res.exitCode !== 0) {
+        throw new BeadsWorkspaceError(
+          `bd init failed (exit ${res.exitCode}): ${res.stderr || res.stdout}`,
+        );
+      }
+      const combined = `${res.stdout}\n${res.stderr ?? ""}`;
+      if (initOutputLooksLikeRemoteBootstrap(combined)) {
+        throw new BeadsWorkspaceError(
+          "bd init bootstrapped from a foreign remote; refusing contaminated workspace. " +
+            "Do not use bare bd init. Use buildSafeBdInitArgs / runSafeBdInit.",
+        );
+      }
+      bdInitRan = true;
+    } else {
+      runSafeBdInit(root);
+      bdInitRan = true;
+    }
+  } else if (!opts.skipBeadsAssert) {
+    // Existing .beads: fail closed if prefix belongs to another project.
+    if (opts.readBdWhere) {
+      const w = opts.readBdWhere();
+      if (w.exitCode === 0 && w.stdout.trim()) {
+        assertBeadsWorkspaceMatchesRoot(w.stdout, root);
+      }
+    } else if (opts.runBdInit === undefined) {
+      // Production: real bd where (throws BeadsWorkspaceError if wrong/missing).
+      assertExistingBeadsWorkspace(root);
+    }
+    // When tests inject runBdInit only (stub .beads marker), skip assert.
   }
 
   return {

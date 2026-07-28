@@ -119,6 +119,125 @@ describe("lean OMP configuration", () => {
     expect(children).toContain("brainstorming");
   });
 
+  test("customDirectories wires stack pack skill parents", () => {
+    const config = parseYaml(
+      readFileSync(join(OMP_ROOT, "config.yml"), "utf8"),
+    ) as Record<string, any>;
+    const dirs: string[] = config.skills.customDirectories ?? [];
+    const home = process.env.HOME ?? "";
+    const expand = (d: string) => d.replace(/^~/, home);
+
+    // Required pack parents (substring match on configured paths)
+    const requiredFragments = [
+      "superpowers",
+      ".agents/skills",
+      "omp/agent/skills",
+      "marketplaces/caveman/skills",
+      "marketplaces/rust-skills/skills",
+      "axiom-marketplace/axiom-codex/skills",
+    ];
+    for (const frag of requiredFragments) {
+      expect(
+        dirs.some((d) => d.includes(frag)),
+        `missing customDirectories entry containing ${frag}`,
+      ).toBe(true);
+    }
+
+    // Each root exists and has at least one name/SKILL.md child
+    const probeSkill: Record<string, string> = {
+      superpowers: "using-superpowers",
+      "marketplaces/caveman/skills": "caveman",
+      "marketplaces/rust-skills/skills": "rust-router",
+      "axiom-marketplace/axiom-codex/skills": "axiom-swiftui",
+      "omp/agent/skills": "goal-harness",
+    };
+    for (const [frag, skill] of Object.entries(probeSkill)) {
+      const root = dirs.find((d) => d.includes(frag));
+      expect(root).toBeTruthy();
+      const abs = expand(root!);
+      expect(existsSync(abs)).toBe(true);
+      expect(existsSync(join(abs, skill, "SKILL.md"))).toBe(true);
+    }
+  });
+
+  test("includeSkills lists skill names, not pack labels (OMP Bun.Glob allowlist)", () => {
+    const config = parseYaml(
+      readFileSync(join(OMP_ROOT, "config.yml"), "utf8"),
+    ) as Record<string, any>;
+    const include: string[] = config.skills.includeSkills ?? [];
+    // Pack/group labels that are NOT skill directory names — historically
+    // filtered out using-superpowers / requesting-code-review entirely.
+    const forbiddenPackLabels = [
+      "superpowers",
+      "rust-skills",
+      "axiom",
+      "android",
+      "compose-performance",
+      "android-testing",
+    ];
+    for (const label of forbiddenPackLabels) {
+      expect(include).not.toContain(label);
+    }
+
+    const requiredSkillNames = [
+      "using-superpowers",
+      "requesting-code-review",
+      "receiving-code-review",
+      "goal-harness",
+      "brainstorming",
+      "writing-plans",
+      "systematic-debugging",
+      "test-driven-development",
+      "subagent-driven-development",
+      "using-git-worktrees",
+      "verification-before-completion",
+      "finishing-a-development-branch",
+      "ponytail",
+      "webwright",
+      "caveman",
+      "axiom-*",
+      "rust-*",
+      "android-cli",
+      "testing-setup",
+    ];
+    for (const name of requiredSkillNames) {
+      expect(include).toContain(name);
+    }
+
+    // Superpowers root must exist and every non-glob include that lives there
+    // must resolve as name/SKILL.md (guards wrong allowlist again).
+    const superpowersRoot = (config.skills.customDirectories as string[])
+      .find((d) => d.includes("superpowers"))!
+      .replace(/^~/, process.env.HOME ?? "");
+    const superpowersSkills = new Set(readdirSync(superpowersRoot));
+    for (const name of [
+      "using-superpowers",
+      "requesting-code-review",
+      "brainstorming",
+    ]) {
+      expect(superpowersSkills.has(name)).toBe(true);
+      expect(
+        existsSync(join(superpowersRoot, name, "SKILL.md")),
+      ).toBe(true);
+    }
+
+    // OMP match semantics: includeSkills globs are matched against skill.name
+    // only. Pack label "superpowers" must not match harness skill names.
+    expect(new Bun.Glob("superpowers").match("using-superpowers")).toBe(false);
+    expect(new Bun.Glob("superpowers").match("requesting-code-review")).toBe(
+      false,
+    );
+    expect(new Bun.Glob("using-superpowers").match("using-superpowers")).toBe(
+      true,
+    );
+    expect(
+      new Bun.Glob("requesting-code-review").match("requesting-code-review"),
+    ).toBe(true);
+    expect(new Bun.Glob("axiom-*").match("axiom-swiftui")).toBe(true);
+    expect(new Bun.Glob("rust-*").match("rust-router")).toBe(true);
+    expect(new Bun.Glob("rust-skills").match("rust-router")).toBe(false);
+  });
+
   test("no Superpowers SKILL.md bodies under omp/", () => {
     const files = walkFiles(OMP_ROOT);
     for (const f of files) {

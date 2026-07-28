@@ -71,10 +71,16 @@ describe("harness command binding", () => {
   test("sendMessage triggerTurn once after handler", async () => {
     const messages: Array<{ text: string; opts?: { triggerTurn?: boolean } }> =
       [];
-    let handler: ((ctx: { args?: string }) => Promise<unknown>) | undefined;
+    // OMP calls handler(args: string, ctx) — not handler({ args })
+    let handler:
+      | ((args: string, ctx?: unknown) => Promise<unknown>)
+      | undefined;
     const api = {
       registerCommand(_name: string, opts: Record<string, unknown>) {
-        handler = opts.handler as (ctx: { args?: string }) => Promise<unknown>;
+        handler = opts.handler as (
+          args: string,
+          ctx?: unknown,
+        ) => Promise<unknown>;
       },
       sendMessage(text: string, opts?: { triggerTurn?: boolean }) {
         messages.push({ text, opts });
@@ -82,11 +88,39 @@ describe("harness command binding", () => {
     };
     registerHarnessCommand(api);
     expect(handler).toBeTruthy();
-    await handler!({ args: "test goal" });
+    await handler!("test goal", {});
     expect(messages.length).toBe(1);
     expect(messages[0].opts?.triggerTurn).toBe(true);
     expect(messages[0].text).toContain("goal-harness-start");
     expect(messages[0].text).toContain("omp/workflows/goal-harness.ts");
+    expect(messages[0].text).toContain("test goal");
+    expect(messages[0].text).not.toContain("1. No errors, warnings");
+  });
+
+  test("OMP-style handler(args, ctx) binds custom goal; empty uses defaults", async () => {
+    const { extractHarnessArgs } = await import(
+      "../extensions/goal-harness/index"
+    );
+    expect(extractHarnessArgs("copy grok tui", {})).toBe("copy grok tui");
+    expect(extractHarnessArgs("")).toBe("");
+    expect(extractHarnessArgs({ args: "legacy" })).toBe("legacy");
+
+    const messages: string[] = [];
+    let handler: ((a: unknown, b?: unknown) => Promise<unknown>) | undefined;
+    registerHarnessCommand({
+      registerCommand(_n, opts) {
+        handler = opts.handler as (a: unknown, b?: unknown) => Promise<unknown>;
+      },
+      sendMessage(text: string) {
+        messages.push(text);
+      },
+    });
+    await handler!("", {});
+    expect(messages[0]).toContain("1. No errors, warnings");
+    messages.length = 0;
+    await handler!("copy of the grok-builds tui", {});
+    expect(messages[0]).toContain("copy of the grok-builds tui");
+    expect(messages[0]).not.toContain("1. No errors, warnings");
   });
 
   test("workflow calls all four Workflowz primitives", async () => {

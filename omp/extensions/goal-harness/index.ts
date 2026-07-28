@@ -108,23 +108,60 @@ export function handleHarnessCommand(args: string): HarnessHandlerResult {
   };
 }
 
+/**
+ * OMP ExtensionCommandContext (subset). Official signature is
+ * `handler(args: string, ctx: ExtensionCommandContext)` — NOT (ctx) alone.
+ * @see oh-my-pi coding-agent agent-session `#tryExecuteExtensionCommand`
+ */
+export type HarnessCommandContext = {
+  toolsConfig?: OmpToolsConfig;
+  /** Some hosts may nest config; prefer top-level when present. */
+  settings?: { tools?: OmpToolsConfig };
+};
+
+/** Extract slash args from OMP's (args, ctx) call shape (and legacy (ctx) mistakes). */
+export function extractHarnessArgs(
+  first: unknown,
+  second?: unknown,
+): string {
+  // Canonical OMP: handler(args: string, ctx)
+  if (typeof first === "string") return first;
+  // Legacy mistaken shape we used: handler({ args })
+  if (first && typeof first === "object" && "args" in first) {
+    const a = (first as { args?: unknown }).args;
+    if (typeof a === "string") return a;
+  }
+  if (second && typeof second === "object" && "args" in (second as object)) {
+    const a = (second as { args?: unknown }).args;
+    if (typeof a === "string") return a;
+  }
+  return "";
+}
+
 /** Register only `/harness`. Must not register goal/guided-goal/init. */
 export function registerHarnessCommand(api: ExtensionAPI): void {
   api.registerCommand(HARNESS_COMMAND_NAME, {
     description:
-      "OMP goal harness. Empty args → default 8 quality goals; otherwise exact override.",
-    handler: async (ctx: {
-      args?: string;
-      toolsConfig?: OmpToolsConfig;
-    }) => {
+      "Like /goal, but empty args bind the 8 default quality requirements; non-empty args bind that text exactly. Then runs Spec→Plan→… with dual reviews.",
+    handler: async (first: unknown, second?: unknown) => {
+      const args = extractHarnessArgs(first, second);
+      const ctx =
+        (typeof first === "object" && first !== null
+          ? (first as HarnessCommandContext)
+          : undefined) ??
+        (typeof second === "object" && second !== null
+          ? (second as HarnessCommandContext)
+          : undefined);
       // Soft-sandbox preflight — refuse if approval mode incompatible
-      const pf = preflightHarnessSandbox(
-        ctx.toolsConfig ?? { approvalMode: "always-ask", extensionGuard: true },
-      );
+      const toolsConfig =
+        ctx?.toolsConfig ??
+        ctx?.settings?.tools ??
+        ({ approvalMode: "always-ask", extensionGuard: true } as OmpToolsConfig);
+      const pf = preflightHarnessSandbox(toolsConfig);
       if (!pf.ok) {
         throw new Error(`harness soft-sandbox preflight failed: ${pf.reason}`);
       }
-      const result = handleHarnessCommand(ctx.args ?? "");
+      const result = handleHarnessCommand(args);
       // After preflight, queue exactly one start message (triggerTurn) if supported.
       if (api.sendMessage) {
         const payload = JSON.stringify({

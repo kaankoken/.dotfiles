@@ -32,9 +32,11 @@ function fakeBd(opts?: {
     }
 
     if (head === "where") {
+      // prefix must match basename of broker repoCwd (/repo → "repo")
       return {
         exitCode: 0,
-        stdout: "/repo/.beads\n",
+        stdout:
+          "/repo/.beads\n  prefix: repo\n  database: /repo/.beads/embeddeddolt\n",
         stderr: "",
       };
     }
@@ -175,10 +177,12 @@ describe("beads broker durable run graph", () => {
     expect(s.integrations[0].sourceSha).toBe("aaa1111");
   });
 
-  test("bd where missing stops before durable work", async () => {
+  test("bd where missing stops before durable work (no auto-init)", async () => {
     const { exec } = fakeBd({ failWhere: true });
     const broker = new BeadsBroker(exec, "controller", "/repo");
-    await expect(broker.ensureWorkspace()).rejects.toThrow(/bd where missing/);
+    await expect(broker.ensureWorkspace()).rejects.toThrow(
+      /bd where missing|bare-init|project-init/i,
+    );
     await expect(
       broker.createRunEpic({
         runId: "r",
@@ -186,7 +190,27 @@ describe("beads broker durable run graph", () => {
         modelRoutes: {},
         skillManifest: [],
       }),
-    ).rejects.toThrow(/bd where missing/);
+    ).rejects.toThrow(/bd where missing|bare-init|project-init/i);
+  });
+
+  test("foreign beads prefix fails closed without init", async () => {
+    const exec = (args: string[]): BdExecResult => {
+      const i = args[0] === "-C" ? 2 : 0;
+      const cmd = args.slice(i);
+      if (cmd[0] === "where") {
+        return {
+          exitCode: 0,
+          stdout:
+            "/repo/.beads\n  prefix: dotfiles\n  database: /repo/.beads/embeddeddolt\n",
+          stderr: "",
+        };
+      }
+      return { exitCode: 0, stdout: "", stderr: "" };
+    };
+    const broker = new BeadsBroker(exec, "controller", "/repo");
+    await expect(broker.ensureWorkspace()).rejects.toThrow(
+      /prefix "dotfiles"|does not match|foreign|dotfiles/i,
+    );
   });
 
   test("transition order: research before spec approval", async () => {

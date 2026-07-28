@@ -77,8 +77,15 @@ export function buildStartMessage(boundGoal: string): HarnessStartMessage {
     kind: "goal-harness-start",
     workflowModule: "omp/workflows/goal-harness.ts",
     boundGoal,
-    controllerPolicy:
-      "Load skills/goal-harness/SKILL.md; Superpowers live reads only; bd SoT.",
+    // boundGoal IS the task (like /goal text). Empty /harness → 8 defaults already applied.
+    // Skill loads must use skill://<exact-name> — never skill:// alone.
+    controllerPolicy: [
+      "boundGoal is the only task text (same role as /goal args). Do not invent a second goal.",
+      "Parent skills (skill://NAME only, never empty skill://): skill://using-superpowers then skill://goal-harness then skill://requesting-code-review.",
+      "Then run phases: Spec (spec-writer→spec-reviewer + human approve) → Plan (plan-writer→plan-reviewer) → BiteSize → SDD implement lanes → Milestone (code-reviewer) → PR.",
+      "Superpowers: live SKILL.md reads by name; bd is SoT.",
+      "Never bare bd init from /harness. Workspace must already match repo prefix (bd where); init only via /init project-init safe args (--prefix, no --remote).",
+    ].join(" "),
   };
 }
 

@@ -16,7 +16,7 @@ Process engine: **Superpowers** (read live `SKILL.md` by path + SHA). Named role
 1. No errors, no warnings, no test failures.
 2. No warning suppressions in production (test-only OK with reason).
 3. Everything wired — no stubs, TODO/TBD/FIXME, unfinished work.
-4. Mandated skills: superpowers + stack + caveman + ponytail.
+4. Mandated skills: using-superpowers + project stack skills + caveman + ponytail (exact skill:// names; never empty skill://).
 5. Latest dependencies — verify on the web (not training data alone).
 6. Complete all superpowers-derived spec/plan tasks.
 7. Specs, plans, goals, updates tracked in **bd** (SoT).
@@ -28,7 +28,7 @@ With arguments: replace 1–8 completely with that text.
 
 | # | Phase | Superpowers skill names (live load) | Producer | Reviewer | Retry N |
 |---|--------|--------------------------------------|----------|----------|---------|
-| 0 | Init | using-superpowers (parent) | `project-init` | — | — |
+| 0 | Init | using-superpowers (parent) | `project-init` (safe bd init only; never bare `bd init`) | — | — |
 | 1 | Spec | brainstorming | `spec-writer` + scouts | `spec-reviewer` | 3 |
 | 2 | Plan | writing-plans | `plan-writer` + scouts | `plan-reviewer` | 3 |
 | 3 | BiteSize | writing-plans | `bite-size-writer` | `bite-size-reviewer` | 2 |
