@@ -279,8 +279,11 @@ export async function runBiteSizeGate(
     review = await reviewBiteSize(wz, graph, {
       reviewerModel: opts.reviewerModel,
     });
+    // PASS ends gate; rewrite only when reviewer requires it
     if (review.ok) break;
-    priorFeedback = review.feedback + " " + review.blocking.join("; ");
+    priorFeedback = [review.feedback, ...(review.blocking ?? [])]
+      .filter(Boolean)
+      .join("; ");
   }
 
   if (!graph || !review.ok) {

@@ -64,6 +64,28 @@ export type { HarnessStartMessage } from "../../workflows/goal-harness";
 export { runAssignedLane } from "./lane-runner";
 export type { ActiveExtensionApi, LaneAssignment } from "./lane-runner";
 export { IMPLEMENTER_EVIDENCE_SCHEMA } from "./evidence";
+export {
+  OMP_READ_DEFAULT_MAX_BYTES,
+  DEFAULT_AGENT_CHUNK_LINES,
+  agentUri,
+  normalizeAgentOutputId,
+  stripTruncationFooter,
+  looksLikeIncompleteJson,
+  readAgentTextFull,
+  readAgentTextByRanges,
+  readAgentJsonFull,
+} from "./agent-output";
+export type {
+  AgentReadFn,
+  AgentReadFileFn,
+  ReadAgentTextOptions,
+  TruncationInfo,
+} from "./agent-output";
+export {
+  reviewRequiresRevision,
+  formatRevisionFeedback,
+} from "./gate-revision";
+export type { ReviewLike } from "./gate-revision";
 
 /** Minimal ExtensionAPI surface used by this extension (OMP runtime). */
 export type ExtensionAPI = {

@@ -26,8 +26,8 @@ With arguments: replace 1–8 completely with that text.
 
 ## Phases
 
-| # | Phase | Superpowers skill names (live load) | Producer | Reviewer | Retry N |
-|---|--------|--------------------------------------|----------|----------|---------|
+| # | Phase | Superpowers skill names (live load) | Producer | Reviewer | Max attempts |
+|---|--------|--------------------------------------|----------|----------|--------------|
 | 0 | Init | using-superpowers (parent) | `project-init` (safe bd init only; never bare `bd init`) | — | — |
 | 1 | Spec | brainstorming | `spec-writer` + scouts | `spec-reviewer` | 3 |
 | 2 | Plan | writing-plans | `plan-writer` + scouts | `plan-reviewer` | 3 |
@@ -35,6 +35,11 @@ With arguments: replace 1–8 completely with that text.
 | 4 | Implement | test-driven-development, using-git-worktrees, subagent-driven-development | `implementer` | optional light | — |
 | 5 | Milestone | requesting-code-review, verification-before-completion | multi `code-reviewer` | `milestone-organizer` | 3 |
 | 6 | PR | finishing-a-development-branch | `pr-opener` | — | — |
+
+**Max attempts = ceiling, not a quota.** First reviewer `ok: true` ends the gate.
+Producer rewrite runs **only** when the reviewer returns `ok: false` (blocking items).
+Do **not** spawn free-standing `*Revision1` / `*Revision2` agents “because budget remains.”
+Nits under `ok: true` are non-blocking notes — not revision triggers.
 
 Bug path: **systematic-debugging** (live skill) before plan → implement.
 
@@ -47,6 +52,21 @@ Do **not** paste Superpowers skill instructions here — only names + “read au
 | Spec/plan/bite/milestone | sol → fabel → opus | ultra/max |
 | Implement | grok 4.5 → sol high → sonnet | high |
 | Scouts | medium / grok high when used | — |
+
+## Agent yields over 50 KiB (`agent://`)
+
+OMP `read` head-truncates around **50 KiB** (`DEFAULT_MAX_BYTES`). Full yields still
+land on disk as session `<id>.md`. **Do not** `json.loads(read('agent://BigYield'))`
+on large plan/spec envelopes.
+
+Prefer (in order):
+
+1. Session file path when known: `json.loads(Path(.../Id.md).read_text())`
+2. Harness helper `readAgentJsonFull(id, read)` / `readAgentTextFull` from
+   `extensions/goal-harness/agent-output.ts` (range reassembly under the cap)
+3. Manual ranges: `agent://Id:1-200`, `agent://Id:201-400`, … then join + parse
+
+Never invent compression formats for agent handoff.
 
 ## Beads
 

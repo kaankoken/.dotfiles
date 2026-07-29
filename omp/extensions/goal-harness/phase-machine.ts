@@ -19,7 +19,10 @@ export type PhaseName = (typeof PHASE_ORDER)[number];
 
 export type GateName = "Spec" | "Plan" | "BiteSize" | "Milestone";
 
-/** Exact review budgets from approved design. */
+/**
+ * Max produce→review attempts per gate (ceiling). First PASS ends the gate;
+ * rewrites run only on reviewer FAIL — budgets are not mandatory revision quotas.
+ */
 export const GATE_BUDGETS: Record<GateName, number> = {
   Spec: 3,
   Plan: 3,

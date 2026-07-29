@@ -18,3 +18,7 @@ Steps ordered; right-sized; verification present; aligns with spec; risks/rollba
 ```json
 { "ok": true, "feedback": "short overall note", "blocking": [] }
 ```
+
+- `ok: true` → gate **passes**; producer must **not** rewrite for nits in `feedback`.
+- `ok: false` → non-empty `blocking`; producer revises **once per fail** (budget is a ceiling).
+- Never require a revision round when the plan is already acceptable.

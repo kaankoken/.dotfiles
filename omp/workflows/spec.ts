@@ -9,6 +9,10 @@ import {
   type Workflowz,
 } from "../extensions/goal-harness/workflow-adapter";
 import { reviewResultSchema } from "../extensions/goal-harness/schemas";
+import {
+  formatRevisionFeedback,
+  reviewRequiresRevision,
+} from "../extensions/goal-harness/gate-revision";
 import type { HumanApprovalRecord } from "../extensions/goal-harness/human-gate";
 import type { ResearchSynthesis } from "./research";
 
@@ -112,6 +116,11 @@ export async function produceSpecCandidate(
   const researchBlock = session.research
     ? `\n\nResearch synthesis (source-linked):\n${session.research.text}`
     : "";
+  // Only inject revision instructions when prior review failed (not on first draft)
+  const revisionBlock =
+    session.review && reviewRequiresRevision(session.review)
+      ? `\n\nReviewer required revision (rewrite only what blocking items demand):\n${formatRevisionFeedback(session.review)}`
+      : "";
 
   const producer = createStrictAgentCall({
     agentName: "spec-writer",
@@ -127,7 +136,7 @@ export async function produceSpecCandidate(
 
   const raw = (await producer(
     wz,
-    `Produce design/spec for: ${session.boundGoal}${researchBlock}\nAnswers: ${JSON.stringify(session.answers)}\nSections so far: ${JSON.stringify(session.designSections)}`,
+    `Produce design/spec for: ${session.boundGoal}${researchBlock}\nAnswers: ${JSON.stringify(session.answers)}\nSections so far: ${JSON.stringify(session.designSections)}${revisionBlock}`,
   )) as Record<string, unknown>;
 
   const candidate: SpecCandidate = {
@@ -193,10 +202,11 @@ export async function runSpecGate(
       reviewerModel: opts.reviewerModel,
     });
     lastReview = session.review ?? lastReview;
-    if (lastReview.ok) {
+    // PASS → stop immediately; remaining attempts are not mandatory revisions
+    if (!reviewRequiresRevision(lastReview)) {
       return { review: lastReview, attempts, candidate };
     }
-    // FAIL → producer revises (loop)
+    // FAIL only → keep review on session so next produce gets revisionBlock
     applyReviewToSpec(session, lastReview);
   }
 

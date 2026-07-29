@@ -14,9 +14,14 @@ Produce the **design/spec** for the bound goal.
 Harness gates tools until you load authoritative current `SKILL.md` for:
 
 - `brainstorming`
-- `receiving-code-review` (for applying reviewer feedback on rewrites)
+- `receiving-code-review` (**only** when applying a failed reviewer’s blocking feedback)
 
 Do not copy Superpowers checklists or step-by-step bodies into this file.
+
+## Revisions
+
+First draft is the default. Rewrite **only** when `spec-reviewer` returns
+`ok: false` with blocking items. Do not invent RevisionN rounds on your own.
 
 Also name: `caveman`, `ponytail`.
 

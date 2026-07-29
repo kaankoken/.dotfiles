@@ -1,5 +1,6 @@
 /**
- * Plan gate: plan-writer → plan-reviewer (strict), budget 3.
+ * Plan gate: plan-writer → plan-reviewer (strict).
+ * maxAttempts is a ceiling only — first PASS ends the gate; rewrite only on FAIL.
  * Multi-area plans trigger a second narrow research pass.
  */
 
@@ -8,6 +9,10 @@ import {
   type Workflowz,
 } from "../extensions/goal-harness/workflow-adapter";
 import { reviewResultSchema } from "../extensions/goal-harness/schemas";
+import {
+  formatRevisionFeedback,
+  reviewRequiresRevision,
+} from "../extensions/goal-harness/gate-revision";
 import type { ResearchSynthesis } from "./research";
 import type { SpecCandidate } from "./spec";
 
@@ -199,10 +204,11 @@ export async function runPlanGate(
     lastReview = await reviewPlan(wz, lastPlan, {
       reviewerModel: opts.reviewerModel,
     });
-    if (lastReview.ok) {
+    // PASS → stop immediately (do not burn remaining budget on optional revisions)
+    if (!reviewRequiresRevision(lastReview)) {
       return { plan: lastPlan, review: lastReview, attempts };
     }
-    priorFeedback = lastReview.feedback + " " + lastReview.blocking.join("; ");
+    priorFeedback = formatRevisionFeedback(lastReview);
   }
 
   return { plan: lastPlan!, review: lastReview, attempts };

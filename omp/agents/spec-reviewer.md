@@ -21,4 +21,8 @@ Checklist: goals/non-goals clear; feasible vs codebase; testable acceptance; ris
 
 Fail → `ok: false` and non-empty `blocking`.
 
+- `ok: true` → gate **passes**; writer must **not** auto-revise for nits in `feedback`.
+- `ok: false` → producer revises only for listed `blocking` items (max-attempt ceiling).
+- Never force a revision round when the spec is already acceptable.
+
 Do not load Superpowers skill bodies here; use the harness review contract + tools.

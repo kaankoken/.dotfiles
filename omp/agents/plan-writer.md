@@ -12,9 +12,14 @@ Produce the **implementation plan**.
 ## Skills (live read required)
 
 - `writing-plans`
-- `receiving-code-review` (rewrite feedback)
+- `receiving-code-review` (**only** when applying a failed reviewer’s blocking feedback)
 
 Load complete current `SKILL.md` by path; never vendor skill text here.
+
+## Revisions
+
+First draft is the default. Rewrite **only** when `plan-reviewer` returns
+`ok: false` with blocking items. Do not invent RevisionN rounds on your own.
 
 ## Output
 
