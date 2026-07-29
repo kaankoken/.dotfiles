@@ -21,4 +21,6 @@ Single primary outcome per task; clear files; concrete done-when; vertical slice
 ## Revisions
 
 First draft is the default. Rewrite **only** when `bite-size-reviewer` returns
-`ok: false`. Do not invent extra RevisionN passes.
+`ok: false`. Nits under `ok: true` are optional — do not rewrite for them.
+Do not invent extra RevisionN passes. Prefer product tasks before evidence-only
+prerequisites (see `REVIEW-POLICY.md`).

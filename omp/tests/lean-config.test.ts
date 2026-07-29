@@ -32,7 +32,38 @@ describe("lean OMP configuration", () => {
     expect(config.edit.mode).toBe("hashline");
     expect(config.lsp.enabled).toBe(true);
     expect(config.task.maxConcurrency).toBe(8);
-    expect(config.tools.approvalMode).toBe("always-ask");
+    // Auto mode + smart-approve high-risk gate (not always-ask).
+    expect(config.tools.approvalMode).toBe("yolo");
+    for (const tool of [
+      "read",
+      "search",
+      "find",
+      "lsp",
+      "web_search",
+      "bash",
+      "edit",
+      "write",
+    ]) {
+      expect(config.tools.approval[tool]).toBe("allow");
+    }
+  });
+
+  test("smart-approve extension is vendored with built dist entry", () => {
+    const root = join(OMP_ROOT, "extensions", "smart-approve");
+    expect(existsSync(root)).toBe(true);
+    expect(existsSync(join(root, "dist", "index.js"))).toBe(true);
+    const pkg = JSON.parse(
+      readFileSync(join(root, "package.json"), "utf8"),
+    ) as {
+      name: string;
+      version: string;
+      omp?: { extensions?: string[] };
+    };
+    expect(pkg.name).toBe("smart-approve");
+    expect(pkg.version).toBe("2.3.0");
+    expect(pkg.omp?.extensions).toContain("./dist/index.js");
+    const versionPin = readFileSync(join(root, "VERSION"), "utf8").trim();
+    expect(versionPin).toBe("2.3.0");
   });
 
   test("mcp.json allowlist is exactly four servers", () => {

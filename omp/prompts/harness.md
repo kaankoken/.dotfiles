@@ -16,3 +16,8 @@ Large producer yields (`agent://` plan/spec JSON over ~50 KiB): use session
 Gate revisions: **not mandatory**. Writer → reviewer once; rewrite only if
 `ok: false` + blocking. Max attempts is a fail ceiling. Never auto-queue
 Revision1/2/3 when the latest review already passed.
+
+Reviewer policy: agents must follow `agents/REVIEW-POLICY.md` — **default PASS**;
+`ok: false` only for wrong/impossible/unsafe/unverifiable-core/hard-dep-gap.
+Nits (thoroughness, early evidence, style, process theater) stay in `feedback`
+with `ok: true`. Prefer product-first plans; defer heavy evidence until first green.

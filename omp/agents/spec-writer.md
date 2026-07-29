@@ -21,7 +21,10 @@ Do not copy Superpowers checklists or step-by-step bodies into this file.
 ## Revisions
 
 First draft is the default. Rewrite **only** when `spec-reviewer` returns
-`ok: false` with blocking items. Do not invent RevisionN rounds on your own.
+`ok: false` with blocking items. Nits in `feedback` under `ok: true` are
+optional — do **not** rewrite for them. Do not invent RevisionN rounds.
+Prefer product-first specs; defer exhaustive evidence factories until after
+first green when the goal is UI/feature work (see `REVIEW-POLICY.md`).
 
 Also name: `caveman`, `ponytail`.
 

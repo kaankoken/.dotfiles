@@ -41,6 +41,12 @@ Producer rewrite runs **only** when the reviewer returns `ok: false` (blocking i
 Do **not** spawn free-standing `*Revision1` / `*Revision2` agents “because budget remains.”
 Nits under `ok: true` are non-blocking notes — not revision triggers.
 
+**Reviewer PASS bias:** all reviewers obey `agents/REVIEW-POLICY.md`. Default
+`ok: true` / empty `blocking`. Fail only for wrong, impossible, unsafe,
+unverifiable-core, or hard dependency gaps. Exhaustive evidence before product
+work, thoroughness preferences, and process theater are **nits**, not fails.
+Product/UI goals: product-first ordering is correct; defer heavy proof factories.
+
 Bug path: **systematic-debugging** (live skill) before plan → implement.
 
 Do **not** paste Superpowers skill instructions here — only names + “read authoritative SKILL.md”.

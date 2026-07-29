@@ -83,11 +83,23 @@ OMP_LIVE_SMOKE=1 bash tests/smoke-omp-harness.sh
 
 **Only after Stage 4 PASS is Pi removal (Tasks 30–31) eligible.**
 
+## Tool auto mode (Claude/Grok-style)
+
+`config.yml` uses `tools.approvalMode: yolo` with per-tool `allow`, plus the
+vendored **`extensions/smart-approve`** (npm `smart-approve@2.3.0`) as the
+high-risk-only gate (destructive git, `rm -rf /`, secret paths, `curl|sh`, …).
+
+Runtime decision memory (not tracked): `~/.omp/agent/smart-approve-allow.json`,
+optional overrides: `~/.omp/agent/smart-approve.json`.
+
+Hashline stays native: `edit.mode: hashline` — do not install Pi hashline packages.
+
 ## Not here
 
 Do not install extra orchestration packages, built-in TODO trackers, Autolearn
 backends, or duplicate subagent packs via this tree. Shared cross-agent policy
-stays in `agent-stack/`.
+stays in `agent-stack/`. Safety hooks like smart-approve are allowed when
+vendored under `extensions/`.
 
 ## Cross-repo smoke (from nixup)
 

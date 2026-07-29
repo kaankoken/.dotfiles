@@ -330,6 +330,12 @@ describe("preflight audit approval cache", () => {
       preflightOmpApprovalConfig({ approvalMode: "always-ask" }, compat).ok,
     ).toBe(true);
     expect(
+      preflightOmpApprovalConfig({ approvalMode: "yolo" }, compat).ok,
+    ).toBe(true);
+    expect(
+      preflightOmpApprovalConfig({ approvalMode: "write" }, compat).ok,
+    ).toBe(true);
+    expect(
       preflightOmpApprovalConfig({ approvalMode: "never" }, compat).ok,
     ).toBe(false);
     expect(

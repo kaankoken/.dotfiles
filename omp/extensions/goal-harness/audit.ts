@@ -87,16 +87,18 @@ export function preflightOmpApprovalConfig(
       reason: `incompatible/missing tools.approvalMode: ${String(mode)}`,
     };
   }
-  // require non-permissive modes like always-ask / on-failure / manual
+  // Preferred strict modes, plus yolo when smart-approve is the high-risk gate.
+  // Reject bare auto-approve* aliases that skip any host/tool policy.
   const okModes = new Set([
     "always-ask",
     "on-failure",
     "manual",
     "ask",
     "strict",
+    "write",
+    "yolo",
   ]);
   if (!okModes.has(String(mode).toLowerCase())) {
-    // allow unknown strict-looking modes that aren't in deny list — still require explicit
     if (String(mode).toLowerCase().includes("auto")) {
       return {
         ok: false,

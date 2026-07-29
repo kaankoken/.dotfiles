@@ -19,16 +19,18 @@ task:
   batch: true
   maxConcurrency: 8
 tools: 
-  approvalMode: always-ask
+  # yolo = Claude/Grok-style auto; smart-approve (extensions/smart-approve)
+  # is the high-risk gate (force-push, rm -rf /, secrets paths, curl|sh, …).
+  approvalMode: yolo
   approval: 
     read: allow
     search: allow
     find: allow
     lsp: allow
-    web_search: prompt
-    bash: prompt
-    edit: prompt
-    write: prompt
+    web_search: allow
+    bash: allow
+    edit: allow
+    write: allow
 skills: 
   enabled: true
   enableClaudeUser: false
@@ -39,20 +41,14 @@ skills:
   enableAgentsUser: true
   enableAgentsProject: true
   enableSkillCommands: true
-  # Each entry is a parent of skill dirs (name/SKILL.md). OMP scans direct
-  # children only — point at pack *skills/* roots, not package labels.
-  # One root per pack (duplicate realpaths for the same skill.name fail closed).
-  customDirectories:
+  customDirectories: 
     - ~/.agents/skills/superpowers
     - ~/.agents/skills
     - ~/.omp/agent/skills
     - ~/.claude/plugins/marketplaces/caveman/skills
     - ~/.claude/plugins/marketplaces/rust-skills/skills
     - ~/.claude/plugins/marketplaces/axiom-marketplace/axiom-codex/skills
-  # includeSkills is a Bun.Glob allowlist on *skill directory names*, not pack
-  # labels. "superpowers" never matched using-superpowers / requesting-code-review.
-  includeSkills:
-    # Superpowers (live under ~/.agents/skills/superpowers)
+  includeSkills: 
     - using-superpowers
     - brainstorming
     - writing-plans
@@ -67,17 +63,14 @@ skills:
     - finishing-a-development-branch
     - dispatching-parallel-agents
     - executing-plans
-    # OMP harness
     - goal-harness
     - beads
-    # Caveman + ponytail + webwright
     - caveman
     - caveman-*
     - cavecrew
     - ponytail
     - ponytail-*
     - webwright
-    # Rust-skills pack (marketplace …/rust-skills/skills)
     - coding-guidelines
     - core-*
     - domain-*
@@ -86,9 +79,7 @@ skills:
     - meta-cognition-parallel
     - rust-*
     - unsafe-checker
-    # Axiom iOS pack (marketplace …/axiom-codex/skills)
     - axiom-*
-    # Android agents skills (flat under ~/.agents/skills — no single "android" skill)
     - adaptive
     - agp-9-upgrade
     - android-cli
@@ -105,7 +96,7 @@ skills:
     - styles
     - testing-setup
     - verified-email
-  ignoredSkills:
+  ignoredSkills: 
     []
 providers: 
   webSearchOrder: 
@@ -153,3 +144,5 @@ inspect_image:
   mode: "on"
 github: 
   enabled: true
+dev: 
+  autoqaConsent: granted

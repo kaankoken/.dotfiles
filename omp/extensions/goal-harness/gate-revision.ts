@@ -5,6 +5,10 @@
  * A producer rewrite runs **only** when the reviewer returns ok:false
  * (or non-empty blocking findings). First PASS ends the gate immediately —
  * never spawn free-standing "Revision1/2" agents just because budget remains.
+ *
+ * Human/agent prompts: `agents/REVIEW-POLICY.md` — default PASS; blocking only
+ * for wrong / impossible / unsafe / unverifiable-core / hard dep gap.
+ * Thoroughness and early-evidence preferences are nits (ok:true, feedback only).
  */
 
 export type ReviewLike = {
@@ -12,6 +16,26 @@ export type ReviewLike = {
   feedback?: string;
   blocking?: string[];
 };
+
+/** Classes that may appear in blocking[] (documentation + tests). */
+export const BLOCKING_CLASSES = [
+  "wrong-contradictory",
+  "impossible-to-implement",
+  "unsafe",
+  "unverifiable-core",
+  "hard-dependency-gap",
+] as const;
+
+/** Feedback-only categories — must never alone force ok:false. */
+export const NIT_ONLY_CLASSES = [
+  "early-exhaustive-evidence",
+  "more-thoroughness",
+  "style-docs",
+  "process-theater",
+  "task-count-aesthetics",
+  "optional-tooling-polish",
+  "deferred-follow-up",
+] as const;
 
 /**
  * True only when the producer must rewrite for this gate.

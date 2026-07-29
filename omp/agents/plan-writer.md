@@ -19,7 +19,11 @@ Load complete current `SKILL.md` by path; never vendor skill text here.
 ## Revisions
 
 First draft is the default. Rewrite **only** when `plan-reviewer` returns
-`ok: false` with blocking items. Do not invent RevisionN rounds on your own.
+`ok: false` with blocking items. Nits under `ok: true` are optional — do **not**
+rewrite for them. Do not invent RevisionN rounds.
+Order work **product-first** (templates/UI/features before exhaustive
+evidence/Playwright/digest factories) unless the bound goal is evidence-only.
+See `REVIEW-POLICY.md`.
 
 ## Output
 
