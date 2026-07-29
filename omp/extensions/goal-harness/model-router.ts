@@ -78,7 +78,8 @@ const BIG_GATE_CHAIN: ChainStep[] = [
   {
     family: "opus",
     effort: "max",
-    queries: ["opus", "claude-opus"],
+    // Prefer Claude Opus 5 when catalog exposes it; keep generic fallbacks.
+    queries: ["claude-opus-5", "opus 5", "opus", "claude-opus"],
   },
 ];
 
@@ -102,7 +103,8 @@ const IMPLEMENT_CHAIN: ChainStep[] = [
   {
     family: "sonnet",
     effort: "high",
-    queries: ["sonnet", "claude-sonnet"],
+    // Prefer Claude Sonnet 5 when catalog exposes it; keep generic fallbacks.
+    queries: ["claude-sonnet-5", "sonnet 5", "sonnet", "claude-sonnet"],
   },
 ];
 
@@ -142,7 +144,7 @@ function chainForPhase(phase: PhaseKind): ChainStep[] {
         {
           family: "sonnet",
           effort: "medium",
-          queries: ["sonnet"],
+          queries: ["claude-sonnet-5", "sonnet 5", "sonnet", "claude-sonnet"],
         },
       ];
   }

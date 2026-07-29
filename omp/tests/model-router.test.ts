@@ -22,14 +22,16 @@ function catalog(...entries: ModelCatalogEntry[]): ModelRouterAdapter {
   const all = () => entries;
   const resolve = (query: string): ModelCatalogEntry | null => {
     const q = query.toLowerCase();
-    for (const e of entries) {
-      if (!e.available) continue;
+    const available = entries.filter((e) => e.available);
+    // Prefer exact id / alias, then id/alias contains query (not the reverse —
+    // reverse would make "claude-opus" steal "claude-opus-5").
+    for (const e of available) {
       if (e.id.toLowerCase() === q) return e;
-      if (e.aliases.some((a) => a.toLowerCase() === q || q.includes(a.toLowerCase())))
-        return e;
-      // semantic family match
-      if (e.aliases.some((a) => q.includes(a.toLowerCase()) || a.toLowerCase().includes(q)))
-        return e;
+      if (e.aliases.some((a) => a.toLowerCase() === q)) return e;
+    }
+    for (const e of available) {
+      if (e.id.toLowerCase().includes(q)) return e;
+      if (e.aliases.some((a) => a.toLowerCase().includes(q))) return e;
     }
     return null;
   };
@@ -243,6 +245,72 @@ describe("deterministic model routing", () => {
     expect(report.grok.available).toBe(true);
     expect(report.grok.notes).toMatch(/not assumed|Grok Build|subscription/i);
     expect(JSON.stringify(report)).not.toMatch(/sk-|api[_-]?key|secret/i);
+  });
+
+  test("big-gate vocabulary prefers claude-opus-5 over generic opus", () => {
+    const c = catalog(
+      entry("openai-codex/gpt-5.6-sol", ["sol"], "openai-codex", false),
+      entry("anthropic/claude-fable-5", ["fable"], "anthropic", false),
+      entry(
+        "anthropic/claude-opus-4",
+        ["opus", "claude-opus"],
+        "anthropic",
+      ),
+      entry(
+        "anthropic/claude-opus-5",
+        ["claude-opus-5", "opus 5", "opus", "claude-opus"],
+        "anthropic",
+      ),
+    );
+    const r = resolveModelRoute(c, "spec");
+    expect(r.providerModelId).toBe("anthropic/claude-opus-5");
+    expect(r.effort).toBe("max");
+  });
+
+  test("implement vocabulary prefers claude-sonnet-5 over generic sonnet", () => {
+    const c = catalog(
+      entry("xai/grok-4.5", ["grok"], "xai", false),
+      entry("cursor/composer-2.5", ["composer"], "cursor", false),
+      entry("openai-codex/gpt-5.6-sol", ["sol"], "openai-codex", false),
+      entry(
+        "anthropic/claude-sonnet-4",
+        ["sonnet", "claude-sonnet"],
+        "anthropic",
+      ),
+      entry(
+        "anthropic/claude-sonnet-5",
+        ["claude-sonnet-5", "sonnet 5", "sonnet", "claude-sonnet"],
+        "anthropic",
+      ),
+    );
+    const r = resolveModelRoute(c, "implement");
+    expect(r.providerModelId).toBe("anthropic/claude-sonnet-5");
+    expect(r.effort).toBe("high");
+  });
+
+  test("opus/sonnet still resolve when only generic v4 aliases exist", () => {
+    const opusOnly = catalog(
+      entry("openai-codex/gpt-5.6-sol", ["sol"], "openai-codex", false),
+      entry("anthropic/claude-fable-5", ["fable"], "anthropic", false),
+      entry("anthropic/claude-opus-4", ["opus", "claude-opus"], "anthropic"),
+    );
+    expect(resolveModelRoute(opusOnly, "plan").providerModelId).toBe(
+      "anthropic/claude-opus-4",
+    );
+
+    const sonnetOnly = catalog(
+      entry("xai/grok-4.5", ["grok"], "xai", false),
+      entry("cursor/composer-2.5", ["composer"], "cursor", false),
+      entry("openai-codex/gpt-5.6-sol", ["sol"], "openai-codex", false),
+      entry(
+        "anthropic/claude-sonnet-4",
+        ["sonnet", "claude-sonnet"],
+        "anthropic",
+      ),
+    );
+    expect(resolveModelRoute(sonnetOnly, "implement").providerModelId).toBe(
+      "anthropic/claude-sonnet-4",
+    );
   });
 });
 
