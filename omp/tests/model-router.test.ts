@@ -49,18 +49,49 @@ const fullCatalog = catalog(
 );
 
 describe("deterministic model routing", () => {
-  test("Spec/Plan/BiteSize/Milestone: Sol ultra → Fable max → Opus", () => {
-    for (const phase of [
-      "spec",
-      "plan",
-      "bitesize",
-      "milestone",
-    ] as PhaseKind[]) {
+  test("Spec/Plan/BiteSize: Sol ultra → Fable max → Opus", () => {
+    for (const phase of ["spec", "plan", "bitesize"] as PhaseKind[]) {
       const r = resolveModelRoute(fullCatalog, phase);
       expect(r.providerModelId).toBe("openai-codex/gpt-5.6-sol");
       expect(r.effort).toBe("ultra");
       expect(r.degradedIndependence).toBe(false);
     }
+  });
+
+  test("Milestone: Terra xhigh → Fable max → Sol ultra → Opus max", () => {
+    const r = resolveModelRoute(fullCatalog, "milestone");
+    expect(r.providerModelId).toBe("openai-codex/gpt-5.6-terra");
+    expect(r.effort).toBe("xhigh");
+    expect(r.fallbackChain.map((x) => `${x.family}@${x.effort}`)).toEqual([
+      "terra@xhigh",
+      "fable@max",
+      "sol@ultra",
+      "opus@max",
+    ]);
+  });
+
+  test("Milestone: no Terra → Fable max", () => {
+    const noTerra = catalog(
+      entry("openai-codex/gpt-5.6-terra", ["terra"], "openai-codex", false),
+      entry("anthropic/claude-fable-5", ["fable", "fable 5"], "anthropic"),
+      entry("openai-codex/gpt-5.6-sol", ["sol"], "openai-codex"),
+      entry("anthropic/claude-opus-4", ["opus"], "anthropic"),
+    );
+    const r = resolveModelRoute(noTerra, "milestone");
+    expect(r.providerModelId).toBe("anthropic/claude-fable-5");
+    expect(r.effort).toBe("max");
+  });
+
+  test("Milestone: no Terra/Fable → Sol ultra", () => {
+    const c = catalog(
+      entry("openai-codex/gpt-5.6-terra", ["terra"], "openai-codex", false),
+      entry("anthropic/claude-fable-5", ["fable"], "anthropic", false),
+      entry("openai-codex/gpt-5.6-sol", ["sol"], "openai-codex"),
+      entry("anthropic/claude-opus-4", ["opus"], "anthropic"),
+    );
+    const r = resolveModelRoute(c, "milestone");
+    expect(r.providerModelId).toBe("openai-codex/gpt-5.6-sol");
+    expect(r.effort).toBe("ultra");
   });
 
   test("big-gate first available wins: no Sol → Fable max", () => {
@@ -177,7 +208,7 @@ describe("deterministic model routing", () => {
       entry("openai-codex/gpt-5.6-sol", ["sol"], "openai-codex", false),
       entry("anthropic/claude-fable-5", ["fable"], "anthropic"),
     );
-    const r = resolveModelRoute(noSol, "milestone");
+    const r = resolveModelRoute(noSol, "spec");
     expect(r.effort).toBe("max");
     expect(r.effort).not.toBe("ultra");
   });

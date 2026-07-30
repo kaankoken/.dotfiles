@@ -9,7 +9,7 @@ here.
 - **Binary:** installed by Nix activation (`install-omp.sh`) only — not configured here.
 - **Launch:** prefer `headroom wrap omp` (nushell `omp` alias wraps it; `omp-raw` skips proxy).
 - **Subagent model label:** `task.showResolvedModelBadge: true` — TUI shows resolved model id on task/agent spawn rows.
-- **Harness model routes** (`extensions/goal-harness/model-router.ts`): research = Grok high (deep-research)→Sol medium; PR = Grok→Terra xhigh→Sonnet; implement = Grok→Composer→Sol→Sonnet; big gates = Sol ultra→Fable max→Opus max.
+- **Harness model routes** (`extensions/goal-harness/model-router.ts`): research = Grok high (deep-research)→Sol medium; milestone = Terra xhigh→Fable→Sol→Opus; PR = Grok→Terra xhigh→Sonnet; implement = Grok→Composer→Sol→Sonnet; big gates = Sol ultra→Fable max→Opus max.
 - **Config:** `config.yml` in this tree → lean defaults (shake, no Autolearn, no built-in task list, memory off, hashline edits, **yolo** tool approval + **smart-approve** high-risk gate).
 - **MCP:** allowlist in `mcp.json` — **cold:** `tokensave` only. `headroom` / `context-mode` / `context7` defined with `enabled: false` → `/mcp enable <name>` or `/mcp-stack` when needed.
 - **Harness:** custom `/harness` (not native `/goal`); Superpowers skills loaded live by path — never vendored into prompts.

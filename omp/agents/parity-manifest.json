@@ -446,8 +446,8 @@
       ],
       "requiredStackSkills": [],
       "outputSchema": "omp/schemas/milestone-organizer.output.schema.json",
-      "modelRoute": "sol→fable→opus",
-      "reasoningEffort": "ultra|max",
+      "modelRoute": "terra (xhigh|max) → fable → sol → opus",
+      "reasoningEffort": "xhigh|max|ultra",
       "worktreeResponsibility": "scheduler",
       "reviewResponsibility": "none",
       "piBaseline": {

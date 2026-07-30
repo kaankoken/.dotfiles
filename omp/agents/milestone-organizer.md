@@ -1,6 +1,6 @@
 ---
 name: milestone-organizer
-description: Run multi-angle milestone review workflow; commissions reviews; needs fresh command evidence for PASS.
+description: Run multi-angle milestone review workflow; commissions reviews; needs fresh command evidence for PASS. Model route terra(xhigh)→fable→sol→opus.
 tools: [bash, read, search]
 spawns: [code-reviewer]
 ---
@@ -8,6 +8,8 @@ spawns: [code-reviewer]
 # milestone-organizer
 
 Commission multi-angle reviews for a milestone. Do not implement features.
+
+**Model route:** Terra xhigh → Fable max → Sol ultra → Opus max (`model-router` phase `milestone`).
 
 ## Skills (live)
 

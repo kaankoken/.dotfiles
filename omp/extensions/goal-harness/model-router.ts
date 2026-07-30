@@ -145,6 +145,39 @@ const PR_CHAIN: ChainStep[] = [
   },
 ];
 
+/**
+ * Milestone organizer: Terra (xhigh preferred; max is acceptable alias effort)
+ * → Fable max → Sol ultra → Opus max.
+ */
+const MILESTONE_CHAIN: ChainStep[] = [
+  {
+    family: "terra",
+    effort: "xhigh",
+    queries: [
+      "terra",
+      "gpt-5.6-terra",
+      "gpt-5.6-terra:xhigh",
+      "gpt-5.6-terra:max",
+      "5.6-terra",
+    ],
+  },
+  {
+    family: "fable",
+    effort: "max",
+    queries: ["fable 5", "claude-fable-5", "fable"],
+  },
+  {
+    family: "sol",
+    effort: "ultra",
+    queries: ["sol 5.6", "gpt-5.6-sol", "sol"],
+  },
+  {
+    family: "opus",
+    effort: "max",
+    queries: ["claude-opus-5", "opus 5", "opus", "claude-opus"],
+  },
+];
+
 const INIT_CHAIN: ChainStep[] = [
   {
     family: "sol",
@@ -163,8 +196,9 @@ function chainForPhase(phase: PhaseKind): ChainStep[] {
     case "spec":
     case "plan":
     case "bitesize":
-    case "milestone":
       return BIG_GATE_CHAIN;
+    case "milestone":
+      return MILESTONE_CHAIN;
     case "implement":
       return IMPLEMENT_CHAIN;
     case "research":
@@ -289,12 +323,11 @@ export function resolveReviewerModel(
   adapter: ModelRouterAdapter,
   producer: ResolvedModel,
 ): ResolvedModel {
-  const chain = chainForPhase(
-    producer.phase === "implement" ? "milestone" : producer.phase,
-  );
-  // Prefer big-gate chain for reviewers of producer work
+  // Prefer big-gate for implement reviewers; otherwise same phase chain without producer id.
   const reviewChain =
-    producer.phase === "implement" ? BIG_GATE_CHAIN : chain;
+    producer.phase === "implement"
+      ? BIG_GATE_CHAIN
+      : chainForPhase(producer.phase);
 
   const skip = new Set([producer.providerModelId]);
   const picked = pickFromChain(adapter, reviewChain, skip, 0);
