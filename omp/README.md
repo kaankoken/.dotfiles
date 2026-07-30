@@ -83,6 +83,35 @@ OMP_LIVE_SMOKE=1 bash tests/smoke-omp-harness.sh
 
 **Only after Stage 4 PASS is Pi removal (Tasks 30–31) eligible.**
 
+## Cold-start context budget
+
+Most residual cold cost is **not** skill bodies — it is OMP system prompt +
+**xd:// device inventory** (MCP tool name/summary lines) + built-in tool surface.
+
+| Lever | Config |
+|-------|--------|
+| Skill catalog | `skills.includeSkills` — ultra-core + `stack-*` routers only |
+| Domain packs | On demand: `/stack-*`, stack-scout, `configs/pack-*.yml` |
+| Cold MCP | **tokensave only** — headroom / context-mode / context7 have `enabled: false` until `/mcp enable` or `/mcp-stack` |
+| Foreign MCP | `mcp.json` `disabledServers` (codebase-memory, chrome-devtools, node_repl, …) |
+| xd:// docs | `tools.xdev: true`, `tools.xdevDocs: catalog` (names only, not long summaries) |
+| Optional tools | `generate_image.enabled: false`, `browser.enabled: false`, `inspect_image.mode: off` |
+
+| Surface | When |
+|---------|------|
+| Cold catalog | Superpowers workflow, harness, caveman/ponytail roots, beads, `stack-*` routers |
+| `/stack-rust` `/stack-ios` `/stack-android` | Activate pack for current turn via path loads |
+| `/mcp-stack` / `/mcp enable <name>` | Connect headroom, context-mode, and/or context7 |
+| `stack-scout` / implementer / harness markers | Detect stack → entry skills by absolute path |
+| `omp --config configs/pack-rust.yml` (etc.) | Optional **new session** with full pack skill catalog |
+
+Pack roots remain in `customDirectories`. Never vendor skill bodies into prompts.
+See `extensions/goal-harness/domain-packs.ts`.
+
+**Floor:** tokensave still contributes dozens of xd:// lines (code-graph-first).
+After optional MCPs stay off, cold % should drop further; single-digit still needs
+a smaller base system prompt (upstream / `SYSTEM.md`).
+
 ## Tool auto mode (Claude/Grok-style)
 
 `config.yml` uses `tools.approvalMode: yolo` with per-tool `allow`, plus the

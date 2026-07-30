@@ -1,8 +1,35 @@
 {
   "mcpServers": {
-    "tokensave": { "command": "tokensave", "args": ["serve"] },
-    "headroom": { "command": "headroom", "args": ["mcp", "serve"] },
-    "context-mode": { "command": "context-mode" },
-    "context7": { "url": "https://mcp.context7.com/mcp" }
-  }
+    "tokensave": {
+      "command": "tokensave",
+      "args": ["serve"]
+    },
+    "headroom": {
+      "enabled": false,
+      "command": "headroom",
+      "args": ["mcp", "serve"]
+    },
+    "context-mode": {
+      "enabled": false,
+      "command": "context-mode"
+    },
+    "context7": {
+      "enabled": false,
+      "url": "https://mcp.context7.com/mcp"
+    }
+  },
+  "disabledServers": [
+    "codebase-memory-mcp",
+    "codebase_memory_mcp",
+    "codebase_memory",
+    "chrome-devtools",
+    "chrome_devtools",
+    "chrome_devtools_mcp",
+    "chrome-devtools-mcp",
+    "node_repl",
+    "computer-use",
+    "rust_skills_actionbook",
+    "actionbook",
+    "plugin_chrome-devtools-mcp_chrome-devtools"
+  ]
 }

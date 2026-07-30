@@ -1,0 +1,35 @@
+# Optional overlay: expand skill catalog with Axiom/iOS domain pack.
+# Usage (new session):
+#   omp --config ~/.dotfiles/omp/configs/pack-ios.yml
+# Prefer /stack-ios or stack-scout for on-demand path loads without a full catalog.
+
+skills:
+  includeSkills:
+    # cold core
+    - using-superpowers
+    - brainstorming
+    - writing-plans
+    - writing-skills
+    - requesting-code-review
+    - receiving-code-review
+    - systematic-debugging
+    - test-driven-development
+    - subagent-driven-development
+    - using-git-worktrees
+    - verification-before-completion
+    - finishing-a-development-branch
+    - dispatching-parallel-agents
+    - executing-plans
+    - goal-harness
+    - beads
+    - caveman
+    - caveman-*
+    - cavecrew
+    - ponytail
+    - ponytail-*
+    - webwright
+    - stack-rust
+    - stack-ios
+    - stack-android
+    # ios / axiom pack
+    - axiom-*

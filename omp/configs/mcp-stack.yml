@@ -1,0 +1,13 @@
+# Optional overlay: connect headroom + context-mode + context7 (tokensave always on).
+# Usage (new session):
+#   omp --config ~/.dotfiles/omp/configs/mcp-stack.yml
+#
+# In an existing session prefer:
+#   /mcp enable headroom
+#   /mcp enable context-mode
+#   /mcp enable context7
+# (or /mcp-stack command which instructs the same).
+
+# Note: OMP mcp.json is not deep-merged by this overlay for server specs.
+# Use /mcp enable or edit mcp.json enabled flags. This file documents intent
+# and can be extended if OMP later accepts MCP overlays here.

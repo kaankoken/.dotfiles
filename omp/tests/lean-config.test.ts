@@ -66,16 +66,33 @@ describe("lean OMP configuration", () => {
     expect(versionPin).toBe("2.3.0");
   });
 
-  test("mcp.json allowlist is exactly four servers", () => {
+  test("mcp.json cold-loads tokensave only; stack MCPs are opt-in", () => {
     const path = join(OMP_ROOT, "mcp.json");
     expect(existsSync(path)).toBe(true);
     const mcp = JSON.parse(readFileSync(path, "utf8")) as {
-      mcpServers: Record<string, unknown>;
+      mcpServers: Record<string, { enabled?: boolean; command?: string; url?: string }>;
+      disabledServers?: string[];
     };
     const keys = Object.keys(mcp.mcpServers).sort();
     expect(keys).toEqual(
       ["context-mode", "context7", "headroom", "tokensave"].sort(),
     );
+    // Cold start: only tokensave connects (no xd:// flood from optional stack MCPs).
+    expect(mcp.mcpServers.tokensave?.enabled).not.toBe(false);
+    for (const name of ["headroom", "context-mode", "context7"] as const) {
+      expect(mcp.mcpServers[name]?.enabled).toBe(false);
+    }
+    // Foreign MCP from VS Code / Claude plugins / Codex must not cold-mount.
+    const disabled = mcp.disabledServers ?? [];
+    for (const name of [
+      "codebase-memory-mcp",
+      "chrome-devtools",
+      "node_repl",
+      "computer-use",
+    ]) {
+      expect(disabled).toContain(name);
+    }
+    expect(existsSync(join(OMP_ROOT, "commands", "mcp-stack.md"))).toBe(true);
   });
 
   test("package.json has no pi-dynamic-workflows or pi-mcp-adapter", () => {
@@ -191,7 +208,7 @@ describe("lean OMP configuration", () => {
     }
   });
 
-  test("includeSkills lists skill names, not pack labels (OMP Bun.Glob allowlist)", () => {
+  test("includeSkills is cold-core only (domain packs on demand)", () => {
     const config = parseYaml(
       readFileSync(join(OMP_ROOT, "config.yml"), "utf8"),
     ) as Record<string, any>;
@@ -210,6 +227,8 @@ describe("lean OMP configuration", () => {
       expect(include).not.toContain(label);
     }
 
+    // Cold catalog: harness + superpowers core + caveman/ponytail roots + routers.
+    // Domain packs and sub-skills (caveman-*, ponytail-*, webwright) are on-demand.
     const requiredSkillNames = [
       "using-superpowers",
       "requesting-code-review",
@@ -224,15 +243,93 @@ describe("lean OMP configuration", () => {
       "verification-before-completion",
       "finishing-a-development-branch",
       "ponytail",
-      "webwright",
       "caveman",
+      "stack-rust",
+      "stack-ios",
+      "stack-android",
+    ];
+    for (const name of requiredSkillNames) {
+      expect(include).toContain(name);
+    }
+
+    const forbiddenColdExtras = [
+      "webwright",
+      "writing-skills",
+      "caveman-*",
+      "ponytail-*",
+      "cavecrew",
       "axiom-*",
       "rust-*",
       "android-cli",
       "testing-setup",
+      "coding-guidelines",
+      "core-*",
+      "domain-*",
+      "m0*",
+      "m1*",
+      "meta-cognition-parallel",
+      "unsafe-checker",
+      "adaptive",
+      "agp-9-upgrade",
+      "appfunctions",
+      "camera1-to-camerax",
+      "display-*",
+      "edge-to-edge",
+      "engage-sdk-integration",
+      "migrate-xml-views-to-jetpack-compose",
+      "navigation-3",
+      "perfetto-*",
+      "play-billing-library-version-upgrade",
+      "r8-analyzer",
+      "styles",
+      "verified-email",
     ];
-    for (const name of requiredSkillNames) {
-      expect(include).toContain(name);
+    for (const name of forbiddenColdExtras) {
+      expect(include).not.toContain(name);
+    }
+
+    // Cold-start tool surface: no image gen / browser tool schemas
+    expect(config.generate_image?.enabled).toBe(false);
+    expect(config.inspect_image?.mode).toBe("off");
+    expect(config.browser?.enabled).toBe(false);
+    expect(config.tools?.xdev).toBe(true);
+    expect(config.tools?.xdevDocs).toBe("catalog");
+
+    // Thin routers exist under omp/skills
+    for (const name of ["stack-rust", "stack-ios", "stack-android"]) {
+      expect(
+        existsSync(join(OMP_ROOT, "skills", name, "SKILL.md")),
+      ).toBe(true);
+    }
+
+    // Pack overlays expand domain globs for optional full-catalog sessions
+    for (const pack of ["pack-rust", "pack-ios", "pack-android"]) {
+      const overlayPath = join(OMP_ROOT, "configs", `${pack}.yml`);
+      expect(existsSync(overlayPath)).toBe(true);
+      const overlay = parseYaml(readFileSync(overlayPath, "utf8")) as Record<
+        string,
+        any
+      >;
+      const oInclude: string[] = overlay.skills?.includeSkills ?? [];
+      expect(oInclude).toContain("using-superpowers");
+      expect(oInclude).toContain("goal-harness");
+    }
+    const rustOverlay = parseYaml(
+      readFileSync(join(OMP_ROOT, "configs", "pack-rust.yml"), "utf8"),
+    ) as Record<string, any>;
+    expect(rustOverlay.skills.includeSkills).toContain("rust-*");
+    const iosOverlay = parseYaml(
+      readFileSync(join(OMP_ROOT, "configs", "pack-ios.yml"), "utf8"),
+    ) as Record<string, any>;
+    expect(iosOverlay.skills.includeSkills).toContain("axiom-*");
+    const androidOverlay = parseYaml(
+      readFileSync(join(OMP_ROOT, "configs", "pack-android.yml"), "utf8"),
+    ) as Record<string, any>;
+    expect(androidOverlay.skills.includeSkills).toContain("android-cli");
+
+    // Stack activation commands exist
+    for (const cmd of ["stack-rust", "stack-ios", "stack-android"]) {
+      expect(existsSync(join(OMP_ROOT, "commands", `${cmd}.md`))).toBe(true);
     }
 
     // Superpowers root must exist and every non-glob include that lives there
@@ -264,6 +361,7 @@ describe("lean OMP configuration", () => {
     expect(
       new Bun.Glob("requesting-code-review").match("requesting-code-review"),
     ).toBe(true);
+    // Domain globs still valid for pack overlays (not cold includeSkills)
     expect(new Bun.Glob("axiom-*").match("axiom-swiftui")).toBe(true);
     expect(new Bun.Glob("rust-*").match("rust-router")).toBe(true);
     expect(new Bun.Glob("rust-skills").match("rust-router")).toBe(false);
@@ -271,11 +369,13 @@ describe("lean OMP configuration", () => {
 
   test("no Superpowers SKILL.md bodies under omp/", () => {
     const files = walkFiles(OMP_ROOT);
+    // Allowed: harness skill + thin on-demand pack routers (not vendored Superpowers).
+    const allowedSkillMd =
+      /skills\/(goal-harness|stack-rust|stack-ios|stack-android)\/SKILL\.md$/;
     for (const f of files) {
       if (f.endsWith("SKILL.md")) {
-        // Superpowers must not be vendored; OMP goal-harness skill is allowed
         expect(f).not.toMatch(/superpowers/i);
-        expect(f).toMatch(/skills\/goal-harness\/SKILL\.md$/);
+        expect(f).toMatch(allowedSkillMd);
       }
     }
   });

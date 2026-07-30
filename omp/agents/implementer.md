@@ -15,7 +15,11 @@ Implement one claimed bd task inside a harness-assigned git worktree.
 - `subagent-driven-development` (boundaries only — harness owns dispatch)
 - `using-git-worktrees` (consume assigned worktree; do not create your own)
 - `receiving-code-review` when fixing review findings
-- Stack skills as project markers require (rust-skills, axiom, android, …)
+- **Stack packs on demand** when worktree markers require them — not cold-loaded:
+  - rust → `stack-rust` router + entry paths (`rust-router`, `coding-guidelines`)
+  - ios → `stack-ios` router + Axiom entry paths
+  - android → `stack-android` router + Android entry paths
+  - Prefer harness `prepareStackSkills` / `domain-packs` absolute paths over assuming `skill://rust-*` exists in the catalog
 - `caveman`, `ponytail` by name
 
 Load complete current `SKILL.md` paths; never vendor skill bodies.

@@ -37,6 +37,15 @@ export { DEFAULT_GOAL, bindGoal, HARNESS_COMMAND_NAME };
 export { REQUIRED_SKILLS_BY_ROLE, validateRequiredSkillsMapping } from "./skills";
 export { attestAndUnlock, createSkillGuardSession } from "./skill-guard";
 export { harnessReadSkill, HARNESS_READ_SKILL_TOOL } from "./skill-tool";
+export {
+  DOMAIN_PACKS,
+  DOMAIN_COLD_START_FORBIDDEN_GLOBS,
+  packsForStackMarker,
+  entrySkillNamesForMarker,
+  resolveEntrySkillPaths,
+  listPackSkillNames,
+  packOverlayIncludeGlobs,
+} from "./domain-packs";
 export { buildPhaseCapabilities, validatePhaseCapabilities } from "./capabilities";
 export {
   preflightOmpApprovalConfig,

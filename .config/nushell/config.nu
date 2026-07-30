@@ -46,6 +46,17 @@ def --wrapped codex-raw [...args: string] {
     ^codex ...$args
 }
 
+# --- Oh My Pi (via headroom by default) ---
+# Routes Anthropic through Headroom proxy; other providers keep normal endpoints.
+# Escape hatch: omp-raw
+def --wrapped omp [...args: string] {
+    ^headroom wrap omp ...$args
+}
+
+def --wrapped omp-raw [...args: string] {
+    ^omp ...$args
+}
+
 # --- Firebase multi-account helpers (personal / voluble only) ---
 def --wrapped firebase [...args: string] {
     let voluble_dir = $"($env.HOME)/Desktop/voluble"

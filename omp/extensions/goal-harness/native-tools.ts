@@ -1,7 +1,8 @@
 /**
  * OMP-native coding tool manifest for implementer lanes.
  * Native: Hashline, LSP, AST/search, shell, web_search.
- * Shared MCP allowlist only: TokenSave, headroom, context-mode, context7.
+ * Shared MCP allowlist only: TokenSave (cold), headroom / context-mode /
+ * context7 (opt-in via enabled:false → /mcp enable).
  */
 
 export class NativeToolsError extends Error {
