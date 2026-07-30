@@ -15,9 +15,11 @@ lsp:
   enabled: true
   lazy: true
   diagnosticsOnWrite: true
-task: 
+task:
   batch: true
   maxConcurrency: 8
+  # Show resolved provider/model id on task/subagent spawn rows in the TUI.
+  showResolvedModelBadge: true
 tools:
   # yolo = Claude/Grok-style auto; smart-approve (extensions/smart-approve)
   # is the high-risk gate (force-push, rm -rf /, secrets paths, curl|sh, …).

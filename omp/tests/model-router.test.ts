@@ -40,6 +40,7 @@ function catalog(...entries: ModelCatalogEntry[]): ModelRouterAdapter {
 
 const fullCatalog = catalog(
   entry("openai-codex/gpt-5.6-sol", ["sol", "sol 5.6", "gpt-5.6-sol"], "openai-codex"),
+  entry("openai-codex/gpt-5.6-terra", ["terra", "gpt-5.6-terra", "5.6-terra"], "openai-codex"),
   entry("anthropic/claude-fable-5", ["fable", "fable 5", "claude-fable-5"], "anthropic"),
   entry("anthropic/claude-opus-4", ["opus", "claude-opus"], "anthropic"),
   entry("xai/grok-4.5", ["grok", "grok 4.5", "grok-4.5"], "xai"),
@@ -311,6 +312,71 @@ describe("deterministic model routing", () => {
     expect(resolveModelRoute(sonnetOnly, "implement").providerModelId).toBe(
       "anthropic/claude-sonnet-4",
     );
+  });
+
+  test("Research: Grok high (deep-research) first, then Sol medium", () => {
+    const r = resolveModelRoute(fullCatalog, "research");
+    expect(r.providerModelId).toBe("xai/grok-4.5");
+    expect(r.effort).toBe("high");
+    expect(r.fallbackChain.map((x) => x.family)).toEqual(["grok", "sol"]);
+  });
+
+  test("Research: no Grok → Sol medium", () => {
+    const noGrok = catalog(
+      entry("xai/grok-4.5", ["grok"], "xai", false),
+      entry("openai-codex/gpt-5.6-sol", ["sol", "gpt-5.6-sol"], "openai-codex"),
+    );
+    const r = resolveModelRoute(noGrok, "research");
+    expect(r.providerModelId).toBe("openai-codex/gpt-5.6-sol");
+    expect(r.effort).toBe("medium");
+  });
+
+  test("PR: Grok high → Terra xhigh → Sonnet high", () => {
+    const r = resolveModelRoute(fullCatalog, "pr");
+    expect(r.providerModelId).toBe("xai/grok-4.5");
+    expect(r.effort).toBe("high");
+    expect(r.fallbackChain.map((x) => `${x.family}@${x.effort}`)).toEqual([
+      "grok@high",
+      "terra@xhigh",
+      "sonnet@high",
+    ]);
+  });
+
+  test("PR: no Grok → Terra xhigh", () => {
+    const noGrok = catalog(
+      entry("xai/grok-4.5", ["grok"], "xai", false),
+      entry(
+        "openai-codex/gpt-5.6-terra",
+        ["terra", "gpt-5.6-terra"],
+        "openai-codex",
+      ),
+      entry("anthropic/claude-sonnet-4", ["sonnet"], "anthropic"),
+    );
+    const r = resolveModelRoute(noGrok, "pr");
+    expect(r.providerModelId).toBe("openai-codex/gpt-5.6-terra");
+    expect(r.effort).toBe("xhigh");
+  });
+
+  test("PR: no Grok/Terra → Sonnet high", () => {
+    const onlySonnet = catalog(
+      entry("xai/grok-4.5", ["grok"], "xai", false),
+      entry("openai-codex/gpt-5.6-terra", ["terra"], "openai-codex", false),
+      entry("anthropic/claude-sonnet-4", ["sonnet"], "anthropic"),
+    );
+    const r = resolveModelRoute(onlySonnet, "pr");
+    expect(r.providerModelId).toBe("anthropic/claude-sonnet-4");
+    expect(r.effort).toBe("high");
+  });
+
+  test("Terra family does not steal sol or generic gpt ids", () => {
+    const c = catalog(
+      entry("xai/grok-4.5", ["grok"], "xai", false),
+      entry("openai-codex/gpt-5.6-sol", ["sol", "gpt-5.6-sol"], "openai-codex"),
+      // no terra — must fall through to sonnet, not match sol as terra
+      entry("anthropic/claude-sonnet-4", ["sonnet"], "anthropic"),
+    );
+    const r = resolveModelRoute(c, "pr");
+    expect(r.providerModelId).toBe("anthropic/claude-sonnet-4");
   });
 });
 

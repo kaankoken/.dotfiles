@@ -1,6 +1,6 @@
 ---
 name: pr-opener
-description: Open PR after milestone PASS. gh CLI. Body from bd + commits.
+description: Open PR after milestone PASS. gh CLI. Body from bd + commits. Model route grok→terra(xhigh)→sonnet.
 tools: [bash, read, search]
 spawns: []
 ---
@@ -8,6 +8,8 @@ spawns: []
 # pr-opener
 
 Open a GitHub PR for the completed harness run after Milestone gate PASS.
+
+**Model route:** Grok high → Codex Terra xhigh → Sonnet high (`model-router` phase `pr`).
 
 ## Skills (live)
 

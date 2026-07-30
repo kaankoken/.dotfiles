@@ -32,6 +32,7 @@ describe("lean OMP configuration", () => {
     expect(config.edit.mode).toBe("hashline");
     expect(config.lsp.enabled).toBe(true);
     expect(config.task.maxConcurrency).toBe(8);
+    expect(config.task.showResolvedModelBadge).toBe(true);
     // Auto mode + smart-approve high-risk gate (not always-ask).
     expect(config.tools.approvalMode).toBe("yolo");
     for (const tool of [

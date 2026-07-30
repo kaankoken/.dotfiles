@@ -14,7 +14,7 @@ export type PhaseKind =
   | "init"
   | "pr";
 
-export type Effort = "low" | "medium" | "high" | "max" | "ultra";
+export type Effort = "low" | "medium" | "high" | "xhigh" | "max" | "ultra";
 
 export type ModelFamily =
   | "sol"
@@ -22,7 +22,8 @@ export type ModelFamily =
   | "opus"
   | "grok"
   | "composer"
-  | "sonnet";
+  | "sonnet"
+  | "terra";
 
 export type ModelCatalogEntry = {
   id: string;
@@ -108,16 +109,52 @@ const IMPLEMENT_CHAIN: ChainStep[] = [
   },
 ];
 
+/**
+ * Research / scouts: Grok high first (deep-research style multi-hop work).
+ * Sol medium remains a soft fallback if Grok is offline.
+ */
 const RESEARCH_CHAIN: ChainStep[] = [
-  {
-    family: "sol",
-    effort: "medium",
-    queries: ["sol", "gpt-5.6-sol"],
-  },
   {
     family: "grok",
     effort: "high",
-    queries: ["grok 4.5", "grok"],
+    queries: ["grok 4.5", "grok-4.5", "grok"],
+  },
+  {
+    family: "sol",
+    effort: "medium",
+    queries: ["sol 5.6", "gpt-5.6-sol", "sol"],
+  },
+];
+
+/** PR delivery: Grok → Codex Terra (xhigh) → Sonnet. */
+const PR_CHAIN: ChainStep[] = [
+  {
+    family: "grok",
+    effort: "high",
+    queries: ["grok 4.5", "grok-4.5", "grok"],
+  },
+  {
+    family: "terra",
+    effort: "xhigh",
+    queries: ["terra", "gpt-5.6-terra", "gpt-5.6-terra:xhigh", "5.6-terra"],
+  },
+  {
+    family: "sonnet",
+    effort: "high",
+    queries: ["claude-sonnet-5", "sonnet 5", "sonnet", "claude-sonnet"],
+  },
+];
+
+const INIT_CHAIN: ChainStep[] = [
+  {
+    family: "sol",
+    effort: "medium",
+    queries: ["sol 5.6", "gpt-5.6-sol", "sol"],
+  },
+  {
+    family: "sonnet",
+    effort: "medium",
+    queries: ["claude-sonnet-5", "sonnet 5", "sonnet", "claude-sonnet"],
   },
 ];
 
@@ -132,21 +169,11 @@ function chainForPhase(phase: PhaseKind): ChainStep[] {
       return IMPLEMENT_CHAIN;
     case "research":
       return RESEARCH_CHAIN;
-    case "init":
     case "pr":
+      return PR_CHAIN;
+    case "init":
     default:
-      return [
-        {
-          family: "sol",
-          effort: "medium",
-          queries: ["sol", "gpt-5.6-sol"],
-        },
-        {
-          family: "sonnet",
-          effort: "medium",
-          queries: ["claude-sonnet-5", "sonnet 5", "sonnet", "claude-sonnet"],
-        },
-      ];
+      return INIT_CHAIN;
   }
 }
 
@@ -162,11 +189,11 @@ function pickFromChain(
       const hit = adapter.resolve(q);
       if (!hit || !hit.available) continue;
       if (skipIds.has(hit.id)) continue;
-      // Family sanity: avoid Composer matching unrelated aliases
-      if (step.family === "composer" && !/composer/i.test(hit.id + hit.aliases.join(" ")))
-        continue;
-      if (step.family === "grok" && !/grok/i.test(hit.id + hit.aliases.join(" ")))
-        continue;
+      // Family sanity: avoid cross-family alias collisions
+      const blob = hit.id + " " + hit.aliases.join(" ");
+      if (step.family === "composer" && !/composer/i.test(blob)) continue;
+      if (step.family === "grok" && !/grok/i.test(blob)) continue;
+      if (step.family === "terra" && !/terra/i.test(blob)) continue;
       return { entry: hit, step, index: i };
     }
   }
