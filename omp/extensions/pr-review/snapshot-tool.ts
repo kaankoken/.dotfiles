@@ -121,8 +121,9 @@ export interface PrReviewSnapshotTool {
     invocationId: string,
     code: PrReviewFailureCode,
     message: string,
-  ): boolean;
+  ): Promise<void> | undefined;
   finishCreate(invocationId: string): void;
+  retryCleanup(): void;
 }
 
 export interface PrReviewSnapshotToolOptions {
@@ -154,6 +155,9 @@ interface PendingSnapshotCreate {
   cancelled: boolean;
   cancellationCode?: PrReviewFailureCode;
   cancellationMessage?: string;
+  controller: AbortController;
+  settled: Promise<void>;
+  resolveSettled: () => void;
 }
 
 export class PrReviewSnapshotError extends Error {
@@ -313,7 +317,16 @@ class SnapshotTool implements PrReviewSnapshotTool {
       throw new PrReviewSnapshotError("invalid_arguments", "snapshot input must be an object");
     }
     if (input.action === "create") {
-      const pending = invocationId ? { cancelled: false } : undefined;
+      let resolveSettled!: () => void;
+      const controller = new AbortController();
+      const pending: PendingSnapshotCreate = {
+        cancelled: false,
+        controller,
+        settled: new Promise<void>((resolve) => {
+          resolveSettled = resolve;
+        }),
+        resolveSettled: () => resolveSettled(),
+      };
       if (invocationId) {
         if (this.#pendingCreates.has(invocationId)) {
           throw new PrReviewSnapshotError(
@@ -321,13 +334,18 @@ class SnapshotTool implements PrReviewSnapshotTool {
             "duplicate snapshot invocation identifier",
           );
         }
-        this.#pendingCreates.set(invocationId, pending!);
+        this.#pendingCreates.set(invocationId, pending);
       }
+      const combinedSignal = signal
+        ? AbortSignal.any([signal, controller.signal])
+        : controller.signal;
       try {
-        return await this.#create(input, invocationId, pending, signal);
+        return await this.#create(input, pending, invocationId, combinedSignal);
       } catch (error) {
         if (invocationId) this.#pendingCreates.delete(invocationId);
         throw error;
+      } finally {
+        pending.resolveSettled();
       }
     }
     if (input.action === "read") return this.#read(input, signal);
@@ -339,18 +357,23 @@ class SnapshotTool implements PrReviewSnapshotTool {
     invocationId: string,
     code: PrReviewFailureCode,
     message: string,
-  ): boolean {
+  ): Promise<void> | undefined {
     const pending = this.#pendingCreates.get(invocationId);
-    if (!pending) return false;
+    if (!pending) return undefined;
     pending.cancelled = true;
     pending.cancellationCode = code;
     pending.cancellationMessage = message;
+    pending.controller.abort();
     this.#finalizePendingCancellation(pending);
-    return true;
+    return pending.settled;
   }
 
   finishCreate(invocationId: string): void {
     this.#pendingCreates.delete(invocationId);
+  }
+
+  retryCleanup(): void {
+    this.#state.retryCleanup();
   }
 
   #finalizePendingCancellation(pending: PendingSnapshotCreate): void {
@@ -374,8 +397,8 @@ class SnapshotTool implements PrReviewSnapshotTool {
     }
   }
 
-  #assertCreateActive(pending?: PendingSnapshotCreate): void {
-    if (!pending?.cancelled) return;
+  #assertCreateActive(pending: PendingSnapshotCreate): void {
+    if (!pending.cancelled) return;
     this.#finalizePendingCancellation(pending);
     throw new PrReviewSnapshotError(
       pending.cancellationCode ?? "internal_error",
@@ -385,8 +408,8 @@ class SnapshotTool implements PrReviewSnapshotTool {
 
   async #create(
     input: SnapshotCreateInput,
+    pending: PendingSnapshotCreate,
     invocationId?: string,
-    pending?: PendingSnapshotCreate,
     signal?: AbortSignal,
   ): Promise<SnapshotCreateResult> {
     const raw = exactObject(input, "create", ["action", "target", "dry_run"]);
@@ -633,7 +656,12 @@ class SnapshotTool implements PrReviewSnapshotTool {
         call_nonces: Object.freeze(callNonces),
       });
     } catch (error) {
-      const failure = normalizedFailure(error, "internal_error");
+      const failure = pending.cancelled
+        ? new PrReviewSnapshotError(
+          pending.cancellationCode ?? "internal_error",
+          pending.cancellationMessage ?? "snapshot create was cancelled",
+        )
+        : normalizedFailure(error, "internal_error");
       if (
         !roleFailureAlreadyReceipted
         && journal.currentReceipt.status === "prepared"

@@ -223,7 +223,17 @@ describe("private immutable PR review state", () => {
   test("mints opaque handles, copies state, stores private bytes, and enforces lifecycle", () => {
     const rootDir = mkdtempSync(join(tmpdir(), "wf7-state-"));
     try {
-      const store = new PrReviewStateStore({ rootDir, maxReadBytes: 8 });
+      let allowRemoval = false;
+      let removalAttempts = 0;
+      const store = new PrReviewStateStore({
+        rootDir,
+        maxReadBytes: 8,
+        removeRunDirectory: (directory) => {
+          removalAttempts += 1;
+          if (!allowRemoval) throw new Error("simulated unlink failure");
+          rmSync(directory, { recursive: true, force: true });
+        },
+      });
       const run = store.startRun();
       const inputBytes = new TextEncoder().encode("exact captured diff");
       const changedFiles = [{
@@ -285,8 +295,15 @@ describe("private immutable PR review state", () => {
       expect(() => store.completeCapture(run.runHandle, [] as never)).toThrow("illegal stage transition");
 
       store.cleanupRun(run.runHandle);
+      expect(() => store.getRunStatus(run.runHandle)).toThrow("unknown run handle");
       expect(() => store.lookupSnapshot(snapshot.snapshotHandle)).toThrow("unknown snapshot handle");
       expect(() => store.lookupCapture(capture.captureHandle)).toThrow("unknown capture handle");
+      expect(statSync(join(rootDir, run.runHandle)).isDirectory()).toBe(true);
+      expect(removalAttempts).toBe(3);
+
+      allowRemoval = true;
+      store.retryCleanup();
+      expect(removalAttempts).toBe(4);
       expect(() => statSync(join(rootDir, run.runHandle))).toThrow();
     } finally {
       rmSync(rootDir, { recursive: true, force: true });

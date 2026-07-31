@@ -83,7 +83,9 @@ function execOk(value: unknown) {
   };
 }
 
-async function dualRunFixture(): Promise<DualRunFixture> {
+async function dualRunFixture(
+  options: { ignoreAbort?: boolean } = {},
+): Promise<DualRunFixture> {
   const root = mkdtempSync(join(tmpdir(), "wf7-dual-run-"));
   roots.push(root);
   const targetDir = join(root, "repo");
@@ -126,14 +128,18 @@ async function dualRunFixture(): Promise<DualRunFixture> {
         if (repo === "alpha" && !delayedAlpha) {
           delayedAlpha = true;
           alphaReached();
-          await Promise.race([
-            alphaRelease,
-            new Promise<void>((resolve) => {
-              callOptions.signal?.addEventListener("abort", () => resolve(), { once: true });
-            }),
-          ]);
-          if (callOptions.signal?.aborted) {
-            return { exitCode: 1, stdout: "", stderr: "operation aborted" };
+          if (options.ignoreAbort) {
+            await alphaRelease;
+          } else {
+            await Promise.race([
+              alphaRelease,
+              new Promise<void>((resolve) => {
+                callOptions.signal?.addEventListener("abort", () => resolve(), { once: true });
+              }),
+            ]);
+            if (callOptions.signal?.aborted) {
+              return { exitCode: 1, stdout: "", stderr: "operation aborted" };
+            }
           }
         }
         return execOk({
@@ -382,7 +388,8 @@ describe("production PR-review extension", () => {
     if (!("error" in outcome)) throw new Error("cancelled snapshot unexpectedly completed");
     expect(outcome.error).toMatchObject({ code: "task_cancelled" });
     expect(fixture.signals.length).toBeGreaterThan(0);
-    expect(fixture.signals.every((signal) => signal === controller.signal)).toBe(true);
+    expect(fixture.signals.every((signal) => signal !== controller.signal)).toBe(true);
+    expect(fixture.signals.every((signal) => signal?.aborted)).toBe(true);
     expect(readdirSync(fixture.stateRoot)).toEqual([]);
     const stored = receiptFiles(fixture.receiptRoot).find((receipt) =>
       receipt.repo === "alpha"
@@ -633,24 +640,23 @@ describe("production PR-review extension", () => {
       "pending-alpha-with-beta",
     );
     await fixture.alphaAtRepository;
-    expect(await fixture.api.emitCall({
+    const betaCall: NativeTaskCallEvent = {
       type: "tool_call",
       toolName: "task",
       toolCallId: "beta-task-during-alpha-create",
       input: structuredClone(beta.next_task),
       cwd: fixture.targetDir,
-    })).toEqual({
-      block: true,
-      reason: expect.stringContaining("Unattributed WF7"),
-    });
+    };
+    expect(await fixture.api.emitCall(betaCall)).toBeUndefined();
+    await fixture.api.emitResult(resultEvent(betaCall, "request_changes", "user"));
     expect(await fixture.api.executeTool(
       "pr_review_snapshot",
       { action: "status", run_handle: beta.run_handle },
-      "beta-remains-ready",
-    )).toMatchObject({ status: "pending", next_task: beta.next_task });
+      "beta-advanced-during-alpha-pending",
+    )).toMatchObject({ status: "pending" });
     expect(receiptFiles(fixture.receiptRoot).filter(
       (receipt) => receipt.repo === "invalid-task-call",
-    )).toHaveLength(1);
+    )).toHaveLength(0);
 
     fixture.releaseAlpha();
     await alphaPromise;
@@ -659,7 +665,7 @@ describe("production PR-review extension", () => {
   });
 
   test("cancelled pending create cannot block a legitimate new run task", async () => {
-    const fixture = await dualRunFixture();
+    const fixture = await dualRunFixture({ ignoreAbort: true });
     const alphaPromise = fixture.api.executeTool<PublicSnapshotCreate>(
       "pr_review_snapshot",
       { action: "create", target: "owner/alpha#1", dry_run: true },
@@ -692,10 +698,9 @@ describe("production PR-review extension", () => {
       input: structuredClone(beta.next_task),
       cwd: fixture.targetDir,
     })).toBeUndefined();
-    await fixture.api.emitShutdown();
     fixture.releaseAlpha();
     const outcome = await alphaPromise;
-    expect(outcome).toHaveProperty("error");
+    await fixture.api.emitShutdown();
     expect(readdirSync(fixture.stateRoot)).toEqual([]);
     expect(receiptFiles(fixture.receiptRoot).find(
       (receipt) => receipt.repo === "alpha",
@@ -719,6 +724,8 @@ describe("production PR-review extension", () => {
     await fixture.alphaAtRepository;
 
     await fixture.api.emitShutdown();
+    const outcome = await alphaPromise;
+    expect(fixture.signals.some((signal) => signal?.aborted)).toBe(true);
     expect(readdirSync(fixture.stateRoot)).toEqual([]);
     expect(receiptFiles(fixture.receiptRoot).find(
       (receipt) => receipt.repo === "alpha",
@@ -727,9 +734,6 @@ describe("production PR-review extension", () => {
       failure_code: "internal_error",
       mutation_guard_active: false,
     });
-
-    fixture.releaseAlpha();
-    const outcome = await alphaPromise;
     expect(outcome).toHaveProperty("error");
     expect(readdirSync(fixture.stateRoot)).toEqual([]);
     expect(receiptFiles(fixture.receiptRoot).filter(

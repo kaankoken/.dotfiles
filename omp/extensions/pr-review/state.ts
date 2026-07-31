@@ -56,6 +56,7 @@ export interface SnapshotInput {
 export interface PrReviewStateStoreOptions {
   rootDir?: string;
   maxReadBytes?: number;
+  removeRunDirectory?: (directory: string) => void;
 }
 
 interface SnapshotRecord {
@@ -137,6 +138,8 @@ export class PrReviewStateStore {
   readonly #runs = new Map<string, RunRecord>();
   readonly #snapshotRuns = new Map<string, string>();
   readonly #captures = new Map<string, CaptureRecord>();
+  readonly #pendingRunDirectories = new Map<string, string>();
+  readonly #removeRunDirectory: (directory: string) => void;
 
   constructor(options: PrReviewStateStoreOptions = {}) {
     const stateHome = process.env.XDG_STATE_HOME ?? join(homedir(), ".local", "state");
@@ -145,6 +148,8 @@ export class PrReviewStateStore {
     if (!Number.isSafeInteger(this.maxReadBytes) || this.maxReadBytes < 1) {
       throw new Error("maxReadBytes must be a positive integer");
     }
+    this.#removeRunDirectory = options.removeRunDirectory
+      ?? ((directory) => rmSync(directory, { recursive: true, force: true }));
     mkdirSync(this.rootDir, { recursive: true, mode: 0o700 });
     chmodSync(this.rootDir, 0o700);
   }
@@ -305,11 +310,33 @@ export class PrReviewStateStore {
 
   cleanupRun(runHandle: string): void {
     const run = this.#runs.get(runHandle);
-    if (!run) return;
-    if (run.snapshot) this.#snapshotRuns.delete(run.snapshot.snapshotHandle);
-    if (run.captureHandle) this.#captures.delete(run.captureHandle);
-    rmSync(run.directory, { recursive: true, force: true });
-    this.#runs.delete(runHandle);
+    if (run) {
+      if (run.snapshot) this.#snapshotRuns.delete(run.snapshot.snapshotHandle);
+      if (run.captureHandle) this.#captures.delete(run.captureHandle);
+      this.#runs.delete(runHandle);
+      this.#pendingRunDirectories.set(runHandle, run.directory);
+    }
+    this.#retryRunDirectory(runHandle);
+  }
+
+  retryCleanup(): void {
+    for (const runHandle of this.#pendingRunDirectories.keys()) {
+      this.#retryRunDirectory(runHandle);
+    }
+  }
+
+  #retryRunDirectory(runHandle: string): void {
+    const directory = this.#pendingRunDirectories.get(runHandle);
+    if (!directory) return;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        this.#removeRunDirectory(directory);
+        this.#pendingRunDirectories.delete(runHandle);
+        return;
+      } catch {
+        // Retain ownership for a later cleanup or shutdown retry.
+      }
+    }
   }
 
   #requireRun(runHandle: string): RunRecord {

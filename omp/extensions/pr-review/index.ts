@@ -545,7 +545,10 @@ export function createPrReviewExtension(
           && pendingSnapshotCalls.size === 0
         ) return undefined;
         const handle = snapshotHandleFromTask(event.input);
-        if (pendingSnapshotCalls.size > 0) {
+        let coordinator = handle
+          ? coordinatorBySnapshot.get(handle)
+          : undefined;
+        if (!coordinator && pendingSnapshotCalls.size > 0) {
           if (
             !handle
             && pendingSnapshotCalls.size === 1
@@ -566,9 +569,6 @@ export function createPrReviewExtension(
           }
           return auditInvalidTaskCall();
         }
-        let coordinator = handle
-          ? coordinatorBySnapshot.get(handle)
-          : undefined;
         if (
           !handle
           && lifecycleByCoordinator.size === 1
@@ -630,7 +630,7 @@ export function createPrReviewExtension(
       return undefined;
     });
 
-    api.on("session_shutdown", () => {
+    api.on("session_shutdown", async () => {
       for (const [coordinator, lifecycle] of [...lifecycleByCoordinator]) {
         if (
           !["failed", "dry_run", "published", "indeterminate"].includes(
@@ -649,14 +649,16 @@ export function createPrReviewExtension(
         }
         teardown(coordinator);
       }
+      const settlements: Promise<void>[] = [];
       for (const invocationId of pendingSnapshotCalls) {
-        const cancelled = snapshot.cancelCreate(
+        const settlement = snapshot.cancelCreate(
           invocationId,
           "internal_error",
           "WF7 session shut down during snapshot creation",
         );
+        if (settlement) settlements.push(settlement);
         const journal = journalBySnapshotCall.get(invocationId);
-        if (!cancelled && journal?.currentReceipt.status === "prepared") {
+        if (!settlement && journal?.currentReceipt.status === "prepared") {
           try {
             journal.fail(
               "internal_error",
@@ -671,6 +673,8 @@ export function createPrReviewExtension(
       }
       pendingSnapshotCalls.clear();
       journalBySnapshotCall.clear();
+      await Promise.allSettled(settlements);
+      snapshot.retryCleanup();
     });
 
     registerReviewPrCommand(api, config, options.runtime ?? compatibility);

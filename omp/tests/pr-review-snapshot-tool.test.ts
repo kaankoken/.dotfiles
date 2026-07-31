@@ -425,7 +425,8 @@ describe("read-only GitHub snapshot tool", () => {
     controller.abort();
     await expectFailure(pending, "task_cancelled");
 
-    expect(observedOptions.every((options) => options.signal === controller.signal)).toBe(true);
+    expect(observedOptions.every((options) => options.signal !== controller.signal)).toBe(true);
+    expect(observedOptions.every((options) => options.signal?.aborted)).toBe(true);
     expect(observedOptions.every((options) =>
       Number.isSafeInteger(options.timeoutMs) && Number(options.timeoutMs) > 0
     )).toBe(true);
