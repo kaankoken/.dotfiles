@@ -4,10 +4,12 @@
     {
       "livePath": "/Users/legolas/.omp/agent/agents/wf7-fable-reviewer.md",
       "canonicalPath": "/Users/legolas/.dotfiles/omp/agents/wf7-fable-reviewer.md",
-      "sha256": "c6cde69f9f1cda2df68daf1e4ced5605373ac9da81a3baca48dcb52507b53f67",
+      "sha256": "25bb778f295bbb812973df6bddcf26c737641340d389aa13bdd170893df58816",
       "agent": "wf7-fable-reviewer",
       "model": "anthropic/claude-fable-5:max",
-      "tools": ["pr_review_snapshot"],
+      "tools": [
+        "pr_review_snapshot"
+      ],
       "spawns": [],
       "blocking": true,
       "schemas": [
@@ -24,10 +26,12 @@
     {
       "livePath": "/Users/legolas/.omp/agent/agents/wf7-sol-reviewer.md",
       "canonicalPath": "/Users/legolas/.dotfiles/omp/agents/wf7-sol-reviewer.md",
-      "sha256": "6e517a462c4115337b0d79ae3ae5beb0acf992649d152486a5f090a7ab12a671",
+      "sha256": "79eaa275d6eca3a9aed15d2ceb37758fca01b09f2c05c02f3581fdab5d94b767",
       "agent": "wf7-sol-reviewer",
       "model": "openai-codex/gpt-5.6-sol:xhigh",
-      "tools": ["pr_review_snapshot"],
+      "tools": [
+        "pr_review_snapshot"
+      ],
       "spawns": [],
       "blocking": true,
       "schemas": [
@@ -44,10 +48,12 @@
     {
       "livePath": "/Users/legolas/.omp/agent/agents/wf7-grok-judge.md",
       "canonicalPath": "/Users/legolas/.dotfiles/omp/agents/wf7-grok-judge.md",
-      "sha256": "8208452bdb35f0e8ab4a0f3b020dd6c545c7ff6f822af6a16a6553bc3ce4f12b",
+      "sha256": "906001d6981546dbb1a9650b5cb8f85ff7cd453fa0b37e0ab03cf2eb3df5f6fd",
       "agent": "wf7-grok-judge",
       "model": "xai-oauth/grok-4.5:xhigh",
-      "tools": ["pr_review_snapshot"],
+      "tools": [
+        "pr_review_snapshot"
+      ],
       "spawns": [],
       "blocking": true,
       "schemas": [
