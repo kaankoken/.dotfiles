@@ -120,6 +120,12 @@ describe("required skill mapping", () => {
     ]);
   });
 
+  test("REQUIRED_SKILLS_BY_ROLE has zero caveman entries", () => {
+    for (const [role, req] of Object.entries(REQUIRED_SKILLS_BY_ROLE)) {
+      expect(req.skills ?? [], role).not.toContain("caveman");
+    }
+  });
+
   test("mapping stores names only never skill content bodies", () => {
     const blob = JSON.stringify(REQUIRED_SKILLS_BY_ROLE);
     expect(blob).not.toMatch(/# Test-Driven Development/);
@@ -166,10 +172,11 @@ describe("resolution", () => {
   test("two different realpaths with same name fail as duplicate", () => {
     const a = tempRoot();
     const b = tempRoot();
-    writeSkill(a, "caveman", "# A\n");
-    writeSkill(b, "caveman", "# B different\n");
+    // multi-root collision fixture, not product skill
+    writeSkill(a, "dup-skill", "# A\n");
+    writeSkill(b, "dup-skill", "# B different\n");
     expect(() =>
-      resolveSkill("caveman", { customDirectories: [a, b] }),
+      resolveSkill("dup-skill", { customDirectories: [a, b] }),
     ).toThrow(/duplicate skill/);
   });
 
@@ -375,7 +382,6 @@ describe("attestation and tool unlock", () => {
     const roots = rootsWith(
       "brainstorming",
       "receiving-code-review",
-      "caveman",
       "ponytail",
     );
     const session = attestAndUnlock({
@@ -384,12 +390,7 @@ describe("attestation and tool unlock", () => {
       roleTools: ["write", "read"],
     });
     expect(session.briefs.map((b) => b.name).sort()).toEqual(
-      [
-        "brainstorming",
-        "caveman",
-        "ponytail",
-        "receiving-code-review",
-      ].sort(),
+      ["brainstorming", "ponytail", "receiving-code-review"].sort(),
     );
   });
 
@@ -397,7 +398,6 @@ describe("attestation and tool unlock", () => {
     const roots = rootsWith(
       "writing-plans",
       "receiving-code-review",
-      "caveman",
       "ponytail",
     );
     const session = attestAndUnlock({
@@ -414,7 +414,6 @@ describe("attestation and tool unlock", () => {
       "test-driven-development",
       "receiving-code-review",
       "ponytail",
-      "caveman",
       "rust-skills",
     );
     const session = attestAndUnlock({
@@ -424,6 +423,7 @@ describe("attestation and tool unlock", () => {
       stackSkills: ["rust-skills"],
     });
     expect(session.required.map((s) => s.name)).toContain("rust-skills");
+    expect(session.required.map((s) => s.name)).not.toContain("caveman");
   });
 
   test("bug fixer required skills", () => {

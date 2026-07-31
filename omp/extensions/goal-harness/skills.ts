@@ -74,7 +74,6 @@ export const REQUIRED_SKILLS_BY_ROLE: Record<SkillRole, RoleSkillRequirement> =
       skills: [
         "brainstorming",
         "receiving-code-review",
-        "caveman",
         "ponytail",
       ],
     },
@@ -82,7 +81,6 @@ export const REQUIRED_SKILLS_BY_ROLE: Record<SkillRole, RoleSkillRequirement> =
       skills: [
         "writing-plans",
         "receiving-code-review",
-        "caveman",
         "ponytail",
       ],
       fromParityManifest: true,
@@ -92,7 +90,6 @@ export const REQUIRED_SKILLS_BY_ROLE: Record<SkillRole, RoleSkillRequirement> =
       skills: [
         "writing-plans",
         "receiving-code-review",
-        "caveman",
         "ponytail",
       ],
       fromParityManifest: true,
@@ -111,7 +108,6 @@ export const REQUIRED_SKILLS_BY_ROLE: Record<SkillRole, RoleSkillRequirement> =
         "test-driven-development",
         "receiving-code-review",
         "ponytail",
-        "caveman",
       ],
       includeAutomaticStackSkills: true,
     },
@@ -121,7 +117,6 @@ export const REQUIRED_SKILLS_BY_ROLE: Record<SkillRole, RoleSkillRequirement> =
         "test-driven-development",
         "receiving-code-review",
         "ponytail",
-        "caveman",
       ],
       includeAutomaticStackSkills: true,
     },
