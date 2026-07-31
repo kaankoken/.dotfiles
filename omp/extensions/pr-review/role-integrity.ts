@@ -684,6 +684,75 @@ function shellTokens(command: string): string[] {
     token.replace(/^["']|["']$/g, "")
   ) ?? [];
 }
+function shellStageExecutables(command: string): string[] | undefined {
+  const executables: string[] = [];
+  let quote: "'" | '"' | undefined;
+  let start = 0;
+  const append = (end: number): boolean => {
+    const executable = shellTokens(command.slice(start, end))[0];
+    if (!executable) return false;
+    executables.push(executable);
+    return true;
+  };
+
+  for (let i = 0; i < command.length; i += 1) {
+    const char = command[i]!;
+    if (quote === "'") {
+      if (char === "'") quote = undefined;
+      continue;
+    }
+    if (quote === '"') {
+      if (char === "\\") i += 1;
+      else if (char === '"') quote = undefined;
+      else if (char === "`" || command.startsWith("$(", i)) return undefined;
+      continue;
+    }
+    if (char === "\\") {
+      i += 1;
+    } else if (char === "'" || char === '"') {
+      quote = char;
+    } else if (
+      char === "`" ||
+      command.startsWith("$(", i) ||
+      command.startsWith("<(", i) ||
+      command.startsWith(">(", i)
+    ) {
+      return undefined;
+    } else if (char === ";" || char === "&" || char === "|" || char === "\n" || char === "\r") {
+      if (!append(i)) return undefined;
+      if ((char === "&" || char === "|") && command[i + 1] === char) i += 1;
+      start = i + 1;
+    }
+  }
+  if (quote !== undefined || !append(command.length)) return undefined;
+  return executables;
+}
+
+function executablePolicy(rawExecutable: string, cwd: string): {
+  name: string;
+  readOnly: boolean;
+  transparent: boolean;
+} {
+  const name = basename(rawExecutable).toLowerCase();
+  const pathQualified =
+    rawExecutable.includes("/") || rawExecutable.includes("\\");
+  const resolvedExecutable = pathQualified
+    ? resolvedCandidate(normalizedCandidate(rawExecutable, cwd))
+    : undefined;
+  const trusted =
+    !pathQualified ||
+    (
+      resolvedExecutable !== undefined &&
+      TRUSTED_SYSTEM_BINARY_DIRS[dirname(resolvedExecutable)] === true &&
+      basename(resolvedExecutable).toLowerCase() === name
+    );
+  return {
+    name,
+    readOnly: trusted && READ_ONLY_COMMANDS[name] === true,
+    transparent: trusted && TRANSPARENT_MUTATION_COMMANDS[name] === true,
+  };
+}
+
 
 export function createRoleMutationGuard(
   manifest: LoadedRoleManifest,
@@ -744,24 +813,10 @@ export function createRoleMutationGuard(
         const nestedTokens = tokens.flatMap((token) => shellTokens(token));
         const allTokens = [...tokens, ...nestedTokens];
         const text = command ?? argv?.join(" ") ?? "";
-        const rawExecutable = tokens[0] ?? "";
-        const executable = basename(rawExecutable).toLowerCase();
-        const pathQualified =
-          rawExecutable.includes("/") || rawExecutable.includes("\\");
-        const resolvedExecutable = pathQualified
-          ? resolvedCandidate(normalizedCandidate(rawExecutable, cwd))
-          : undefined;
-        const trustedExecutable =
-          !pathQualified ||
-          (
-            resolvedExecutable !== undefined &&
-            TRUSTED_SYSTEM_BINARY_DIRS[dirname(resolvedExecutable)] === true &&
-            basename(resolvedExecutable).toLowerCase() === executable
-          );
-        const readOnlyExecutable =
-          trustedExecutable && READ_ONLY_COMMANDS[executable] === true;
-        const transparentExecutable =
-          trustedExecutable && TRANSPARENT_MUTATION_COMMANDS[executable] === true;
+        const primaryExecutable = executablePolicy(tokens[0] ?? "", cwd);
+        const executable = primaryExecutable.name;
+        const readOnlyExecutable = primaryExecutable.readOnly;
+        const transparentExecutable = primaryExecutable.transparent;
         const structure = text ? shellStructure(text) : undefined;
         const mutationCapable = structure
           ? structure.compound ||
@@ -777,10 +832,22 @@ export function createRoleMutationGuard(
             const command = basename(token).toLowerCase();
             return command === "cd" || command === "pushd";
           });
+        const compoundStagesSafe =
+          structure?.compound !== true ||
+          (
+            command !== undefined &&
+            (
+              shellStageExecutables(command)?.every((rawExecutable) => {
+                const policy = executablePolicy(rawExecutable, cwd);
+                return policy.readOnly || policy.transparent;
+              }) ?? false
+            )
+          );
         const opaqueMutation =
           mutationCapable &&
           (
             (!readOnlyExecutable && !transparentExecutable) ||
+            !compoundStagesSafe ||
             allTokens.some((token) => {
               const name = basename(token).toLowerCase();
               return OPAQUE_COMMAND_WRAPPERS[name] === true ||
