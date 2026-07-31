@@ -302,11 +302,15 @@ export async function runDesignFlow(
       `Review this PDR under REVIEW-POLICY (default PASS).\n${JSON.stringify(c)}`,
   });
   if (!pdrGate.review.ok) {
-    snap = applyDesignTransition(snap, {
-      type: "gate_fail",
-      gate: "Pdr",
-      feedback: pdrGate.review.feedback,
-    });
+    const fails = Math.max(1, pdrGate.attempts);
+    for (let i = 0; i < fails; i++) {
+      snap = applyDesignTransition(snap, {
+        type: "gate_fail",
+        gate: "Pdr",
+        feedback: pdrGate.review.feedback,
+      });
+      if (snap.status === "failed") break;
+    }
     return { snapshot: snap, handoff: null, error: snap.lastError };
   }
   snap = applyDesignTransition(snap, { type: "gate_pass", gate: "Pdr" });
@@ -332,11 +336,15 @@ export async function runDesignFlow(
       `Review Arc42 vs PDR under REVIEW-POLICY.\nPDR:${JSON.stringify(pdrGate.candidate)}\nArc42:${JSON.stringify(c)}`,
   });
   if (!arcGate.review.ok) {
-    snap = applyDesignTransition(snap, {
-      type: "gate_fail",
-      gate: "Arc42",
-      feedback: arcGate.review.feedback,
-    });
+    const fails = Math.max(1, arcGate.attempts);
+    for (let i = 0; i < fails; i++) {
+      snap = applyDesignTransition(snap, {
+        type: "gate_fail",
+        gate: "Arc42",
+        feedback: arcGate.review.feedback,
+      });
+      if (snap.status === "failed") break;
+    }
     return { snapshot: snap, handoff: null, error: snap.lastError };
   }
   snap = applyDesignTransition(snap, { type: "gate_pass", gate: "Arc42" });

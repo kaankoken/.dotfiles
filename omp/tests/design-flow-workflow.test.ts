@@ -3,6 +3,7 @@ import { mkdtempSync, readFileSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { runDesignFlow } from "../extensions/design-flow/workflow";
+import { DESIGN_GATE_BUDGETS } from "../extensions/design-flow/phase-machine";
 import type { Workflowz } from "../extensions/goal-harness/workflow-adapter";
 import type {
   ModelCatalogEntry,
@@ -348,5 +349,33 @@ describe("runDesignFlow", () => {
     expect(result.error).toBeUndefined();
     expect(result.handoff).toBeTruthy();
     expect(updates.length).toBe(0);
+  });
+
+  test("exhausted Pdr reviewer → snapshot.status failed, gateAttempts=budget", async () => {
+    const root = mkdtempSync(join(tmpdir(), "design-flow-"));
+    let reviews = 0;
+    const result = await runDesignFlow(
+      mockWz({
+        "pdr-writer": samplePdr,
+        "pdr-reviewer": () => {
+          reviews++;
+          return {
+            ok: false,
+            feedback: `pdr fail ${reviews}`,
+            blocking: [`block ${reviews}`],
+          };
+        },
+      }),
+      {
+        boundGoal: "exhaust pdr gate",
+        repoRoot: root,
+        runId: "exhaust-pdr",
+      },
+    );
+    expect(result.handoff).toBeNull();
+    expect(result.snapshot.status).toBe("failed");
+    expect(result.snapshot.gateAttempts.Pdr).toBe(DESIGN_GATE_BUDGETS.Pdr);
+    expect(result.error).toMatch(/Pdr failed after 2/);
+    expect(reviews).toBe(DESIGN_GATE_BUDGETS.Pdr);
   });
 });
