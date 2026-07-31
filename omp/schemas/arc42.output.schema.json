@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dotfiles.local/schemas/arc42-output-v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "title",
+    "introduction",
+    "constraints",
+    "context",
+    "solutionStrategy",
+    "buildingBlocks",
+    "runtime",
+    "deployment",
+    "crosscutting",
+    "quality",
+    "risks",
+    "diagrams"
+  ],
+  "properties": {
+    "title": { "type": "string", "minLength": 1 },
+    "introduction": { "type": "string", "minLength": 1 },
+    "constraints": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "context": { "type": "string", "minLength": 1 },
+    "solutionStrategy": { "type": "string", "minLength": 1 },
+    "buildingBlocks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "responsibility"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "responsibility": { "type": "string", "minLength": 1 },
+          "interfaces": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 }
+          }
+        }
+      },
+      "minItems": 1
+    },
+    "runtime": { "type": "string", "minLength": 1 },
+    "deployment": { "type": "string", "minLength": 1 },
+    "crosscutting": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "quality": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "risks": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "diagrams": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "kind", "source"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "kind": {
+            "type": "string",
+            "enum": ["mermaid", "structurizr", "other"]
+          },
+          "source": { "type": "string", "minLength": 1 }
+        }
+      },
+      "minItems": 1
+    }
+  }
+}

@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dotfiles.local/schemas/pdr-output-v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "title",
+    "problem",
+    "goals",
+    "nonGoals",
+    "users",
+    "requirements",
+    "successMetrics",
+    "risks",
+    "openQuestions"
+  ],
+  "properties": {
+    "title": { "type": "string", "minLength": 1 },
+    "problem": { "type": "string", "minLength": 1 },
+    "goals": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
+    },
+    "nonGoals": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "users": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 1
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "text", "priority"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "text": { "type": "string", "minLength": 1 },
+          "priority": { "type": "string", "enum": ["must", "should", "could"] }
+        }
+      },
+      "minItems": 1
+    },
+    "successMetrics": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "risks": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "openQuestions": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  }
+}
