@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dotfiles.local/schemas/pr-review-initial-v1.schema.json",
+  "title": "InitialReview v1",
+  "type": "object",
+  "properties": {
+    "schema_version": { "const": 1 },
+    "reviewer": { "enum": ["fable", "sol"] },
+    "run_nonce": { "type": "string", "minLength": 32, "maxLength": 256 },
+    "snapshot_nonce": { "type": "string", "minLength": 32, "maxLength": 256 },
+    "call_nonce": { "type": "string", "minLength": 32, "maxLength": 256 },
+    "head_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "diff_digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "findings": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 100,
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+              "path": { "type": "string", "minLength": 1, "maxLength": 1024 },
+              "line": { "type": "integer", "minimum": 1, "maximum": 2147483647 },
+              "side": { "enum": ["LEFT", "RIGHT"] },
+              "severity": { "enum": ["blocking", "nonblocking"] },
+              "title": { "type": "string", "minLength": 1, "maxLength": 256 },
+              "body": { "type": "string", "minLength": 1, "maxLength": 65536 },
+              "evidence": { "type": "string", "minLength": 1, "maxLength": 8192 }
+            },
+            "required": ["id", "path", "line", "side", "severity", "title", "body", "evidence"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+              "path": { "type": "string", "minLength": 1, "maxLength": 1024 },
+              "line": { "type": "integer", "minimum": 1, "maximum": 2147483647 },
+              "side": { "enum": ["LEFT", "RIGHT"] },
+              "start_line": { "type": "integer", "minimum": 1, "maximum": 2147483647 },
+              "start_side": { "enum": ["LEFT", "RIGHT"] },
+              "severity": { "enum": ["blocking", "nonblocking"] },
+              "title": { "type": "string", "minLength": 1, "maxLength": 256 },
+              "body": { "type": "string", "minLength": 1, "maxLength": 65536 },
+              "evidence": { "type": "string", "minLength": 1, "maxLength": 8192 }
+            },
+            "required": ["id", "path", "line", "side", "start_line", "start_side", "severity", "title", "body", "evidence"],
+            "additionalProperties": false
+          }
+        ]
+      }
+    }
+  },
+  "required": ["schema_version", "reviewer", "run_nonce", "snapshot_nonce", "call_nonce", "head_sha", "diff_digest", "findings"],
+  "additionalProperties": false
+}

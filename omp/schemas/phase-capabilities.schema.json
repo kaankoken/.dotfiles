@@ -25,7 +25,8 @@
         "Implement",
         "Integration",
         "Milestone",
-        "PR"
+        "PR",
+        "PrReviewPublish"
       ]
     },
     "agent": { "type": "string", "minLength": 1 },
@@ -80,6 +81,7 @@
           "git.write.integration",
           "git.push",
           "gh.pr",
+          "gh.pr.inline-review",
           "cli.execute",
           "skill.read",
           "network.fetch"

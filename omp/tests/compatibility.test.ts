@@ -30,8 +30,10 @@ const requiredSdkOptions = [
 const requiredTaskFields = [
   "context",
   "tasks",
+  "name",
   "agent",
   "task",
+  "effort",
   "outputSchema",
   "schemaMode",
   "isolated",
@@ -120,6 +122,11 @@ describe("OMP compatibility contract", () => {
       "extensionApis",
       "compactionStrategies",
       "compactModes",
+      "extensionHooks",
+      "singleResultFields",
+      "structuredOutputFields",
+      "sendMessageOptions",
+      "taskRequirements",
     ] as const) {
       expect(key in doc).toBe(true);
     }
@@ -171,6 +178,50 @@ describe("OMP compatibility contract", () => {
     for (const k of requiredCompactModes) {
       expect(compactModes).toContain(k);
     }
+  });
+
+  test("pins the verified v17.2 task capture surface", () => {
+    const doc = loadContract();
+    expect(doc.ompVersion).toBe("omp/17.2.1");
+    expect(doc.upstreamCommit).toBe(
+      "4df68d60438423b384b2b47fb3d6835641624757",
+    );
+    expect(doc.extensionHooks).toEqual(["tool_call", "tool_result"]);
+    expect(doc.singleResultFields).toEqual([
+      "id",
+      "agent",
+      "agentSource",
+      "task",
+      "assignment",
+      "exitCode",
+      "aborted",
+      "abortReason",
+      "structuredOutput",
+      "resolvedModel",
+      "resolvedModelIsFallback",
+    ]);
+    expect(doc.structuredOutputFields).toEqual([
+      "source",
+      "mode",
+      "status",
+      "data",
+      "error",
+    ]);
+    expect(doc.sendMessageOptions).toEqual({
+      deliverAs: ["steer", "followUp", "nextTurn"],
+      reviewPr: { deliverAs: "nextTurn", triggerTurn: true },
+    });
+    expect(doc.taskRequirements).toEqual({
+      outputSchema: true,
+      schemaMode: "strict",
+      isolated: true,
+    });
+
+    const serialized = JSON.stringify(doc);
+    expect(serialized).not.toContain("17.1.3");
+    expect(assertStringArray(doc.extensionApis, "extensionApis")).not.toContain(
+      "registerAgent",
+    );
   });
 
   test("active binary version matches recorded ompVersion", () => {

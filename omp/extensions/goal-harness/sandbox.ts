@@ -8,7 +8,7 @@ import {
   lstatSync,
   realpathSync,
 } from "node:fs";
-import { dirname, isAbsolute, join, normalize, resolve, sep } from "node:path";
+import { basename, dirname, isAbsolute, join, normalize, resolve, sep } from "node:path";
 import type { PhaseCapabilityManifest } from "./capabilities";
 import { PROTECTED_BRANCHES } from "./git";
 
@@ -59,6 +59,27 @@ const FORBIDDEN_GIT = [
   ["filter-branch"],
   ["filter-repo"],
 ];
+
+const GH_MUTATING_METHODS: Record<string, true> = {
+  POST: true,
+  PATCH: true,
+  PUT: true,
+  DELETE: true,
+};
+const GH_REVIEW_OR_COMMENT_ENDPOINT =
+  /^repos\/[^/]+\/[^/]+\/(?:issues\/(?:[^/]+\/comments|comments\/[^/]+)|pulls\/(?:[^/]+\/(?:comments|reviews)|comments\/[^/]+))(?:\/[^/]+)*$/;
+const GH_GROUPED_REVIEW_ENDPOINT =
+  /^repos\/[^/]+\/[^/]+\/pulls\/[^/]+\/reviews$/;
+const GH_READ_ONLY_ACTIONS: Record<string, Record<string, true>> = {
+  issue: { list: true, view: true },
+  pr: { checks: true, diff: true, list: true, status: true, view: true },
+  release: { list: true, view: true },
+  repo: { list: true, view: true },
+  run: { list: true, view: true, watch: true },
+  search: { code: true, commits: true, issues: true, prs: true, repos: true },
+  workflow: { list: true, view: true },
+};
+
 
 /**
  * Resolve path component-by-component with lstat; return canonical path
@@ -278,6 +299,158 @@ export function classifyPathAccess(
   };
 }
 
+const POLICY_COMMANDS: Record<string, true> = {
+  rm: true,
+  find: true,
+  git: true,
+  bd: true,
+  beads: true,
+  gh: true,
+};
+
+
+function canonicalGhApiPath(endpoint: string): {
+  path?: string;
+  malformed: boolean;
+} {
+  let rawPath: string;
+  if (/^https?:\/\//i.test(endpoint)) {
+    try {
+      rawPath = new URL(endpoint).pathname;
+    } catch {
+      return { malformed: true };
+    }
+  } else {
+    rawPath = endpoint.replace(/[?#].*$/, "");
+  }
+
+  let decoded: string;
+  try {
+    decoded = decodeURIComponent(rawPath);
+  } catch {
+    return { malformed: true };
+  }
+  if (/%[0-9a-f]{2}/i.test(decoded) || decoded.includes("\\") || decoded.includes("\0")) {
+    return { malformed: true };
+  }
+
+  const apiPath = decoded.replace(/^\/(?:api\/v3\/)?/, "");
+
+  const segments: string[] = [];
+  for (const segment of apiPath.split("/")) {
+    if (!segment || segment === ".") continue;
+    if (segment === "..") segments.pop();
+    else segments.push(segment);
+  }
+  return { path: segments.join("/"), malformed: false };
+}
+function graphqlTokens(document: string): string[] | undefined {
+  const tokens: string[] = [];
+  for (let i = 0; i < document.length;) {
+    const char = document[i]!;
+    if (/\s|,/.test(char)) {
+      i += 1;
+      continue;
+    }
+    if (char === "#") {
+      while (i < document.length && document[i] !== "\n" && document[i] !== "\r") i += 1;
+      continue;
+    }
+    if (document.startsWith('"""', i)) {
+      i += 3;
+      let closed = false;
+      while (i < document.length) {
+        if (document.startsWith('"""', i) && document[i - 1] !== "\\") {
+          i += 3;
+          closed = true;
+          break;
+        }
+        i += 1;
+      }
+      if (!closed) return undefined;
+      continue;
+    }
+    if (char === '"') {
+      i += 1;
+      let closed = false;
+      while (i < document.length) {
+        if (document[i] === "\\") {
+          i += 2;
+        } else if (document[i] === '"') {
+          i += 1;
+          closed = true;
+          break;
+        } else {
+          i += 1;
+        }
+      }
+      if (!closed) return undefined;
+      continue;
+    }
+    if (/[A-Za-z_]/.test(char)) {
+      let end = i + 1;
+      while (end < document.length && /[A-Za-z0-9_]/.test(document[end]!)) end += 1;
+      tokens.push(document.slice(i, end));
+      i = end;
+      continue;
+    }
+    tokens.push(char);
+    i += 1;
+  }
+  return tokens;
+}
+
+function isProvablyGraphqlQuery(document: string): boolean {
+  const tokens = graphqlTokens(document);
+  if (!tokens) return false;
+
+  let definition: "query" | "fragment" | undefined;
+  let braceDepth = 0;
+  let parenDepth = 0;
+  let bracketDepth = 0;
+  let sawQuery = false;
+  for (const token of tokens) {
+    if (token === "addPullRequestReview") return false;
+    if (braceDepth > 0) {
+      if (token === "{") braceDepth += 1;
+      else if (token === "}") {
+        braceDepth -= 1;
+        if (braceDepth === 0) definition = undefined;
+      }
+      continue;
+    }
+    if (definition !== undefined) {
+      if (token === "(") parenDepth += 1;
+      else if (token === ")") parenDepth -= 1;
+      else if (token === "[") bracketDepth += 1;
+      else if (token === "]") bracketDepth -= 1;
+      else if (token === "{" && parenDepth === 0 && bracketDepth === 0) {
+        braceDepth = 1;
+      }
+      if (parenDepth < 0 || bracketDepth < 0) return false;
+      continue;
+    }
+    if (token === "query") {
+      definition = "query";
+      sawQuery = true;
+    } else if (token === "fragment") {
+      definition = "fragment";
+    } else if (token === "{") {
+      definition = "query";
+      braceDepth = 1;
+      sawQuery = true;
+    } else {
+      return false;
+    }
+  }
+  return sawQuery &&
+    definition === undefined &&
+    braceDepth === 0 &&
+    parenDepth === 0 &&
+    bracketDepth === 0;
+}
+
+
 export function classifyCommand(
   manifest: PhaseCapabilityManifest,
   argv: string[],
@@ -285,7 +458,8 @@ export function classifyCommand(
   if (!argv.length) {
     return { allow: false, reason: "empty command" };
   }
-  const cmd = argv[0]!;
+  const executable = basename(normalize(argv[0]!));
+  const cmd = POLICY_COMMANDS[executable] === true ? executable : argv[0]!;
   const args = argv.slice(1);
 
   // Broad recursive deletion
@@ -435,7 +609,39 @@ function classifyGh(
   manifest: PhaseCapabilityManifest,
   args: string[],
 ): SandboxDecision {
-  if (args[0] === "pr" && (args[1] === "create" || args[1] === "merge")) {
+  let commandIndex = 0;
+  while (commandIndex < args.length) {
+    const arg = args[commandIndex]!;
+    if (arg === "-R" || arg === "--repo") {
+      commandIndex += 2;
+    } else if (
+      arg.startsWith("--repo=") ||
+      (arg.startsWith("-R") && arg.length > 2)
+    ) {
+      commandIndex += 1;
+    } else {
+      break;
+    }
+  }
+
+  const command = args[commandIndex];
+  let actionIndex = commandIndex + 1;
+  while (actionIndex < args.length) {
+    const arg = args[actionIndex]!;
+    if (arg === "-R" || arg === "--repo") {
+      actionIndex += 2;
+    } else if (
+      arg.startsWith("--repo=") ||
+      (arg.startsWith("-R") && arg.length > 2)
+    ) {
+      actionIndex += 1;
+    } else {
+      break;
+    }
+  }
+  const action = args[actionIndex];
+  const prAction = command === "pr" ? action : undefined;
+  if (prAction === "create" || prAction === "merge") {
     if (!manifest.operations.includes("gh.pr")) {
       return {
         allow: false,
@@ -444,10 +650,235 @@ function classifyGh(
     }
     return { allow: true, reason: "gh.pr allowed", operation: "gh.pr" };
   }
+
+  let explicitApiMethod: string | undefined;
+  let apiDefaultsToPost = false;
+  let apiEndpoint: string | undefined;
+  let apiHasOpaqueInput = false;
+  const apiFieldValues: string[] = [];
+  if (command === "api") {
+    for (let i = commandIndex + 1; i < args.length; i += 1) {
+      const arg = args[i]!;
+      if (arg === "--") {
+        apiEndpoint ??= args[i + 1];
+        break;
+      }
+      let option = arg;
+      while (option.startsWith("-i") && option.length > 2) {
+        option = `-${option.slice(2)}`;
+      }
+      if (option === "--method" || option === "-X") {
+        explicitApiMethod = args[i + 1]?.toUpperCase();
+        i += 1;
+        continue;
+      }
+      if (option.startsWith("--method=")) {
+        explicitApiMethod = option.slice("--method=".length).toUpperCase();
+        continue;
+      }
+      if (option.startsWith("-X") && option.length > 2) {
+        explicitApiMethod = option.slice(2).replace(/^=/, "").toUpperCase();
+        continue;
+      }
+      if (
+        option === "-f" ||
+        option === "-F" ||
+        option === "--raw-field" ||
+        option === "--field"
+      ) {
+        apiDefaultsToPost = true;
+        const value = args[i + 1];
+        if (value !== undefined) apiFieldValues.push(value);
+        i += 1;
+        continue;
+      }
+      if (option === "--input") {
+        apiDefaultsToPost = true;
+        apiHasOpaqueInput = true;
+        i += 1;
+        continue;
+      }
+      if (
+        (option.startsWith("-f") && option.length > 2) ||
+        (option.startsWith("-F") && option.length > 2)
+      ) {
+        apiDefaultsToPost = true;
+        apiFieldValues.push(option.slice(2));
+        continue;
+      }
+      if (option.startsWith("--raw-field=") || option.startsWith("--field=")) {
+        apiDefaultsToPost = true;
+        apiFieldValues.push(option.slice(option.indexOf("=") + 1));
+        continue;
+      }
+      if (option.startsWith("--input=")) {
+        apiDefaultsToPost = true;
+        apiHasOpaqueInput = true;
+        continue;
+      }
+      if (
+        option === "--cache" ||
+        option === "-H" ||
+        option === "--header" ||
+        option === "--hostname" ||
+        option === "-q" ||
+        option === "--jq" ||
+        option === "-p" ||
+        option === "--preview" ||
+        option === "-t" ||
+        option === "--template"
+      ) {
+        i += 1;
+        continue;
+      }
+      if (
+        option.startsWith("--cache=") ||
+        (option.startsWith("-H") && option.length > 2) ||
+        option.startsWith("--header=") ||
+        option.startsWith("--hostname=") ||
+        (option.startsWith("-q") && option.length > 2) ||
+        option.startsWith("--jq=") ||
+        (option.startsWith("-p") && option.length > 2) ||
+        option.startsWith("--preview=") ||
+        (option.startsWith("-t") && option.length > 2) ||
+        option.startsWith("--template=")
+      ) {
+        continue;
+      }
+      if (!arg.startsWith("-") && apiEndpoint === undefined) {
+        apiEndpoint = arg;
+      }
+    }
+  }
+
+  const apiMethod =
+    explicitApiMethod ?? (apiDefaultsToPost ? "POST" : "GET");
+  const canonicalEndpoint = apiEndpoint === undefined
+    ? { path: undefined, malformed: false }
+    : canonicalGhApiPath(apiEndpoint);
+  if (command === "api" && canonicalEndpoint.malformed) {
+    return { allow: false, reason: "malformed GitHub API URL/endpoint denied" };
+  }
+  const apiPath = canonicalEndpoint.path;
+  const isGraphql = command === "api" && apiPath === "graphql";
+  const literalQueries = apiFieldValues
+    .filter((value) => value.startsWith("query="))
+    .map((value) => value.slice("query=".length).trim());
+  const graphqlQueryOnly =
+    isGraphql &&
+    !apiHasOpaqueInput &&
+    literalQueries.length === 1 &&
+    isProvablyGraphqlQuery(literalQueries[0]!);
+  const graphqlMutation =
+    isGraphql &&
+    !graphqlQueryOnly &&
+    (apiHasOpaqueInput ||
+      apiFieldValues.length > 0 ||
+      GH_MUTATING_METHODS[apiMethod] === true);
+  const publisher = manifest.operations.includes("gh.pr.inline-review");
+
+  if (command === "pr" && (prAction === "comment" || prAction === "review")) {
+    return {
+      allow: false,
+      reason: "inline review/comment mutation requires exact publisher grouped review POST",
+    };
+  }
+  if (
+    graphqlQueryOnly &&
+    apiMethod !== "GET" &&
+    apiMethod !== "POST"
+  ) {
+    return {
+      allow: false,
+      reason: `unsupported GraphQL query transport method denied: ${apiMethod}`,
+    };
+  }
+
+  if (graphqlMutation) {
+    return {
+      allow: false,
+      reason: "GraphQL mutation denied; grouped review REST POST is the sole publisher mutation",
+    };
+  }
+  if (
+    command === "api" &&
+    apiMethod !== "GET" &&
+    GH_MUTATING_METHODS[apiMethod] !== true &&
+    !graphqlQueryOnly
+  ) {
+    return {
+      allow: false,
+      reason: `unsupported GitHub API method denied: ${apiMethod}`,
+    };
+  }
+
+
+  const reviewOrCommentMutation =
+    command === "api" &&
+    GH_MUTATING_METHODS[apiMethod] === true &&
+    apiPath !== undefined &&
+    GH_REVIEW_OR_COMMENT_ENDPOINT.test(apiPath);
+  const exactGroupedReviewPost =
+    reviewOrCommentMutation &&
+    apiMethod === "POST" &&
+    GH_GROUPED_REVIEW_ENDPOINT.test(apiPath!);
+  if (reviewOrCommentMutation) {
+    if (exactGroupedReviewPost && publisher) {
+      return {
+        allow: true,
+        reason: "exact grouped review POST allowed",
+        operation: "gh.pr.inline-review",
+      };
+    }
+    return {
+      allow: false,
+      reason: "inline review/comment mutation requires exact publisher grouped review POST",
+    };
+  }
+
+  const apiRead =
+    command === "api" &&
+    (apiMethod === "GET" || (graphqlQueryOnly && apiMethod === "POST"));
+  if (apiRead && publisher) {
+    return {
+      allow: true,
+      reason: "publisher GitHub read allowed",
+      operation: "gh.pr.inline-review",
+    };
+  }
+
+  const readOnlyCli =
+    command !== undefined &&
+    action !== undefined &&
+    GH_READ_ONLY_ACTIONS[command]?.[action] === true;
+  if (readOnlyCli) {
+    if (publisher) {
+      return {
+        allow: true,
+        reason: "publisher gh read allowed",
+        operation: "gh.pr.inline-review",
+      };
+    }
+    if (manifest.operations.includes("cli.execute")) {
+      return {
+        allow: true,
+        reason: "gh read-only command allowed",
+        operation: "cli.execute",
+      };
+    }
+    return { allow: false, reason: "gh read not allowed in phase" };
+  }
+  if (command !== "api") {
+    return {
+      allow: false,
+      reason: "gh command denied: not in read-only allowlist",
+    };
+  }
+
   if (!manifest.operations.includes("cli.execute")) {
     return { allow: false, reason: "gh not allowed" };
   }
-  return { allow: true, reason: "gh read-ish", operation: "cli.execute" };
+  return { allow: true, reason: "gh API operation allowed", operation: "cli.execute" };
 }
 
 /** Caches must resolve only under runTemp. */

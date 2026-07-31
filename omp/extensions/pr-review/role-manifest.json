@@ -1,0 +1,61 @@
+{
+  "version": 1,
+  "roles": [
+    {
+      "livePath": "/Users/legolas/.omp/agent/agents/wf7-fable-reviewer.md",
+      "canonicalPath": "/Users/legolas/.dotfiles/omp/agents/wf7-fable-reviewer.md",
+      "sha256": "c6cde69f9f1cda2df68daf1e4ced5605373ac9da81a3baca48dcb52507b53f67",
+      "agent": "wf7-fable-reviewer",
+      "model": "anthropic/claude-fable-5:max",
+      "tools": ["pr_review_snapshot"],
+      "spawns": [],
+      "blocking": true,
+      "schemas": [
+        {
+          "identity": "https://dotfiles.local/schemas/pr-review-initial-v1.schema.json",
+          "sha256": "1d28ea100cdb0815ea0d98008e249ae9ef8d77c7687afd46d3f6351c4abbfbda"
+        },
+        {
+          "identity": "https://dotfiles.local/schemas/pr-review-rebuttal-v1.schema.json",
+          "sha256": "0a778572f70a0928701de899aa4b05975869bd3816d43795283dd80d125e2547"
+        }
+      ]
+    },
+    {
+      "livePath": "/Users/legolas/.omp/agent/agents/wf7-sol-reviewer.md",
+      "canonicalPath": "/Users/legolas/.dotfiles/omp/agents/wf7-sol-reviewer.md",
+      "sha256": "6e517a462c4115337b0d79ae3ae5beb0acf992649d152486a5f090a7ab12a671",
+      "agent": "wf7-sol-reviewer",
+      "model": "openai-codex/gpt-5.6-sol:xhigh",
+      "tools": ["pr_review_snapshot"],
+      "spawns": [],
+      "blocking": true,
+      "schemas": [
+        {
+          "identity": "https://dotfiles.local/schemas/pr-review-initial-v1.schema.json",
+          "sha256": "1d28ea100cdb0815ea0d98008e249ae9ef8d77c7687afd46d3f6351c4abbfbda"
+        },
+        {
+          "identity": "https://dotfiles.local/schemas/pr-review-rebuttal-v1.schema.json",
+          "sha256": "0a778572f70a0928701de899aa4b05975869bd3816d43795283dd80d125e2547"
+        }
+      ]
+    },
+    {
+      "livePath": "/Users/legolas/.omp/agent/agents/wf7-grok-judge.md",
+      "canonicalPath": "/Users/legolas/.dotfiles/omp/agents/wf7-grok-judge.md",
+      "sha256": "8208452bdb35f0e8ab4a0f3b020dd6c545c7ff6f822af6a16a6553bc3ce4f12b",
+      "agent": "wf7-grok-judge",
+      "model": "xai-oauth/grok-4.5:xhigh",
+      "tools": ["pr_review_snapshot"],
+      "spawns": [],
+      "blocking": true,
+      "schemas": [
+        {
+          "identity": "https://dotfiles.local/schemas/pr-review-judge-v1.schema.json",
+          "sha256": "765143544e79146fc4d7a283d022ed2e1d900f6e70163e1d1762583af291df5d"
+        }
+      ]
+    }
+  ]
+}

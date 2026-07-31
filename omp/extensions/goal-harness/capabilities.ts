@@ -16,7 +16,8 @@ export type HarnessPhase =
   | "Implement"
   | "Integration"
   | "Milestone"
-  | "PR";
+  | "PR"
+  | "PrReviewPublish";
 
 export type CapabilityOp =
   | "fs.read.repo"
@@ -31,6 +32,7 @@ export type CapabilityOp =
   | "git.write.integration"
   | "git.push"
   | "gh.pr"
+  | "gh.pr.inline-review"
   | "cli.execute"
   | "skill.read"
   | "network.fetch";
@@ -75,6 +77,7 @@ const ALL_OPS: CapabilityOp[] = [
   "git.write.integration",
   "git.push",
   "gh.pr",
+  "gh.pr.inline-review",
   "cli.execute",
   "skill.read",
   "network.fetch",
@@ -90,6 +93,7 @@ const PHASES: HarnessPhase[] = [
   "Integration",
   "Milestone",
   "PR",
+  "PrReviewPublish",
 ];
 
 /** Phase → minimum operations (matrix). */
@@ -162,6 +166,7 @@ const PHASE_OPS: Record<HarnessPhase, CapabilityOp[]> = {
     "skill.read",
     "network.fetch",
   ],
+  PrReviewPublish: ["gh.pr.inline-review"],
 };
 
 export type BuildCapabilityInput = {
@@ -331,11 +336,16 @@ export function validatePhaseCapabilities(
     if (!ALL_OPS.includes(op as CapabilityOp)) {
       throw new CapabilityError(`unknown operation: ${op}`);
     }
-    // push/pr only in PR
+    // GitHub mutations stay in their dedicated contexts.
     if (
       (op === "git.push" || op === "gh.pr") &&
       phase !== "PR"
     ) {
+      throw new CapabilityError(
+        `capability ${op} outside phase matrix for ${phase}`,
+      );
+    }
+    if (op === "gh.pr.inline-review" && phase !== "PrReviewPublish") {
       throw new CapabilityError(
         `capability ${op} outside phase matrix for ${phase}`,
       );
@@ -356,5 +366,5 @@ export function validatePhaseCapabilities(
 }
 
 export function isWritePhase(phase: HarnessPhase): boolean {
-  return ["Implement", "Integration", "PR"].includes(phase);
+  return ["Implement", "Integration", "PR", "PrReviewPublish"].includes(phase);
 }
