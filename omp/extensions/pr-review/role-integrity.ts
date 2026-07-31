@@ -584,6 +584,12 @@ const TRANSPARENT_MUTATION_COMMANDS: Record<string, true> = {
   truncate: true,
   unlink: true,
 };
+const TRUSTED_SYSTEM_BINARY_DIRS: Record<string, true> = {
+  "/bin": true,
+  "/sbin": true,
+  "/usr/bin": true,
+  "/usr/sbin": true,
+};
 const OPAQUE_COMMAND_WRAPPERS: Record<string, true> = {
   bash: true,
   bun: true,
@@ -738,13 +744,30 @@ export function createRoleMutationGuard(
         const nestedTokens = tokens.flatMap((token) => shellTokens(token));
         const allTokens = [...tokens, ...nestedTokens];
         const text = command ?? argv?.join(" ") ?? "";
-        const executable = basename(tokens[0] ?? "").toLowerCase();
+        const rawExecutable = tokens[0] ?? "";
+        const executable = basename(rawExecutable).toLowerCase();
+        const pathQualified =
+          rawExecutable.includes("/") || rawExecutable.includes("\\");
+        const resolvedExecutable = pathQualified
+          ? resolvedCandidate(normalizedCandidate(rawExecutable, cwd))
+          : undefined;
+        const trustedExecutable =
+          !pathQualified ||
+          (
+            resolvedExecutable !== undefined &&
+            TRUSTED_SYSTEM_BINARY_DIRS[dirname(resolvedExecutable)] === true &&
+            basename(resolvedExecutable).toLowerCase() === executable
+          );
+        const readOnlyExecutable =
+          trustedExecutable && READ_ONLY_COMMANDS[executable] === true;
+        const transparentExecutable =
+          trustedExecutable && TRANSPARENT_MUTATION_COMMANDS[executable] === true;
         const structure = text ? shellStructure(text) : undefined;
         const mutationCapable = structure
           ? structure.compound ||
             structure.outputRedirect ||
-            READ_ONLY_COMMANDS[executable] !== true
-          : READ_ONLY_COMMANDS[executable] !== true;
+            !readOnlyExecutable
+          : !readOnlyExecutable;
         const protectedTarget =
           targetsProtected(allTokens, cwd) ||
           [...protectedPaths].some((path) => text.includes(path));
@@ -757,10 +780,7 @@ export function createRoleMutationGuard(
         const opaqueMutation =
           mutationCapable &&
           (
-            (
-              READ_ONLY_COMMANDS[executable] !== true &&
-              TRANSPARENT_MUTATION_COMMANDS[executable] !== true
-            ) ||
+            (!readOnlyExecutable && !transparentExecutable) ||
             allTokens.some((token) => {
               const name = basename(token).toLowerCase();
               return OPAQUE_COMMAND_WRAPPERS[name] === true ||

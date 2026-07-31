@@ -475,6 +475,8 @@ describe("run-scoped OMP role mutation guard", () => {
     const escapedRoleFile = roleFile.replace("-", "\\-");
     const ddTarget = join(root, "preexisting-symlink-to-protected-role");
     symlinkSync(role.canonicalPath, ddTarget);
+    const fakeRm = join(root, "rm");
+    writeFileSync(fakeRm, "#!/bin/sh\n");
     const originalHome = process.env.HOME;
     const protectedRolePaths = manifest.roles.flatMap((entry) => [
       entry.livePath,
@@ -563,6 +565,11 @@ describe("run-scoped OMP role mutation guard", () => {
           command: `python3 -c 'from pathlib import Path; p="${liveDir}/"; Path(p+"wf7-"+"fable-reviewer.md").write_text("tampered")'`,
         },
       },
+      {
+        toolName: "bash",
+        cwd: root,
+        input: { command: `./rm '${join(root, "unrelated.txt")}'` },
+      },
       { toolName: "exec", input: { argv: ["rm", `$HOME/${relativeLivePath}`] } },
     ];
 
@@ -618,6 +625,10 @@ describe("run-scoped OMP role mutation guard", () => {
 
     expect(guard.active).toBe(true);
     expect(guard.handleToolCall({ toolName: "read", input: { path: role.livePath } })).toBeUndefined();
+    expect(guard.handleToolCall({
+      toolName: "bash",
+      input: { command: `/bin/rm '${join(roots.at(-1)!, "other-system-rm.txt")}'` },
+    })).toBeUndefined();
     expect(guard.handleToolCall({ toolName: "bash", input: { command: `sha256sum '${role.canonicalPath}'` } })).toBeUndefined();
     expect(guard.handleToolCall({ toolName: "write", input: { path: join(roots.at(-1)!, "other.txt") } })).toBeUndefined();
     expect(guard.handleToolCall({
