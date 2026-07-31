@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import {
-  WF7_ROLE_SPECS,
-  WF7_TASK_SLOTS,
+  PR_REVIEW_ROLE_SPECS,
+  PR_REVIEW_TASK_SLOTS,
   type CompletedCapture,
   type ImmutableSnapshot,
   type NativeSingleResult,
@@ -12,7 +12,7 @@ import {
   type SealedTaskResult,
   type SingleResultEvidence,
   type TaskSlotExpectation,
-  type Wf7TaskName,
+  type PrReviewTaskName,
 } from "./contracts";
 import type { ReceiptJournal } from "./receipts";
 import type { RoleMutationGuard } from "./role-integrity";
@@ -53,7 +53,7 @@ export interface NativeTaskResultEvent {
 }
 
 export interface CaptureRoleCheck {
-  taskName: Wf7TaskName;
+  taskName: PrReviewTaskName;
   task: {
     agent: string;
     schemaIdentity: string;
@@ -72,7 +72,7 @@ export interface CaptureCoordinatorOptions {
   journal: ReceiptJournal;
   guard: RoleMutationGuard;
   snapshot: Readonly<ImmutableSnapshot>;
-  callNonces: Readonly<Record<Wf7TaskName, string>>;
+  callNonces: Readonly<Record<PrReviewTaskName, string>>;
   verifyRole: (check: CaptureRoleCheck) => void;
   releaseGuardOnCompletion?: boolean;
   cleanupStateOnFailure?: boolean;
@@ -103,7 +103,7 @@ type CaptureState = {
   journal: ReceiptJournal;
   guard: RoleMutationGuard;
   snapshot: Readonly<ImmutableSnapshot>;
-  callNonces: Readonly<Record<Wf7TaskName, string>>;
+  callNonces: Readonly<Record<PrReviewTaskName, string>>;
   verifyRole: CaptureCoordinatorOptions["verifyRole"];
   now: () => string;
   releaseGuardOnCompletion: boolean;
@@ -111,27 +111,27 @@ type CaptureState = {
   status: "active" | "completed" | "failed";
   captureHandle?: string;
   pending?: PendingCall;
-  sealed: Map<Wf7TaskName, Readonly<SealedTaskResult>>;
-  outputs: Map<Wf7TaskName, Readonly<StageOutput>>;
+  sealed: Map<PrReviewTaskName, Readonly<SealedTaskResult>>;
+  outputs: Map<PrReviewTaskName, Readonly<StageOutput>>;
 };
 
 const PRIVATE = new WeakMap<CaptureCoordinator, CaptureState>();
 
 const STAGE_CONTRACT = {
   initial: {
-    context: "WF7 initial review batch v1",
+    context: "PR review initial batch v1",
     schema: INITIAL_REVIEW_SCHEMA,
     schemaSha256: INITIAL_REVIEW_SCHEMA_SHA256,
     schemaIdentity: "InitialReview.v1",
   },
   rebuttal: {
-    context: "WF7 rebuttal batch v1",
+    context: "PR review rebuttal batch v1",
     schema: REBUTTAL_SCHEMA,
     schemaSha256: REBUTTAL_SCHEMA_SHA256,
     schemaIdentity: "Rebuttal.v1",
   },
   judge: {
-    context: "WF7 judgment v1",
+    context: "PR review judgment v1",
     schema: JUDGE_RESULT_SCHEMA,
     schemaSha256: JUDGE_RESULT_SCHEMA_SHA256,
     schemaIdentity: "JudgeResult.v1",
@@ -234,7 +234,7 @@ function copyAndFreeze<T extends object>(value: T): Readonly<T> {
   return copy;
 }
 
-function reviewerFor(slot: Wf7TaskName): "fable" | "sol" {
+function reviewerFor(slot: PrReviewTaskName): "fable" | "sol" {
   return slot.includes("fable") ? "fable" : "sol";
 }
 
@@ -244,36 +244,36 @@ function stageFor(state: CaptureState): PrReviewStage {
   return "judge";
 }
 
-function outputFor<T extends StageOutput>(state: CaptureState, slot: Wf7TaskName): Readonly<T> {
+function outputFor<T extends StageOutput>(state: CaptureState, slot: PrReviewTaskName): Readonly<T> {
   const output = state.outputs.get(slot);
   if (!output) throw new Error(`missing sealed output for ${slot}`);
   return output as Readonly<T>;
 }
 
-function stageData(state: CaptureState, slot: Wf7TaskName): unknown {
-  const stage = WF7_TASK_SLOTS.find((candidate) => candidate.name === slot)?.stage;
+function stageData(state: CaptureState, slot: PrReviewTaskName): unknown {
+  const stage = PR_REVIEW_TASK_SLOTS.find((candidate) => candidate.name === slot)?.stage;
   if (stage === "initial") return { reviewer: reviewerFor(slot) };
   if (stage === "rebuttal") {
-    const fable = outputFor<InitialReview>(state, "wf7-fable-initial");
-    const sol = outputFor<InitialReview>(state, "wf7-sol-initial");
-    return slot === "wf7-fable-rebuttal"
+    const fable = outputFor<InitialReview>(state, "pr-fable-initial");
+    const sol = outputFor<InitialReview>(state, "pr-sol-initial");
+    return slot === "pr-fable-rebuttal"
       ? { own_initial: fable, peer_initial: sol }
       : { own_initial: sol, peer_initial: fable };
   }
   return {
     initial_reviews: [
-      outputFor<InitialReview>(state, "wf7-fable-initial"),
-      outputFor<InitialReview>(state, "wf7-sol-initial"),
+      outputFor<InitialReview>(state, "pr-fable-initial"),
+      outputFor<InitialReview>(state, "pr-sol-initial"),
     ],
     rebuttals: [
-      outputFor<Rebuttal>(state, "wf7-fable-rebuttal"),
-      outputFor<Rebuttal>(state, "wf7-sol-rebuttal"),
+      outputFor<Rebuttal>(state, "pr-fable-rebuttal"),
+      outputFor<Rebuttal>(state, "pr-sol-rebuttal"),
     ],
   };
 }
 
-function expectedSlot(state: CaptureState, slotName: Wf7TaskName, toolCallId: string): ExpectedSlot {
-  const slot = WF7_TASK_SLOTS.find((candidate) => candidate.name === slotName);
+function expectedSlot(state: CaptureState, slotName: PrReviewTaskName, toolCallId: string): ExpectedSlot {
+  const slot = PR_REVIEW_TASK_SLOTS.find((candidate) => candidate.name === slotName);
   if (!slot) throw new Error(`unknown task slot ${slotName}`);
   const contract = STAGE_CONTRACT[slot.stage];
   const callNonce = state.callNonces[slot.name];
@@ -310,7 +310,7 @@ function expectedSlot(state: CaptureState, slotName: Wf7TaskName, toolCallId: st
 
 function expectedInput(state: CaptureState, toolCallId = "pending"): Record<string, unknown> {
   const stage = stageFor(state);
-  const names = WF7_TASK_SLOTS.filter((slot) => slot.stage === stage).map((slot) => slot.name);
+  const names = PR_REVIEW_TASK_SLOTS.filter((slot) => slot.stage === stage).map((slot) => slot.name);
   const slots = names.map((name) => expectedSlot(state, name, toolCallId));
   const items = slots.map((slot) => ({
     name: slot.name,
@@ -359,11 +359,11 @@ export function rejectCapture(
   message: string,
 ): { block: true; reason: string } {
   failCapture(privateState(coordinator), code, message);
-  return { block: true, reason: "Invalid WF7 task envelope" };
+  return { block: true, reason: "Invalid PR review task envelope" };
 }
 
 function receiptEvidence(result: SealedTaskResult): ReceiptTaskEvidence {
-  const role = WF7_ROLE_SPECS.find((candidate) => candidate.agent === result.agent)!;
+  const role = PR_REVIEW_ROLE_SPECS.find((candidate) => candidate.agent === result.agent)!;
   return {
     stage: result.stage,
     task: result.slot,
@@ -453,12 +453,12 @@ function classifyResult(result: NativeSingleResult, slot: ExpectedSlot): PrRevie
     || result.assignment !== slot.prompt
     || result.task !== `${TASK_PROMPT_PREFIX}${slot.prompt}`
   ) return "task_result_invalid";
-  if (result.index !== WF7_TASK_SLOTS.filter((candidate) => candidate.stage === slot.stage).findIndex((candidate) => candidate.name === slot.name)) {
+  if (result.index !== PR_REVIEW_TASK_SLOTS.filter((candidate) => candidate.stage === slot.stage).findIndex((candidate) => candidate.name === slot.name)) {
     return "task_result_invalid";
   }
   if (result.agentSource === "project") return "project_shadow";
   if (result.agentSource !== "user") return "route_mismatch";
-  const role = WF7_ROLE_SPECS.find((candidate) => candidate.agent === slot.agent)!;
+  const role = PR_REVIEW_ROLE_SPECS.find((candidate) => candidate.agent === slot.agent)!;
   if (result.resolvedModelIsFallback !== false) return "model_fallback";
   const record = result as NativeSingleResult & Record<string, unknown>;
   if (result.resolvedModel !== role.model || record.modelOverride != null) return "route_mismatch";
@@ -516,11 +516,11 @@ function validateOutput(state: CaptureState, slot: ExpectedSlot, data: unknown):
       reviewer,
       reviewableAnchors: state.snapshot.lineMap,
       ownInitial: reviewer === "fable"
-        ? outputFor<InitialReview>(state, "wf7-fable-initial")
-        : outputFor<InitialReview>(state, "wf7-sol-initial"),
+        ? outputFor<InitialReview>(state, "pr-fable-initial")
+        : outputFor<InitialReview>(state, "pr-sol-initial"),
       peerInitial: reviewer === "fable"
-        ? outputFor<InitialReview>(state, "wf7-sol-initial")
-        : outputFor<InitialReview>(state, "wf7-fable-initial"),
+        ? outputFor<InitialReview>(state, "pr-sol-initial")
+        : outputFor<InitialReview>(state, "pr-fable-initial"),
     });
     return validated.ok ? validated : invalidOutput(validated.reason);
   }
@@ -528,20 +528,20 @@ function validateOutput(state: CaptureState, slot: ExpectedSlot, data: unknown):
     binding,
     reviewableAnchors: state.snapshot.lineMap,
     initialReviews: [
-      outputFor<InitialReview>(state, "wf7-fable-initial"),
-      outputFor<InitialReview>(state, "wf7-sol-initial"),
+      outputFor<InitialReview>(state, "pr-fable-initial"),
+      outputFor<InitialReview>(state, "pr-sol-initial"),
     ],
   });
   return validated.ok ? validated : invalidOutput(validated.reason);
 }
 
 export function createCaptureCoordinator(options: CaptureCoordinatorOptions): CaptureCoordinator {
-  const expectedNames = new Set(WF7_TASK_SLOTS.map((slot) => slot.name));
+  const expectedNames = new Set(PR_REVIEW_TASK_SLOTS.map((slot) => slot.name));
   const nonceNames = Object.keys(options.callNonces);
   if (
     nonceNames.length !== expectedNames.size
-    || nonceNames.some((name) => !expectedNames.has(name as Wf7TaskName))
-    || WF7_TASK_SLOTS.some((slot) => typeof options.callNonces[slot.name] !== "string")
+    || nonceNames.some((name) => !expectedNames.has(name as PrReviewTaskName))
+    || PR_REVIEW_TASK_SLOTS.some((slot) => typeof options.callNonces[slot.name] !== "string")
   ) throw new Error("capture requires exactly five registered call nonces");
   if (options.state.getRunStatus(options.snapshot.runHandle).stage !== "snapshotted") {
     throw new Error("capture must register at snapshot creation");
@@ -588,10 +588,10 @@ export function observeTaskCall(
       failCapture(
         state,
         "task_envelope_invalid",
-        "unexpected WF7 task call after capture completion",
+        "unexpected PR review task call after capture completion",
       );
     }
-    return { block: true, reason: "WF7 capture is terminal" };
+    return { block: true, reason: "PR review capture is terminal" };
   }
 
   const guardResult = state.guard.handleToolCall({
@@ -605,17 +605,17 @@ export function observeTaskCall(
   }
   if (event.toolName !== "task") return undefined;
   if (state.pending || !event.toolCallId) {
-    failCapture(state, "task_envelope_invalid", "duplicate or unidentifiable WF7 task call");
-    return { block: true, reason: "Invalid WF7 task envelope" };
+    failCapture(state, "task_envelope_invalid", "duplicate or unidentifiable PR review task call");
+    return { block: true, reason: "Invalid PR review task envelope" };
   }
 
   const expected = expectedInput(state, event.toolCallId);
   if (canonicalJson(event.input) !== canonicalJson(expected)) {
-    failCapture(state, "task_envelope_invalid", "WF7 task batch, order, prompt, schema, or override mismatch");
-    return { block: true, reason: "Invalid WF7 task envelope" };
+    failCapture(state, "task_envelope_invalid", "PR review task batch, order, prompt, schema, or override mismatch");
+    return { block: true, reason: "Invalid PR review task envelope" };
   }
   const stage = stageFor(state);
-  const names = WF7_TASK_SLOTS.filter((slot) => slot.stage === stage).map((slot) => slot.name);
+  const names = PR_REVIEW_TASK_SLOTS.filter((slot) => slot.stage === stage).map((slot) => slot.name);
   const slots = names.map((name) => expectedSlot(state, name, event.toolCallId));
   try {
     for (const slot of slots) {
@@ -630,7 +630,7 @@ export function observeTaskCall(
     }
   } catch (error) {
     failCapture(state, failureCode(error, "role_integrity_drift"), error instanceof Error ? error.message : "role check failed");
-    return { block: true, reason: "WF7 role integrity check failed" };
+    return { block: true, reason: "PR review role integrity check failed" };
   }
 
   state.state.transitionRun(state.snapshot.runHandle, stage);
@@ -653,7 +653,7 @@ export function sealSlot(
     failCapture(state, "task_result_invalid", `duplicate result for ${slot.name}`);
     return undefined;
   }
-  const role = WF7_ROLE_SPECS.find((candidate) => candidate.agent === slot.agent)!;
+  const role = PR_REVIEW_ROLE_SPECS.find((candidate) => candidate.agent === slot.agent)!;
   const evidence: SingleResultEvidence = {
     task: slot.name,
     agent: slot.agent,
@@ -691,7 +691,7 @@ export function sealSlot(
   state.sealed.set(slot.name, sealed);
   state.outputs.set(slot.name, copyAndFreeze(output));
   state.journal.prepare({
-    tasks: WF7_TASK_SLOTS.flatMap((candidate) => {
+    tasks: PR_REVIEW_TASK_SLOTS.flatMap((candidate) => {
       const captured = state.sealed.get(candidate.name);
       return captured ? [receiptEvidence(captured)] : [];
     }),
@@ -701,11 +701,11 @@ export function sealSlot(
 
 export function completeCapture(coordinator: CaptureCoordinator): Readonly<CompletedCapture> | undefined {
   const state = privateState(coordinator);
-  if (state.status !== "active" || state.sealed.size !== WF7_TASK_SLOTS.length || state.pending) {
+  if (state.status !== "active" || state.sealed.size !== PR_REVIEW_TASK_SLOTS.length || state.pending) {
     failCapture(state, "task_result_invalid", "capture completed without exactly five ordered results");
     return undefined;
   }
-  const ordered = WF7_TASK_SLOTS.map((slot) => state.sealed.get(slot.name)!);
+  const ordered = PR_REVIEW_TASK_SLOTS.map((slot) => state.sealed.get(slot.name)!);
   try {
     const capture = state.state.completeCapture(state.snapshot.runHandle, ordered, state.now());
     if (state.releaseGuardOnCompletion) state.guard.stop();
@@ -727,7 +727,7 @@ export function observeTaskResult(coordinator: CaptureCoordinator, event: Native
   const state = privateState(coordinator);
   if (event.toolName !== "task") return;
   if (state.status !== "active" || !state.pending) {
-    failCapture(state, "task_result_invalid", "unexpected or duplicate WF7 task result");
+    failCapture(state, "task_result_invalid", "unexpected or duplicate PR review task result");
     return;
   }
   const pending = state.pending;
@@ -741,7 +741,7 @@ export function observeTaskResult(coordinator: CaptureCoordinator, event: Native
     || !Array.isArray(event.details.results)
     || event.details.results.length !== pending.slots.length
   ) {
-    failCapture(state, event.isError ? "task_failed" : "task_result_invalid", "WF7 native task result envelope mismatch");
+    failCapture(state, event.isError ? "task_failed" : "task_result_invalid", "PR review native task result envelope mismatch");
     return;
   }
   const results = event.details.results;
@@ -752,17 +752,17 @@ export function observeTaskResult(coordinator: CaptureCoordinator, event: Native
     const slot = pending.slots[index]!;
     const raw = results[index];
     if (!exactResultObject(raw) || ids.has(raw.id) || sealedIds.has(raw.id)) {
-      failCapture(state, "task_result_invalid", "WF7 task result is malformed, reordered, or duplicated");
+      failCapture(state, "task_result_invalid", "PR review task result is malformed, reordered, or duplicated");
       return;
     }
     ids.add(raw.id);
     const invalid = classifyResult(raw, slot);
     if (invalid) {
-      failCapture(state, invalid, `WF7 task result contract failed for ${slot.name}`);
+      failCapture(state, invalid, `PR review task result contract failed for ${slot.name}`);
       return;
     }
     try {
-      const role = WF7_ROLE_SPECS.find((candidate) => candidate.agent === slot.agent)!;
+      const role = PR_REVIEW_ROLE_SPECS.find((candidate) => candidate.agent === slot.agent)!;
       state.verifyRole({
         taskName: slot.name,
         task: {
@@ -783,7 +783,7 @@ export function observeTaskResult(coordinator: CaptureCoordinator, event: Native
     }
     const output = validateOutput(state, slot, raw.structuredOutput!.data);
     if (!output.ok) {
-      failCapture(state, output.code, `WF7 structured output failed validation for ${slot.name}: ${output.reason}`);
+      failCapture(state, output.code, `PR review structured output failed validation for ${slot.name}: ${output.reason}`);
       return;
     }
     validated.push({ slot, result: raw, output: output.value });
@@ -793,5 +793,5 @@ export function observeTaskResult(coordinator: CaptureCoordinator, event: Native
   for (const item of validated) {
     if (!sealSlot(coordinator, item.slot, item.result, item.output)) return;
   }
-  if (state.sealed.size === WF7_TASK_SLOTS.length) completeCapture(coordinator);
+  if (state.sealed.size === PR_REVIEW_TASK_SLOTS.length) completeCapture(coordinator);
 }

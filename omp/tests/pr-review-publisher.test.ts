@@ -1,12 +1,12 @@
 import { describe, expect, test } from "bun:test";
 import {
   PR_REVIEW_SUMMARY_BODIES,
-  WF7_ROLE_SPECS,
-  WF7_TASK_SLOTS,
+  PR_REVIEW_ROLE_SPECS,
+  PR_REVIEW_TASK_SLOTS,
   type CompletedCapture,
   type NativeSingleResult,
   type SealedTaskResult,
-  type Wf7TaskSlot,
+  type PrReviewTaskSlot,
 } from "../extensions/pr-review/contracts";
 import {
   INITIAL_REVIEW_SCHEMA_SHA256,
@@ -81,7 +81,7 @@ type CaptureOptions = {
   solWithdrawn?: string[];
 };
 
-function binding(slot: Wf7TaskSlot, index: number) {
+function binding(slot: PrReviewTaskSlot, index: number) {
   return {
     schema_version: 1 as const,
     stage: slot.stage,
@@ -95,7 +95,7 @@ function binding(slot: Wf7TaskSlot, index: number) {
   };
 }
 
-function initial(slot: Wf7TaskSlot, index: number, reviewer: "fable" | "sol", findings: InitialFinding[]): InitialReview {
+function initial(slot: PrReviewTaskSlot, index: number, reviewer: "fable" | "sol", findings: InitialFinding[]): InitialReview {
   const value = binding(slot, index);
   return {
     schema_version: 1,
@@ -110,7 +110,7 @@ function initial(slot: Wf7TaskSlot, index: number, reviewer: "fable" | "sol", fi
 }
 
 function rebuttal(
-  slot: Wf7TaskSlot,
+  slot: PrReviewTaskSlot,
   index: number,
   reviewer: "fable" | "sol",
   peer: InitialReview,
@@ -135,7 +135,7 @@ function rebuttal(
   };
 }
 
-function judge(slot: Wf7TaskSlot, index: number, adjudications: JudgeAdjudication[]): JudgeResult {
+function judge(slot: PrReviewTaskSlot, index: number, adjudications: JudgeAdjudication[]): JudgeResult {
   const value = binding(slot, index);
   return {
     schema_version: 1,
@@ -149,15 +149,15 @@ function judge(slot: Wf7TaskSlot, index: number, adjudications: JudgeAdjudicatio
   };
 }
 
-function schemaHash(slot: Wf7TaskSlot): string {
+function schemaHash(slot: PrReviewTaskSlot): string {
   if (slot.stage === "initial") return INITIAL_REVIEW_SCHEMA_SHA256;
   if (slot.stage === "rebuttal") return REBUTTAL_SCHEMA_SHA256;
   return JUDGE_RESULT_SCHEMA_SHA256;
 }
 
-function sealed(slot: Wf7TaskSlot, index: number, data: unknown): SealedTaskResult {
+function sealed(slot: PrReviewTaskSlot, index: number, data: unknown): SealedTaskResult {
   const value = binding(slot, index);
-  const role = WF7_ROLE_SPECS.find((candidate) => candidate.agent === slot.agent)!;
+  const role = PR_REVIEW_ROLE_SPECS.find((candidate) => candidate.agent === slot.agent)!;
   const structuredOutput = {
     source: "caller" as const,
     mode: "strict" as const,
@@ -218,10 +218,10 @@ function sealed(slot: Wf7TaskSlot, index: number, data: unknown): SealedTaskResu
 }
 
 function capture(options: CaptureOptions = {}): CompletedCapture {
-  const fable = initial(WF7_TASK_SLOTS[0], 0, "fable", options.fable ?? [structuredClone(fableOne), structuredClone(fableTwo)]);
-  const sol = initial(WF7_TASK_SLOTS[1], 1, "sol", options.sol ?? [structuredClone(solOne)]);
-  const fableRebuttal = rebuttal(WF7_TASK_SLOTS[2], 2, "fable", sol, options.fableWithdrawn ?? []);
-  const solRebuttal = rebuttal(WF7_TASK_SLOTS[3], 3, "sol", fable, options.solWithdrawn ?? []);
+  const fable = initial(PR_REVIEW_TASK_SLOTS[0], 0, "fable", options.fable ?? [structuredClone(fableOne), structuredClone(fableTwo)]);
+  const sol = initial(PR_REVIEW_TASK_SLOTS[1], 1, "sol", options.sol ?? [structuredClone(solOne)]);
+  const fableRebuttal = rebuttal(PR_REVIEW_TASK_SLOTS[2], 2, "fable", sol, options.fableWithdrawn ?? []);
+  const solRebuttal = rebuttal(PR_REVIEW_TASK_SLOTS[3], 3, "sol", fable, options.solWithdrawn ?? []);
   const adjudications = options.adjudications ?? [
     {
       source_finding_ids: ["fable:one"],
@@ -248,7 +248,7 @@ function capture(options: CaptureOptions = {}): CompletedCapture {
     sol,
     fableRebuttal,
     solRebuttal,
-    judge(WF7_TASK_SLOTS[4], 4, adjudications),
+    judge(PR_REVIEW_TASK_SLOTS[4], 4, adjudications),
   ] as const;
   return {
     captureHandle: CAPTURE_HANDLE,
@@ -277,7 +277,7 @@ function capture(options: CaptureOptions = {}): CompletedCapture {
       ],
       nonreviewableEntries: [],
     },
-    results: outputs.map((output, index) => sealed(WF7_TASK_SLOTS[index]!, index, output)) as CompletedCapture["results"],
+    results: outputs.map((output, index) => sealed(PR_REVIEW_TASK_SLOTS[index]!, index, output)) as CompletedCapture["results"],
     completedAt: "2026-07-31T12:00:00.000Z",
   };
 }
@@ -396,7 +396,7 @@ describe("buildReviewPlanFromCapture", () => {
 
   test("rejects duplicate slots, candidates, partition defects, missing rebuttals, and invalid source anchors", () => {
     const duplicateSlot = mutableCapture(capture());
-    duplicateSlot.results[1]!.slot = "wf7-fable-initial";
+    duplicateSlot.results[1]!.slot = "pr-fable-initial";
     const duplicateSlotCapture = duplicateSlot as unknown as CompletedCapture;
 
     const failures: Array<[CompletedCapture, RegExp]> = [
@@ -462,9 +462,9 @@ describe("buildReviewPlanFromCapture", () => {
     expect(buildReviewPlanFromCapture(reordered)).toEqual(firstPlan);
     expect(firstPlan.runKey).toMatch(/^[a-f0-9]{64}$/);
     expect(firstPlan.payloadDigest).toMatch(/^[a-f0-9]{64}$/);
-    expect(firstPlan.runMarker).toMatch(/^<!-- dotfiles-wf7:run:[a-f0-9]{64} -->$/);
+    expect(firstPlan.runMarker).toMatch(/^<!-- dotfiles-pr-review:run:[a-f0-9]{64} -->$/);
     expect(firstPlan.findings[0]!.key).toMatch(/^[a-f0-9]{64}$/);
-    expect(firstPlan.findings[0]!.marker).toBe(`<!-- dotfiles-wf7:finding:${firstPlan.findings[0]!.key} -->`);
+    expect(firstPlan.findings[0]!.marker).toBe(`<!-- dotfiles-pr-review:finding:${firstPlan.findings[0]!.key} -->`);
 
     const changed = capture({
       adjudications: [

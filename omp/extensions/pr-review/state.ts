@@ -11,14 +11,14 @@ import {
 import { homedir } from "node:os";
 import { join } from "node:path";
 import {
-  WF7_TASK_SLOTS,
+  PR_REVIEW_TASK_SLOTS,
   type CompletedCapture,
   type ImmutableSnapshot,
   type SealedTaskResult,
   type SnapshotChangedFile,
   type SnapshotNonreviewableEntry,
   type SnapshotReviewableLine,
-  type Wf7TaskName,
+  type PrReviewTaskName,
 } from "./contracts";
 import { writeAllSync } from "./private-files";
 
@@ -74,7 +74,7 @@ interface RunRecord extends PrReviewRunIdentity {
   stage: PrReviewRunStage;
   directory: string;
   snapshot?: SnapshotRecord;
-  callNonces: Map<Wf7TaskName, string>;
+  callNonces: Map<PrReviewTaskName, string>;
   captureHandle?: string;
 }
 
@@ -241,12 +241,12 @@ export class PrReviewStateStore {
     run.stage = next;
   }
 
-  mintCallNonce(runHandle: string, slot: Wf7TaskName): string {
+  mintCallNonce(runHandle: string, slot: PrReviewTaskName): string {
     const run = this.#requireRun(runHandle);
     if (run.stage === "started" || run.stage === "captured") {
       throw new Error(`cannot mint call nonce during ${run.stage}`);
     }
-    if (!WF7_TASK_SLOTS.some((candidate) => candidate.name === slot)) {
+    if (!PR_REVIEW_TASK_SLOTS.some((candidate) => candidate.name === slot)) {
       throw new Error(`unknown task slot ${slot}`);
     }
     if (run.callNonces.has(slot)) throw new Error(`call nonce already minted for ${slot}`);
@@ -263,11 +263,11 @@ export class PrReviewStateStore {
     const run = this.#requireRun(runHandle);
     if (run.stage !== "judge") throw new Error(`illegal stage transition ${run.stage} to captured`);
     if (!run.snapshot) throw new Error("capture has no snapshot");
-    if (results.length !== WF7_TASK_SLOTS.length) throw new Error("capture requires exactly five results");
+    if (results.length !== PR_REVIEW_TASK_SLOTS.length) throw new Error("capture requires exactly five results");
 
     const capturedCallNonces = new Set<string>();
-    for (let index = 0; index < WF7_TASK_SLOTS.length; index += 1) {
-      const slot = WF7_TASK_SLOTS[index]!;
+    for (let index = 0; index < PR_REVIEW_TASK_SLOTS.length; index += 1) {
+      const slot = PR_REVIEW_TASK_SLOTS[index]!;
       const result = results[index]!;
       const expectedCallNonce = run.callNonces.get(slot.name);
       if (!expectedCallNonce) throw new Error(`unknown call nonce at ${slot.name}`);

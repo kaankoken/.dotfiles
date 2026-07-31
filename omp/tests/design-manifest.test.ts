@@ -40,7 +40,7 @@ describe("design-manifest pack", () => {
       "pdr-writer",
       "arc42-writer",
       "adr-writer",
-      "wf7-fable-reviewer",
+      "pr-fable-reviewer",
     ]) {
       expect(parity.agents.some((a) => a.name === name)).toBe(false);
     }

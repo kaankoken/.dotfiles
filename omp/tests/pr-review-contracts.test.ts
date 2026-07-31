@@ -7,8 +7,8 @@ import {
   PR_REVIEW_SCHEMA_VERSION,
   PR_REVIEW_SNAPSHOT_PARAMETERS_SCHEMA,
   PR_REVIEW_SUMMARY_BODIES,
-  WF7_ROLE_SPECS,
-  WF7_TASK_SLOTS,
+  PR_REVIEW_ROLE_SPECS,
+  PR_REVIEW_TASK_SLOTS,
 } from "../extensions/pr-review/contracts";
 import type {
   PrReviewReceiptV1,
@@ -17,58 +17,58 @@ import type {
   SingleResultEvidence,
 } from "../extensions/pr-review/contracts";
 
-describe("WF7 PR review contracts", () => {
+describe("PR review contracts", () => {
   test("pins the exact three user-role routes", () => {
-    expect(WF7_ROLE_SPECS).toEqual([
+    expect(PR_REVIEW_ROLE_SPECS).toEqual([
       {
-        livePath: "~/.omp/agent/agents/wf7-fable-reviewer.md",
+        livePath: "~/.omp/agent/agents/pr-fable-reviewer.md",
         canonicalPath:
-          "/Users/legolas/.dotfiles/omp/agents/wf7-fable-reviewer.md",
-        agent: "wf7-fable-reviewer",
+          "/Users/legolas/.dotfiles/omp/agents/pr-fable-reviewer.md",
+        agent: "pr-fable-reviewer",
         model: "anthropic/claude-fable-5:max",
       },
       {
-        livePath: "~/.omp/agent/agents/wf7-sol-reviewer.md",
+        livePath: "~/.omp/agent/agents/pr-sol-reviewer.md",
         canonicalPath:
-          "/Users/legolas/.dotfiles/omp/agents/wf7-sol-reviewer.md",
-        agent: "wf7-sol-reviewer",
+          "/Users/legolas/.dotfiles/omp/agents/pr-sol-reviewer.md",
+        agent: "pr-sol-reviewer",
         model: "openai-codex/gpt-5.6-sol:xhigh",
       },
       {
-        livePath: "~/.omp/agent/agents/wf7-grok-judge.md",
-        canonicalPath: "/Users/legolas/.dotfiles/omp/agents/wf7-grok-judge.md",
-        agent: "wf7-grok-judge",
+        livePath: "~/.omp/agent/agents/pr-grok-judge.md",
+        canonicalPath: "/Users/legolas/.dotfiles/omp/agents/pr-grok-judge.md",
+        agent: "pr-grok-judge",
         model: "xai-oauth/grok-4.5:xhigh",
       },
     ]);
   });
 
   test("defines exactly five ordered task slots", () => {
-    expect(WF7_TASK_SLOTS).toEqual([
+    expect(PR_REVIEW_TASK_SLOTS).toEqual([
       {
         stage: "initial",
-        name: "wf7-fable-initial",
-        agent: "wf7-fable-reviewer",
+        name: "pr-fable-initial",
+        agent: "pr-fable-reviewer",
       },
       {
         stage: "initial",
-        name: "wf7-sol-initial",
-        agent: "wf7-sol-reviewer",
+        name: "pr-sol-initial",
+        agent: "pr-sol-reviewer",
       },
       {
         stage: "rebuttal",
-        name: "wf7-fable-rebuttal",
-        agent: "wf7-fable-reviewer",
+        name: "pr-fable-rebuttal",
+        agent: "pr-fable-reviewer",
       },
       {
         stage: "rebuttal",
-        name: "wf7-sol-rebuttal",
-        agent: "wf7-sol-reviewer",
+        name: "pr-sol-rebuttal",
+        agent: "pr-sol-reviewer",
       },
       {
         stage: "judge",
-        name: "wf7-grok-judge",
-        agent: "wf7-grok-judge",
+        name: "pr-grok-judge",
+        agent: "pr-grok-judge",
       },
     ]);
   });
@@ -79,7 +79,7 @@ describe("WF7 PR review contracts", () => {
       schema: PR_REVIEW_SCHEMA_VERSION,
       manifest: PR_REVIEW_ROLE_MANIFEST_VERSION,
       marker: PR_REVIEW_MARKER_NAMESPACE,
-    }).toEqual({ protocol: 1, schema: 1, manifest: 1, marker: "dotfiles-wf7" });
+    }).toEqual({ protocol: 1, schema: 1, manifest: 1, marker: "dotfiles-pr-review" });
     expect(PR_REVIEW_SUMMARY_BODIES).toEqual({
       COMMENT: "Automated review completed; findings are inline.",
       REQUEST_CHANGES:
@@ -139,12 +139,12 @@ describe("WF7 PR review contracts", () => {
   });
   test("receipt types represent missing roles and post-publication evidence", () => {
     const missingRole = {
-      agent: "wf7-fable-reviewer",
-      livePath: "~/.omp/agent/agents/wf7-fable-reviewer.md",
+      agent: "pr-fable-reviewer",
+      livePath: "~/.omp/agent/agents/pr-fable-reviewer.md",
       preCallValid: false,
     } satisfies RoleIntegrityObservation;
     const publication = {
-      github_inline_comment_markers: ["<!-- dotfiles-wf7:finding:key -->"],
+      github_inline_comment_markers: ["<!-- dotfiles-pr-review:finding:key -->"],
       post_publish_head_sha: "b".repeat(40),
       published_on_superseded_head: true,
     } satisfies Pick<
@@ -155,8 +155,8 @@ describe("WF7 PR review contracts", () => {
     >;
 
     expect(missingRole).toEqual({
-      agent: "wf7-fable-reviewer",
-      livePath: "~/.omp/agent/agents/wf7-fable-reviewer.md",
+      agent: "pr-fable-reviewer",
+      livePath: "~/.omp/agent/agents/pr-fable-reviewer.md",
       preCallValid: false,
     });
     expect(publication.github_inline_comment_markers).toHaveLength(1);

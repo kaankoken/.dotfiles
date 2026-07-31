@@ -31,8 +31,8 @@ describe("ponytail reviewer wiring", () => {
     expect(angle).toMatch(/ponytail-audit/);
   });
 
-  test("WF7 fable/sol load ponytail-review and ponytail-audit", () => {
-    for (const name of ["wf7-fable-reviewer", "wf7-sol-reviewer"]) {
+  test("PR fable/sol load ponytail-review and ponytail-audit", () => {
+    for (const name of ["pr-fable-reviewer", "pr-sol-reviewer"]) {
       const raw = readFileSync(join(OMP_ROOT, `agents/${name}.md`), "utf8");
       expect(raw).toMatch(/ponytail-review/);
       expect(raw).toMatch(/ponytail-audit/);
@@ -41,8 +41,8 @@ describe("ponytail reviewer wiring", () => {
     }
   });
 
-  test("WF7 grok-judge loads ponytail-review and ponytail-audit", () => {
-    const raw = readFileSync(join(OMP_ROOT, "agents/wf7-grok-judge.md"), "utf8");
+  test("PR grok-judge loads ponytail-review and ponytail-audit", () => {
+    const raw = readFileSync(join(OMP_ROOT, "agents/pr-grok-judge.md"), "utf8");
     expect(raw).toMatch(/Load live skills|load.*ponytail-review/i);
     expect(raw).toMatch(/ponytail-review/);
     expect(raw).toMatch(/ponytail-audit/);

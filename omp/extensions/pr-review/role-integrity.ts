@@ -19,12 +19,12 @@ import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
 import {
   PR_REVIEW_ROLE_MANIFEST_VERSION,
-  WF7_ROLE_SPECS,
-  WF7_TASK_SLOTS,
+  PR_REVIEW_ROLE_SPECS,
+  PR_REVIEW_TASK_SLOTS,
   type PrReviewFailureCode,
   type RoleIntegrityObservation,
-  type Wf7AgentName,
-  type Wf7TaskName,
+  type PrReviewAgentName,
+  type PrReviewTaskName,
 } from "./contracts";
 import type { ReceiptJournal } from "./receipts";
 import {
@@ -45,7 +45,7 @@ export interface RoleManifestEntry {
   livePath: string;
   canonicalPath: string;
   sha256: string;
-  agent: Wf7AgentName;
+  agent: PrReviewAgentName;
   model: string;
   tools: ["pr_review_snapshot"];
   spawns: [];
@@ -67,9 +67,9 @@ export interface RoleCheckOptions {
 
 export interface RoleSlotCheckOptions {
   boundary: "pre-call";
-  taskName: Wf7TaskName;
+  taskName: PrReviewTaskName;
   task: {
-    agent: Wf7AgentName;
+    agent: PrReviewAgentName;
     schemaIdentity: string;
     schemaSha256: string;
     model?: unknown;
@@ -115,10 +115,10 @@ const SCHEMAS_BY_STAGE = {
   },
 } as const;
 
-const SCHEMAS_BY_AGENT: Record<Wf7AgentName, readonly RoleManifestSchema[]> = {
-  "wf7-fable-reviewer": [SCHEMAS_BY_STAGE.initial, SCHEMAS_BY_STAGE.rebuttal],
-  "wf7-sol-reviewer": [SCHEMAS_BY_STAGE.initial, SCHEMAS_BY_STAGE.rebuttal],
-  "wf7-grok-judge": [SCHEMAS_BY_STAGE.judge],
+const SCHEMAS_BY_AGENT: Record<PrReviewAgentName, readonly RoleManifestSchema[]> = {
+  "pr-fable-reviewer": [SCHEMAS_BY_STAGE.initial, SCHEMAS_BY_STAGE.rebuttal],
+  "pr-sol-reviewer": [SCHEMAS_BY_STAGE.initial, SCHEMAS_BY_STAGE.rebuttal],
+  "pr-grok-judge": [SCHEMAS_BY_STAGE.judge],
 };
 
 function exactArray(left: readonly unknown[], right: readonly unknown[]): boolean {
@@ -134,8 +134,8 @@ function exactSchemas(
   );
 }
 
-function expectedRole(agent: unknown): (typeof WF7_ROLE_SPECS)[number] | undefined {
-  return WF7_ROLE_SPECS.find((role) => role.agent === agent);
+function expectedRole(agent: unknown): (typeof PR_REVIEW_ROLE_SPECS)[number] | undefined {
+  return PR_REVIEW_ROLE_SPECS.find((role) => role.agent === agent);
 }
 
 function expandedLivePath(path: string): string {
@@ -144,10 +144,10 @@ function expandedLivePath(path: string): string {
 
 function validateManifestRole(value: unknown, index: number, strictPaths: boolean): RoleManifestEntry {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new RoleIntegrityError("role_integrity_drift", "WF7 role manifest is invalid");
+    throw new RoleIntegrityError("role_integrity_drift", "PR review role manifest is invalid");
   }
   const role = value as Record<string, unknown>;
-  const spec = WF7_ROLE_SPECS[index];
+  const spec = PR_REVIEW_ROLE_SPECS[index];
   if (
     !spec ||
     typeof role.livePath !== "string" ||
@@ -165,7 +165,7 @@ function validateManifestRole(value: unknown, index: number, strictPaths: boolea
     role.blocking !== true ||
     !Array.isArray(role.schemas)
   ) {
-    throw new RoleIntegrityError("role_integrity_drift", "WF7 role manifest is invalid");
+    throw new RoleIntegrityError("role_integrity_drift", "PR review role manifest is invalid");
   }
   const schemas = role.schemas as RoleManifestSchema[];
   if (
@@ -178,7 +178,7 @@ function validateManifestRole(value: unknown, index: number, strictPaths: boolea
       role.canonicalPath !== spec.canonicalPath
     ))
   ) {
-    throw new RoleIntegrityError("role_integrity_drift", "WF7 role manifest is invalid");
+    throw new RoleIntegrityError("role_integrity_drift", "PR review role manifest is invalid");
   }
   return {
     livePath: role.livePath,
@@ -219,14 +219,14 @@ export function loadRoleManifest(path = MANIFEST_PATH): LoadedRoleManifest {
     bytes = readFileSync(path);
     parsed = JSON.parse(bytes.toString("utf8"));
   } catch {
-    throw new RoleIntegrityError("role_integrity_drift", "WF7 role manifest is unavailable or invalid");
+    throw new RoleIntegrityError("role_integrity_drift", "PR review role manifest is unavailable or invalid");
   }
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new RoleIntegrityError("role_integrity_drift", "WF7 role manifest is invalid");
+    throw new RoleIntegrityError("role_integrity_drift", "PR review role manifest is invalid");
   }
   const raw = parsed as Record<string, unknown>;
   if (raw.version !== PR_REVIEW_ROLE_MANIFEST_VERSION || !Array.isArray(raw.roles) || raw.roles.length !== 3) {
-    throw new RoleIntegrityError("role_integrity_drift", "WF7 role manifest is invalid");
+    throw new RoleIntegrityError("role_integrity_drift", "PR review role manifest is invalid");
   }
   const strictPaths = path === MANIFEST_PATH;
   return {
@@ -257,7 +257,7 @@ function roleFailure(
 ): RoleIntegrityError {
   return new RoleIntegrityError(
     "role_integrity_drift",
-    `WF7 role integrity check failed for ${role.agent} at ${boundary}`,
+    `PR review role integrity check failed for ${role.agent} at ${boundary}`,
     observation,
   );
 }
@@ -427,11 +427,11 @@ export function checkRoleForSlot(
     journal: options.journal,
     previousObservations: options.previousObservations,
   });
-  const slot = WF7_TASK_SLOTS.find((candidate) => candidate.name === options.taskName);
+  const slot = PR_REVIEW_TASK_SLOTS.find((candidate) => candidate.name === options.taskName);
   if (!slot || slot.agent !== options.task.agent) {
     return slotFailure(
       "task_envelope_invalid",
-      "WF7 task role does not match its fixed slot",
+      "PR review task role does not match its fixed slot",
       options.journal,
       observations,
     );
@@ -450,7 +450,7 @@ export function checkRoleForSlot(
   ) {
     return slotFailure(
       "task_envelope_invalid",
-      "WF7 task caller supplied a role, selector, or schema override",
+      "PR review task caller supplied a role, selector, or schema override",
       options.journal,
       observations,
     );
@@ -461,7 +461,7 @@ export function checkRoleForSlot(
     if (options.settlement.agentSource === "project") {
       return slotFailure(
         "project_shadow",
-        "WF7 target-project role shadow is forbidden",
+        "PR review target-project role shadow is forbidden",
         options.journal,
         checked,
       );
@@ -469,7 +469,7 @@ export function checkRoleForSlot(
     if (options.settlement.agentSource !== "user") {
       return slotFailure(
         "route_mismatch",
-        "WF7 role must settle from the user source",
+        "PR review role must settle from the user source",
         options.journal,
         checked,
       );
@@ -477,7 +477,7 @@ export function checkRoleForSlot(
     if (options.settlement.resolvedModelIsFallback !== false) {
       return slotFailure(
         "model_fallback",
-        "WF7 role model fallback is forbidden",
+        "PR review role model fallback is forbidden",
         options.journal,
         checked,
       );
@@ -488,7 +488,7 @@ export function checkRoleForSlot(
     ) {
       return slotFailure(
         "route_mismatch",
-        "WF7 role selector does not match the manifest",
+        "PR review role selector does not match the manifest",
         options.journal,
         checked,
       );
@@ -866,12 +866,12 @@ export function createRoleMutationGuard(
       if (!denied) return undefined;
       journal.fail(
         "role_mutation_denied",
-        "WF7 role mutation denied by the run-scoped OMP guard",
+        "PR review role mutation denied by the run-scoped OMP guard",
         { mutation_guard_active: true },
       );
       failed = true;
       active = false;
-      return { block: true, reason: "WF7 role mutation denied" };
+      return { block: true, reason: "PR review role mutation denied" };
     },
     stop() {
       if (!active) return;
