@@ -2,12 +2,14 @@
   "version": 1,
   "roles": [
     {
-      "livePath": "/Users/legolas/.omp/agent/agents/wf7-fable-reviewer.md",
-      "canonicalPath": "/Users/legolas/.dotfiles/omp/agents/wf7-fable-reviewer.md",
-      "sha256": "c6cde69f9f1cda2df68daf1e4ced5605373ac9da81a3baca48dcb52507b53f67",
-      "agent": "wf7-fable-reviewer",
+      "livePath": "/Users/legolas/.omp/agent/agents/pr-fable-reviewer.md",
+      "canonicalPath": "/Users/legolas/.dotfiles/omp/agents/pr-fable-reviewer.md",
+      "sha256": "9fbea849645ae7fdb884cb8cb4a649316798e2d2bbec43dd27305933628670d1",
+      "agent": "pr-fable-reviewer",
       "model": "anthropic/claude-fable-5:max",
-      "tools": ["pr_review_snapshot"],
+      "tools": [
+        "pr_review_snapshot"
+      ],
       "spawns": [],
       "blocking": true,
       "schemas": [
@@ -22,12 +24,14 @@
       ]
     },
     {
-      "livePath": "/Users/legolas/.omp/agent/agents/wf7-sol-reviewer.md",
-      "canonicalPath": "/Users/legolas/.dotfiles/omp/agents/wf7-sol-reviewer.md",
-      "sha256": "6e517a462c4115337b0d79ae3ae5beb0acf992649d152486a5f090a7ab12a671",
-      "agent": "wf7-sol-reviewer",
+      "livePath": "/Users/legolas/.omp/agent/agents/pr-sol-reviewer.md",
+      "canonicalPath": "/Users/legolas/.dotfiles/omp/agents/pr-sol-reviewer.md",
+      "sha256": "ce39c58c397bf22bab828b4adaa7f114a1d8094d2a551ab2b767ede353199e9e",
+      "agent": "pr-sol-reviewer",
       "model": "openai-codex/gpt-5.6-sol:xhigh",
-      "tools": ["pr_review_snapshot"],
+      "tools": [
+        "pr_review_snapshot"
+      ],
       "spawns": [],
       "blocking": true,
       "schemas": [
@@ -42,12 +46,14 @@
       ]
     },
     {
-      "livePath": "/Users/legolas/.omp/agent/agents/wf7-grok-judge.md",
-      "canonicalPath": "/Users/legolas/.dotfiles/omp/agents/wf7-grok-judge.md",
-      "sha256": "8208452bdb35f0e8ab4a0f3b020dd6c545c7ff6f822af6a16a6553bc3ce4f12b",
-      "agent": "wf7-grok-judge",
+      "livePath": "/Users/legolas/.omp/agent/agents/pr-grok-judge.md",
+      "canonicalPath": "/Users/legolas/.dotfiles/omp/agents/pr-grok-judge.md",
+      "sha256": "9f21b68ccc6f356ce68bfff68389360ba61d7344009be9fd15d39e8f65e56036",
+      "agent": "pr-grok-judge",
       "model": "xai-oauth/grok-4.5:xhigh",
-      "tools": ["pr_review_snapshot"],
+      "tools": [
+        "pr_review_snapshot"
+      ],
       "spawns": [],
       "blocking": true,
       "schemas": [

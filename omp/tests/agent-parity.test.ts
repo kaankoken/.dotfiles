@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
-import { WF7_ROLE_SPECS } from "../extensions/pr-review/contracts";
+import { PR_REVIEW_ROLE_SPECS } from "../extensions/pr-review/contracts";
 
 const OMP_ROOT = join(import.meta.dir, "..");
 const MANIFEST_PATH = join(OMP_ROOT, "agents/parity-manifest.json");
@@ -364,7 +364,7 @@ function parseOmpAgentFrontmatter(text: string): Record<string, unknown> {
   return fm;
 }
 
-describe("WF7 standalone user roles", () => {
+describe("PR review standalone user roles", () => {
   test("remain outside the frozen 19-role parity manifest", () => {
     const manifest = JSON.parse(readFileSync(MANIFEST_PATH, "utf8")) as {
       agentCount: number;
@@ -372,13 +372,13 @@ describe("WF7 standalone user roles", () => {
     };
     expect(manifest.agentCount).toBe(19);
     expect(manifest.agents).toHaveLength(19);
-    for (const role of WF7_ROLE_SPECS) {
+    for (const role of PR_REVIEW_ROLE_SPECS) {
       expect(manifest.agents.some(({ name }) => name === role.agent)).toBe(false);
     }
   });
 
   test("pin exact models and expose only snapshot reads with no spawns", () => {
-    for (const role of WF7_ROLE_SPECS) {
+    for (const role of PR_REVIEW_ROLE_SPECS) {
       const path = join(OMP_ROOT, "agents", `${role.agent}.md`);
       expect(existsSync(path)).toBe(true);
       const raw = readFileSync(path, "utf8");

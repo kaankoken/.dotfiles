@@ -5,11 +5,11 @@ import type {
   SnapshotChangedFile,
   SnapshotNonreviewableEntry,
   SnapshotReviewableLine,
-  Wf7TaskName,
+  PrReviewTaskName,
 } from "./contracts";
 import {
   PR_REVIEW_SNAPSHOT_PARAMETERS_SCHEMA,
-  WF7_TASK_SLOTS,
+  PR_REVIEW_TASK_SLOTS,
 } from "./contracts";
 import {
   GitHubReadClient,
@@ -80,7 +80,7 @@ export interface SnapshotCreateResult {
   changed_file_count: number;
   line_map: readonly SnapshotReviewableLine[];
   nonreviewable_entries: readonly SnapshotNonreviewableEntry[];
-  call_nonces: readonly { task: Wf7TaskName; call_nonce: string }[];
+  call_nonces: readonly { task: PrReviewTaskName; call_nonce: string }[];
 }
 
 export interface SnapshotReadResult {
@@ -603,7 +603,7 @@ class SnapshotTool implements PrReviewSnapshotTool {
         lineMap: parsedDiff.lines,
         nonreviewableEntries: parsedDiff.nonreviewableEntries,
       });
-      const callNonces = WF7_TASK_SLOTS.map((slot) => Object.freeze({
+      const callNonces = PR_REVIEW_TASK_SLOTS.map((slot) => Object.freeze({
         task: slot.name,
         call_nonce: this.#state.mintCallNonce(stateRun.runHandle, slot.name),
       }));

@@ -13,11 +13,11 @@ import {
   type NativeTaskResultEvent,
 } from "../extensions/pr-review/capture";
 import {
-  WF7_TASK_SLOTS,
+  PR_REVIEW_TASK_SLOTS,
   type NativeSingleResult,
   type PrReviewFailureCode,
   type PrReviewTaskBinding,
-  type Wf7TaskName,
+  type PrReviewTaskName,
 } from "../extensions/pr-review/contracts";
 import { ReceiptJournal } from "../extensions/pr-review/receipts";
 import type { RoleMutationGuard } from "../extensions/pr-review/role-integrity";
@@ -52,7 +52,7 @@ type CaptureResult = NativeSingleResult & {
 
 
 function harness(options: { mutationBlocked?: boolean } = {}): Harness {
-  const root = mkdtempSync(join(tmpdir(), "wf7-capture-"));
+  const root = mkdtempSync(join(tmpdir(), "pr-review-capture-"));
   const state = new PrReviewStateStore({ rootDir: join(root, "runs") });
   const run = state.startRun();
   const snapshot = state.storeSnapshot(run.runHandle, {
@@ -71,8 +71,8 @@ function harness(options: { mutationBlocked?: boolean } = {}): Harness {
     nonreviewableEntries: [],
   });
   const callNonces = Object.fromEntries(
-    WF7_TASK_SLOTS.map((slot) => [slot.name, state.mintCallNonce(run.runHandle, slot.name)]),
-  ) as Record<Wf7TaskName, string>;
+    PR_REVIEW_TASK_SLOTS.map((slot) => [slot.name, state.mintCallNonce(run.runHandle, slot.name)]),
+  ) as Record<PrReviewTaskName, string>;
   const journal = ReceiptJournal.start({
     rootDir: join(root, "receipts"),
     provisionalId: "capture",
@@ -91,7 +91,7 @@ function harness(options: { mutationBlocked?: boolean } = {}): Harness {
     handleToolCall(event) {
       if (active && options.mutationBlocked && event.toolName === "write") {
         active = false;
-        return { block: true, reason: "WF7 role mutation denied" };
+        return { block: true, reason: "PR review role mutation denied" };
       }
       return undefined;
     },
@@ -196,7 +196,7 @@ function validResults(event: NativeTaskCallEvent): CaptureResult[] {
   const items = (Array.isArray(input.tasks) ? input.tasks : [input]) as Array<Record<string, unknown>>;
   const bindings = itemBindings(event);
   return items.map((item, index) => {
-    const name = item.name as Wf7TaskName;
+    const name = item.name as PrReviewTaskName;
     const binding = bindings[index]!;
     const data = binding.stage === "initial"
       ? initialData(binding, name.includes("fable") ? "fable" : "sol")
@@ -288,7 +288,7 @@ describe("exact five-result capture", () => {
       captureHandle: h.coordinator.captureHandle,
     });
     const capture = h.state.lookupCapture(h.coordinator.captureHandle!);
-    expect(capture.results.map((result) => result.slot)).toEqual(WF7_TASK_SLOTS.map((slot) => slot.name));
+    expect(capture.results.map((result) => result.slot)).toEqual(PR_REVIEW_TASK_SLOTS.map((slot) => slot.name));
     expect(capture.results.map((result) => result.nativeToolCallId)).toEqual([
       "call-initial",
       "call-initial",
@@ -297,7 +297,7 @@ describe("exact five-result capture", () => {
       "call-judge",
     ]);
     expect(capture.results.map((result) => result.nativeResultId)).toEqual(
-      WF7_TASK_SLOTS.map((slot) => `${slot.name}-2`),
+      PR_REVIEW_TASK_SLOTS.map((slot) => `${slot.name}-2`),
     );
     const receipt = JSON.parse(readFileSync(h.journal.receiptPath, "utf8"));
     expect(receipt.status).toBe("prepared");
@@ -328,10 +328,10 @@ describe("exact five-result capture", () => {
       tasks.push(structuredClone(tasks[0]));
     }],
     ["wrong name", (event: NativeTaskCallEvent) => {
-      ((event.input as { tasks: Array<Record<string, unknown>> }).tasks[0]!).name = "wf7-renamed";
+      ((event.input as { tasks: Array<Record<string, unknown>> }).tasks[0]!).name = "pr-review-renamed";
     }],
     ["wrong role", (event: NativeTaskCallEvent) => {
-      ((event.input as { tasks: Array<Record<string, unknown>> }).tasks[0]!).agent = "wf7-sol-reviewer";
+      ((event.input as { tasks: Array<Record<string, unknown>> }).tasks[0]!).agent = "pr-sol-reviewer";
     }],
     ["wrong schema", (event: NativeTaskCallEvent) => {
       ((event.input as { tasks: Array<Record<string, unknown>> }).tasks[0]!).outputSchema = { type: "object" };
@@ -507,7 +507,7 @@ describe("exact five-result capture", () => {
       toolName: "write",
       toolCallId: "mutation",
       input: { path: "/protected/role.md", content: "drift" },
-    })).toEqual({ block: true, reason: "WF7 role mutation denied" });
+    })).toEqual({ block: true, reason: "PR review role mutation denied" });
     expectFailed(h, "role_mutation_denied");
   });
 });

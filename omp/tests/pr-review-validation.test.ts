@@ -198,7 +198,7 @@ describe("validateInitialReview", () => {
     expect(
       validateInitialReview(
         initial("fable", [
-          { ...finding("visible"), body: "Discuss dotfiles-wf7 behavior." },
+          { ...finding("visible"), body: "Discuss dotfiles-pr-review behavior." },
         ]),
         initialContext,
       ).ok,
@@ -318,7 +318,7 @@ describe("validateInitialReview", () => {
       validateInitialReview(initial("fable", [{ ...finding("long"), body: "x".repeat(65_537) }]), initialContext).ok,
     ).toBe(false);
     expect(
-      validateInitialReview(initial("fable", [{ ...finding("marker"), body: "<!-- dotfiles-wf7:finding -->" }]), initialContext).ok,
+      validateInitialReview(initial("fable", [{ ...finding("marker"), body: "<!-- dotfiles-pr-review:finding -->" }]), initialContext).ok,
     ).toBe(false);
     expect(validateInitialReview(initial("fable", [{ ...finding("control"), evidence: "bad\u0000" }]), initialContext).ok).toBe(false);
     expect(
@@ -533,7 +533,7 @@ describe("validateJudgeResult", () => {
         judgeContext,
       ).ok,
     ).toBe(false);
-    for (const body of ["<!-- dotfiles-wf7:control -->", "bad\u0000", "x".repeat(65_537)]) {
+    for (const body of ["<!-- dotfiles-pr-review:control -->", "bad\u0000", "x".repeat(65_537)]) {
       expect(validateJudgeResult(judge([{ ...accepted, body }, { source_finding_ids: ["fable:b"], decision: "reject", rationale: "No." }]), judgeContext).ok).toBe(false);
     }
   });

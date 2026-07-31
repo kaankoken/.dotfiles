@@ -11,12 +11,12 @@ import {
   type PrReviewExtensionApi,
 } from "../extensions/pr-review/index";
 import {
-  WF7_ROLE_SPECS,
-  WF7_TASK_SLOTS,
+  PR_REVIEW_ROLE_SPECS,
+  PR_REVIEW_TASK_SLOTS,
   type PrReviewReceiptV1,
   type PrReviewTaskBinding,
-  type Wf7TaskName,
-  type Wf7TaskSlot,
+  type PrReviewTaskName,
+  type PrReviewTaskSlot,
 } from "../extensions/pr-review/contracts";
 import type { PrReviewExec } from "../extensions/pr-review/github";
 import type {
@@ -68,7 +68,7 @@ type Hook = (
 ) => unknown;
 type StageOutput = InitialReview | Rebuttal | JudgeResult;
 type TaskItem = {
-  name: Wf7TaskName;
+  name: PrReviewTaskName;
   agent: string;
   task: string;
   outputSchema: Record<string, unknown>;
@@ -203,7 +203,7 @@ function manifest(root: string): LoadedRoleManifest {
   return {
     version: 1,
     digest: createHash("sha256").update("fake manifest").digest("hex"),
-    roles: WF7_ROLE_SPECS.map((role) => ({
+    roles: PR_REVIEW_ROLE_SPECS.map((role) => ({
       livePath: join(root, "live", `${role.agent}.md`),
       canonicalPath: join(root, "canonical", `${role.agent}.md`),
       sha256: "1".repeat(64),
@@ -218,7 +218,7 @@ function manifest(root: string): LoadedRoleManifest {
 }
 
 function observations(prePublish = false) {
-  return WF7_ROLE_SPECS.map((role) => ({
+  return PR_REVIEW_ROLE_SPECS.map((role) => ({
     agent: role.agent,
     livePath: `/live/${role.agent}.md`,
     checkedRealpath: `/canonical/${role.agent}.md`,
@@ -340,7 +340,7 @@ function fakeGithub(options: FakeRunOptions) {
 
 
 function outputFor(
-  slot: Wf7TaskSlot,
+  slot: PrReviewTaskSlot,
   binding: PrReviewTaskBinding,
   decision: NonNullable<FakeRunOptions["decision"]>,
 ): StageOutput {
@@ -400,10 +400,10 @@ export function resultEvent(
 ): NativeTaskResultEvent {
   const items = call.input.tasks as TaskItem[];
   const results = items.map((item, index) => {
-    const slot = WF7_TASK_SLOTS.find((candidate) => candidate.name === item.name)!;
+    const slot = PR_REVIEW_TASK_SLOTS.find((candidate) => candidate.name === item.name)!;
     const binding = JSON.parse(item.task) as PrReviewTaskBinding;
     const data = outputFor(slot, binding, decision);
-    const role = WF7_ROLE_SPECS.find((candidate) => candidate.agent === slot.agent)!;
+    const role = PR_REVIEW_ROLE_SPECS.find((candidate) => candidate.agent === slot.agent)!;
     return {
       index,
       id: `${slot.name}-2`,
@@ -457,7 +457,7 @@ export async function runFakeReview(options: FakeRunOptions = {}): Promise<FakeR
   const dryRun = options.dryRun ?? true;
   const decision = options.decision ?? "request_changes";
   const agentSource = options.agentSource ?? "user";
-  const root = mkdtempSync(join(tmpdir(), "wf7-integration-"));
+  const root = mkdtempSync(join(tmpdir(), "pr-review-integration-"));
   const targetDir = join(root, "arbitrary-repo");
   const receiptRoot = join(root, "receipts");
   const stateRoot = join(root, "state");
@@ -482,7 +482,7 @@ export async function runFakeReview(options: FakeRunOptions = {}): Promise<FakeR
   });
   await extension(api);
 
-  const command = api.commands.get("review-pr")!;
+  const command = api.commands.get("pr-reviewer")!;
   const receipts: PrReviewReceiptV1[] = [];
   const publishResults: Array<Record<string, unknown> | undefined> = [];
   let captureHandle: string | undefined;

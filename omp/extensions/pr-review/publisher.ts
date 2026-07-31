@@ -4,8 +4,8 @@ import {
   PR_REVIEW_PROTOCOL_VERSION,
   PR_REVIEW_SCHEMA_VERSION,
   PR_REVIEW_SUMMARY_BODIES,
-  WF7_ROLE_SPECS,
-  WF7_TASK_SLOTS,
+  PR_REVIEW_ROLE_SPECS,
+  PR_REVIEW_TASK_SLOTS,
   type CompletedCapture,
   type PrReviewTaskBinding,
   type ReviewAnchor,
@@ -132,7 +132,7 @@ function assertSnapshot(capture: CompletedCapture): void {
     || !DIFF_DIGEST.test(snapshot.diffDigest)
     || !Array.isArray(snapshot.lineMap)
     || !Array.isArray(capture.results)
-    || capture.results.length !== WF7_TASK_SLOTS.length
+    || capture.results.length !== PR_REVIEW_TASK_SLOTS.length
   ) throw new Error("completed capture is invalid");
 }
 
@@ -142,9 +142,9 @@ function capturedOutput(
   callNonces: Set<string>,
 ): unknown {
   const snapshot = capture.snapshot;
-  const expected = WF7_TASK_SLOTS[index]!;
+  const expected = PR_REVIEW_TASK_SLOTS[index]!;
   const sealed = capture.results[index];
-  const role = WF7_ROLE_SPECS.find((candidate) => candidate.agent === expected.agent)!;
+  const role = PR_REVIEW_ROLE_SPECS.find((candidate) => candidate.agent === expected.agent)!;
   if (
     !sealed
     || sealed.slot !== expected.name
@@ -220,7 +220,7 @@ function binding(result: SealedTaskResult): PrReviewTaskBinding {
 function validatedOutputs(capture: CompletedCapture): readonly [InitialReview, InitialReview, Rebuttal, Rebuttal, JudgeResult] {
   assertSnapshot(capture);
   const callNonces = new Set<string>();
-  const outputs = WF7_TASK_SLOTS.map((_slot, index) => capturedOutput(capture, index, callNonces));
+  const outputs = PR_REVIEW_TASK_SLOTS.map((_slot, index) => capturedOutput(capture, index, callNonces));
   const reviewableAnchors = capture.snapshot.lineMap;
 
   const fable = validateInitialReview(outputs[0], {

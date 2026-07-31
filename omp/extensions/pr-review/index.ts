@@ -20,7 +20,7 @@ import {
 } from "./command";
 import type {
   RoleIntegrityObservation,
-  Wf7TaskName,
+  PrReviewTaskName,
 } from "./contracts";
 import { buildPhaseCapabilities } from "../goal-harness/capabilities";
 import { classifyCommand } from "../goal-harness/sandbox";
@@ -330,7 +330,7 @@ export function createPrReviewExtension(
       }
       return {
         block: true as const,
-        reason: "Unattributed WF7 native task call blocked",
+        reason: "Unattributed PR review native task call blocked",
       };
     };
 
@@ -396,7 +396,7 @@ export function createPrReviewExtension(
             const immutable = state.lookupSnapshot(result.snapshot_handle);
             const callNonces = Object.fromEntries(
               result.call_nonces.map((entry) => [entry.task, entry.call_nonce]),
-            ) as Record<Wf7TaskName, string>;
+            ) as Record<PrReviewTaskName, string>;
             const roleGuard = createGuard(manifest, journal);
             const coordinator = createCaptureCoordinator({
               state,
@@ -514,7 +514,7 @@ export function createPrReviewExtension(
         if (github.kind === "nested") {
           return {
             block: true,
-            reason: "GitHub command nested in shell denied during active WF7 run",
+            reason: "GitHub command nested in shell denied during active PR review run",
           };
         }
         if (github.kind === "direct") {
@@ -534,7 +534,7 @@ export function createPrReviewExtension(
           if (!demonstrablyReadOnlyGitHub(github.argv)) {
             return {
               block: true,
-              reason: "GitHub command is not demonstrably read-only during active WF7 run",
+              reason: "GitHub command is not demonstrably read-only during active PR review run",
             };
           }
         }
@@ -564,7 +564,7 @@ export function createPrReviewExtension(
             journalBySnapshotCall.delete(invocationId);
             return {
               block: true,
-              reason: "Invalid WF7 task envelope during snapshot creation",
+              reason: "Invalid PR review task envelope during snapshot creation",
             };
           }
           return auditInvalidTaskCall();
@@ -640,7 +640,7 @@ export function createPrReviewExtension(
           try {
             lifecycle.journal.fail(
               "internal_error",
-              "WF7 session shut down before terminal publication",
+              "PR review session shut down before terminal publication",
               { mutation_guard_active: false },
             );
           } catch {
@@ -654,7 +654,7 @@ export function createPrReviewExtension(
         const settlement = snapshot.cancelCreate(
           invocationId,
           "internal_error",
-          "WF7 session shut down during snapshot creation",
+          "PR review session shut down during snapshot creation",
         );
         if (settlement) settlements.push(settlement);
         const journal = journalBySnapshotCall.get(invocationId);
@@ -662,7 +662,7 @@ export function createPrReviewExtension(
           try {
             journal.fail(
               "internal_error",
-              "WF7 session shut down during snapshot creation",
+              "PR review session shut down during snapshot creation",
               { mutation_guard_active: false },
             );
           } catch {
