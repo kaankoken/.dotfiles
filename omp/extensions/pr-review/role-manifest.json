@@ -4,11 +4,12 @@
     {
       "livePath": "/Users/legolas/.omp/agent/agents/wf7-fable-reviewer.md",
       "canonicalPath": "/Users/legolas/.dotfiles/omp/agents/wf7-fable-reviewer.md",
-      "sha256": "e8622bfa0c6b38e0bc01de0106135bf27169371751abc5212a6dfd4840ca1109",
+      "sha256": "c6cde69f9f1cda2df68daf1e4ced5605373ac9da81a3baca48dcb52507b53f67",
       "agent": "wf7-fable-reviewer",
       "model": "anthropic/claude-fable-5:max",
       "tools": ["pr_review_snapshot"],
       "spawns": [],
+      "blocking": true,
       "schemas": [
         {
           "identity": "https://dotfiles.local/schemas/pr-review-initial-v1.schema.json",
@@ -23,11 +24,12 @@
     {
       "livePath": "/Users/legolas/.omp/agent/agents/wf7-sol-reviewer.md",
       "canonicalPath": "/Users/legolas/.dotfiles/omp/agents/wf7-sol-reviewer.md",
-      "sha256": "a78682660b7356b663d8ea3a4912d44c121e205fb4b9cb5ed4e21e28994e7158",
+      "sha256": "6e517a462c4115337b0d79ae3ae5beb0acf992649d152486a5f090a7ab12a671",
       "agent": "wf7-sol-reviewer",
       "model": "openai-codex/gpt-5.6-sol:xhigh",
       "tools": ["pr_review_snapshot"],
       "spawns": [],
+      "blocking": true,
       "schemas": [
         {
           "identity": "https://dotfiles.local/schemas/pr-review-initial-v1.schema.json",
@@ -42,11 +44,12 @@
     {
       "livePath": "/Users/legolas/.omp/agent/agents/wf7-grok-judge.md",
       "canonicalPath": "/Users/legolas/.dotfiles/omp/agents/wf7-grok-judge.md",
-      "sha256": "846238572384a6de7e05da3cafd14d76d70da069573ba97d501732c36fc3a10d",
+      "sha256": "8208452bdb35f0e8ab4a0f3b020dd6c545c7ff6f822af6a16a6553bc3ce4f12b",
       "agent": "wf7-grok-judge",
       "model": "xai-oauth/grok-4.5:xhigh",
       "tools": ["pr_review_snapshot"],
       "spawns": [],
+      "blocking": true,
       "schemas": [
         {
           "identity": "https://dotfiles.local/schemas/pr-review-judge-v1.schema.json",

@@ -320,7 +320,7 @@ describe("early private receipt journal", () => {
           resolvedModel: "anthropic/claude-fable-5:max",
           resolvedModelIsFallback: false,
           schemaSha256: digest("schema"),
-          structuredOutputSource: "agent",
+          structuredOutputSource: "caller",
           structuredOutputMode: "strict",
           structuredOutputStatus: "valid",
           outputDigest: digest("output"),

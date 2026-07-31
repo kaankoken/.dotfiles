@@ -12,7 +12,9 @@ import {
 } from "../extensions/pr-review/contracts";
 import type {
   PrReviewReceiptV1,
+  ReceiptTaskEvidence,
   RoleIntegrityObservation,
+  SingleResultEvidence,
 } from "../extensions/pr-review/contracts";
 
 describe("WF7 PR review contracts", () => {
@@ -160,6 +162,23 @@ describe("WF7 PR review contracts", () => {
     expect(publication.github_inline_comment_markers).toHaveLength(1);
     expect(publication.post_publish_head_sha).toHaveLength(40);
     expect(publication.published_on_superseded_head).toBe(true);
+  });
+
+  test("pins caller-owned strict structured output provenance", () => {
+    const evidence = {
+      structuredOutput: {
+        source: "caller",
+        mode: "strict",
+        status: "valid",
+        data: {},
+      },
+    } satisfies Pick<SingleResultEvidence, "structuredOutput">;
+    const receipt = {
+      structuredOutputSource: "caller",
+    } satisfies Pick<ReceiptTaskEvidence, "structuredOutputSource">;
+
+    expect(evidence.structuredOutput.source).toBe("caller");
+    expect(receipt.structuredOutputSource).toBe("caller");
   });
 
 });

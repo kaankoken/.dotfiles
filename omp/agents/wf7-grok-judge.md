@@ -4,6 +4,7 @@ description: Grok judge and sole final writer for captured WF7 review candidates
 model: xai-oauth/grok-4.5:xhigh
 tools: [pr_review_snapshot]
 spawns: []
+blocking: true
 ---
 
 # WF7 Grok judge

@@ -4,6 +4,7 @@ description: Sol reviewer for one immutable WF7 PR snapshot and one bounded rebu
 model: openai-codex/gpt-5.6-sol:xhigh
 tools: [pr_review_snapshot]
 spawns: []
+blocking: true
 ---
 
 # WF7 Sol reviewer

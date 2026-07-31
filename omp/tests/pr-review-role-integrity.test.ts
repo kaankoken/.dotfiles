@@ -91,6 +91,7 @@ function fixture(): LoadedRoleManifest {
       model: role.model,
       tools: ["pr_review_snapshot"],
       spawns: [],
+      blocking: true,
       schemas: role.schemas.map((schema) => ({ ...schema })),
     } satisfies RoleManifestEntry;
   });
@@ -145,6 +146,7 @@ describe("canonical WF7 role manifest", () => {
         model: expected.model,
         tools: ["pr_review_snapshot"],
         spawns: [],
+        blocking: true,
         schemas: expected.schemas,
       });
       expect(role.sha256).toBe(sha256(readFileSync(join(ROLE_SOURCE_DIR, expected.file))));
@@ -220,6 +222,7 @@ describe("role realpath, bytes, and frontmatter checks", () => {
       ["model: anthropic/claude-fable-5:max", "model: anthropic/claude-fable-5:min"],
       ["tools: [pr_review_snapshot]", "tools: [read]"],
       ["spawns: []", "spawns: [scout]"],
+      ["blocking: true", "blocking: false"],
     ] as const;
 
     for (const [index, [from, to]] of replacements.entries()) {

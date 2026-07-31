@@ -4,6 +4,7 @@ description: Fable reviewer for one immutable WF7 PR snapshot and one bounded re
 model: anthropic/claude-fable-5:max
 tools: [pr_review_snapshot]
 spawns: []
+blocking: true
 ---
 
 # WF7 Fable reviewer

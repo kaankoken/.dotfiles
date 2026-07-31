@@ -174,7 +174,7 @@ export interface SingleResultEvidence {
   exitCode: 0;
   aborted: false;
   structuredOutput: {
-    source: "agent";
+    source: "caller";
     mode: "strict";
     status: "valid";
     data: unknown;
@@ -274,7 +274,7 @@ export interface ReceiptTaskEvidence {
   resolvedModel: Wf7Model;
   resolvedModelIsFallback: false;
   schemaSha256: string;
-  structuredOutputSource: "agent";
+  structuredOutputSource: "caller";
   structuredOutputMode: "strict";
   structuredOutputStatus: "valid";
   outputDigest: string;

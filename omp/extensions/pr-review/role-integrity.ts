@@ -48,6 +48,7 @@ export interface RoleManifestEntry {
   model: string;
   tools: ["pr_review_snapshot"];
   spawns: [];
+  blocking: true;
   schemas: RoleManifestSchema[];
 }
 
@@ -160,6 +161,7 @@ function validateManifestRole(value: unknown, index: number, strictPaths: boolea
     !exactArray(role.tools, ["pr_review_snapshot"]) ||
     !Array.isArray(role.spawns) ||
     role.spawns.length !== 0 ||
+    role.blocking !== true ||
     !Array.isArray(role.schemas)
   ) {
     throw new RoleIntegrityError("role_integrity_drift", "WF7 role manifest is invalid");
@@ -185,6 +187,7 @@ function validateManifestRole(value: unknown, index: number, strictPaths: boolea
     model: spec.model,
     tools: ["pr_review_snapshot"],
     spawns: [],
+    blocking: true,
     schemas: schemas.map((schema) => ({ ...schema })),
   };
 }
@@ -296,6 +299,7 @@ function checkRoleFile(
       role.model !== spec.model ||
       !exactArray(role.tools, ["pr_review_snapshot"]) ||
       role.spawns.length !== 0 ||
+      role.blocking !== true ||
       !exactSchemas(role.schemas, SCHEMAS_BY_AGENT[role.agent]) ||
       !frontmatter ||
       frontmatter.name !== role.agent ||
@@ -303,7 +307,8 @@ function checkRoleFile(
       !Array.isArray(frontmatter.tools) ||
       !exactArray(frontmatter.tools, role.tools) ||
       !Array.isArray(frontmatter.spawns) ||
-      !exactArray(frontmatter.spawns, role.spawns)
+      !exactArray(frontmatter.spawns, role.spawns) ||
+      frontmatter.blocking !== true
     ) {
       throw roleFailure(role, boundary, observation);
     }
