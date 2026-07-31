@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dotfiles.local/schemas/pr-review-rebuttal-v1.schema.json",
+  "title": "Rebuttal v1",
+  "type": "object",
+  "properties": {
+    "schema_version": { "const": 1 },
+    "reviewer": { "enum": ["fable", "sol"] },
+    "run_nonce": { "type": "string", "minLength": 32, "maxLength": 256 },
+    "snapshot_nonce": { "type": "string", "minLength": 32, "maxLength": 256 },
+    "call_nonce": { "type": "string", "minLength": 32, "maxLength": 256 },
+    "head_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "diff_digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "responses": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 100,
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "peer_finding_id": { "type": "string", "minLength": 3, "maxLength": 134, "pattern": "^(fable|sol):[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+              "stance": { "enum": ["support", "oppose"] },
+              "rationale": { "type": "string", "minLength": 1, "maxLength": 8192 }
+            },
+            "required": ["peer_finding_id", "stance", "rationale"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "peer_finding_id": { "type": "string", "minLength": 3, "maxLength": 134, "pattern": "^(fable|sol):[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+              "stance": { "const": "refine" },
+              "rationale": { "type": "string", "minLength": 1, "maxLength": 8192 },
+              "replacement_body": { "type": "string", "minLength": 1, "maxLength": 65536 }
+            },
+            "required": ["peer_finding_id", "stance", "rationale", "replacement_body"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "peer_finding_id": { "type": "string", "minLength": 3, "maxLength": 134, "pattern": "^(fable|sol):[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+              "stance": { "const": "refine" },
+              "rationale": { "type": "string", "minLength": 1, "maxLength": 8192 }
+            },
+            "required": ["peer_finding_id", "stance", "rationale"],
+            "additionalProperties": false
+          }
+        ]
+      }
+    },
+    "withdrawn_own_ids": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 100,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 3, "maxLength": 134, "pattern": "^(fable|sol):[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" }
+    }
+  },
+  "required": ["schema_version", "reviewer", "run_nonce", "snapshot_nonce", "call_nonce", "head_sha", "diff_digest", "responses", "withdrawn_own_ids"],
+  "additionalProperties": false
+}
