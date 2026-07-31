@@ -1119,7 +1119,6 @@ describe("pr_review_publish", () => {
   for (const [stderr, code, status] of [
     ["gh: HTTP 429 rate limit exceeded", "rate_limited", "failed"],
     ["gh: Validation Failed (HTTP 422)", "github_api_failed", "failed"],
-    ["gh: server failure (HTTP 500)", "github_api_failed", "failed"],
     ["request timed out", "publication_indeterminate", "indeterminate"],
   ] as const) {
     test(`records unrecovered ${code} without retry`, async () => {
@@ -1132,6 +1131,63 @@ describe("pr_review_publish", () => {
       expect(receipt(journal)).toMatchObject({ status, failure_code: code });
     });
   }
+
+  test("treats grouped-review HTTP 5xx as ambiguous until an exact marker appears", async () => {
+    const firstSource = capture("REQUEST_CHANGES");
+    const secondSource = capture("REQUEST_CHANGES", `${CAPTURE_HANDLE}-http-500-second`);
+    const thirdSource = capture("REQUEST_CHANGES", `${CAPTURE_HANDLE}-http-500-recovery`);
+    const plan = buildReviewPlanFromCapture(firstSource);
+    const remote = remoteFor(plan, 950);
+    const firstJournal = journalFor(firstSource);
+    const secondJournal = journalFor(secondSource);
+    const thirdJournal = journalFor(thirdSource);
+    let markerVisible = false;
+    const fake = fakeGitHub({
+      postResult: {
+        exitCode: 1,
+        stdout: "",
+        stderr: "gh: server failure (HTTP 500)",
+      },
+      reviewPages: () => markerVisible ? [remote.review] : [],
+      commentPages: () => markerVisible ? remote.comments : [],
+    });
+    const tool = toolForCaptures(new Map([
+      [firstSource.captureHandle, { source: firstSource, journal: firstJournal }],
+      [secondSource.captureHandle, { source: secondSource, journal: secondJournal }],
+      [thirdSource.captureHandle, { source: thirdSource, journal: thirdJournal }],
+    ]), fake);
+
+    await expect(tool.execute({ capture_handle: firstSource.captureHandle, dry_run: false }))
+      .rejects.toMatchObject({ code: "publication_indeterminate" });
+    await expect(tool.execute({ capture_handle: secondSource.captureHandle, dry_run: false }))
+      .rejects.toMatchObject({ code: "publication_indeterminate" });
+    expect(fake.calls.filter((argv) => argv.includes("POST"))).toHaveLength(1);
+    expect(receipt(firstJournal)).toMatchObject({
+      status: "indeterminate",
+      failure_code: "publication_indeterminate",
+    });
+    expect(receipt(secondJournal)).toMatchObject({
+      status: "indeterminate",
+      failure_code: "publication_indeterminate",
+    });
+
+    markerVisible = true;
+    const recovered = await tool.execute({
+      capture_handle: thirdSource.captureHandle,
+      dry_run: false,
+    });
+    expect(recovered).toMatchObject({
+      status: "existing",
+      github_review_id: 950,
+      github_inline_comment_ids: [951],
+    });
+    expect(fake.calls.filter((argv) => argv.includes("POST"))).toHaveLength(1);
+    expect(receipt(thirdJournal)).toMatchObject({
+      status: "published",
+      github_review_id: 950,
+      github_inline_comment_ids: [951],
+    });
+  });
 
   for (const stderr of [
     "unexpected EOF",

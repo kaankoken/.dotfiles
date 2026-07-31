@@ -514,13 +514,13 @@ export class PrReviewPublish {
       }
       if (result.exitCode !== 0) {
         const rateLimited = /rate.?limit|secondary rate|HTTP 429/i.test(result.stderr);
-        const apiRejected = /\bHTTP [45]\d{2}\b/i.test(result.stderr);
-        const indeterminate = !rateLimited && !apiRejected;
+        const clientRejected = /\bHTTP 4\d{2}\b/i.test(result.stderr);
+        const indeterminate = !rateLimited && !clientRejected;
         throw new GitHubPublishError(
-          rateLimited ? "rate_limited" : apiRejected ? "github_api_failed" : "publication_indeterminate",
+          rateLimited ? "rate_limited" : clientRejected ? "github_api_failed" : "publication_indeterminate",
           rateLimited
             ? "GitHub publish was rate limited"
-            : apiRejected
+            : clientRejected
             ? "GitHub rejected the review publication"
             : "GitHub publish outcome is ambiguous",
           indeterminate,
