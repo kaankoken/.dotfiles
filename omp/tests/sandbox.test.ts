@@ -418,11 +418,189 @@ describe("path and command policy", () => {
       expect(denied.reason).toMatch(/inline review/i);
     }
 
+  });
+
+  test("normalizes gh paths and rejects GraphQL or encoded review mutations", () => {
+    const cwd = process.cwd();
+    const ordinary = buildPhaseCapabilities({
+      phase: "Implement",
+      agent: "implementer",
+      runId: "run-path-qualified-gh",
+      issueId: "iss-1",
+      canonicalRoots: { repo: cwd, worktree: cwd, runTemp: tmp() },
+    });
     const publisher = publisherManifest(tmp());
-    for (const command of commands) {
-      const allowed = classifyCommand(publisher, command);
-      expect(allowed.allow, command.join(" ")).toBe(true);
-      expect(allowed.operation).toBe("gh.pr.inline-review");
+    const mutations = [
+      [
+        "/opt/homebrew/bin/gh",
+        "api",
+        "--method",
+        "POST",
+        "repos/acme/widgets/issues/7/comments",
+        "-f",
+        "body=pwn",
+      ],
+      [
+        "gh",
+        "api",
+        "graphql",
+        "-f",
+        "query=mutation { addPullRequestReview(input: {}) { pullRequestReview { id } } }",
+      ],
+      [
+        "gh",
+        "api",
+        "graphql",
+        "-f",
+        "query=query Review { addPullRequestReview(input: {}) { pullRequestReview { id } } }",
+      ],
+      [
+        "gh",
+        "api",
+        "graphql",
+        "-f",
+        "query=subscription ReviewEvents { reviewAdded { id } }",
+      ],
+      [
+        "gh",
+        "api",
+        "--method=POST",
+        "repos/acme/widgets/%69ssues/7/%63omments",
+        "-f",
+        "body=pwn",
+      ],
+    ];
+
+    for (const command of mutations) {
+      for (const manifest of [ordinary, publisher]) {
+        const decision = classifyCommand(manifest, command);
+        expect(decision.allow, command.join(" ")).toBe(false);
+        expect(decision.reason).toMatch(/review|comment|GraphQL/i);
+      }
+    }
+  });
+
+  test("publisher allows exact grouped review POST and GitHub GET reads only", () => {
+    const ordinary = implManifest(tmp());
+    const publisher = publisherManifest(tmp());
+    const groupedPosts = [
+      [
+        "gh",
+        "api",
+        "--method",
+        "POST",
+        "repos/acme/widgets/pulls/11/reviews",
+        "--input",
+        "payload.json",
+      ],
+      [
+        "/opt/homebrew/bin/gh",
+        "api",
+        "-XPOST",
+        "/repos/acme/widgets/pulls/11/%72eviews",
+        "-f",
+        "body=summary",
+      ],
+    ];
+
+    for (const command of groupedPosts) {
+      expect(classifyCommand(ordinary, command).allow, command.join(" ")).toBe(false);
+      expect(classifyCommand(publisher, command)).toMatchObject({
+        allow: true,
+        operation: "gh.pr.inline-review",
+      });
+    }
+
+    for (const endpoint of [
+      "repos/acme/widgets/pulls/11",
+      "repos/acme/widgets/pulls/11/reviews",
+      "repos/acme/widgets/pulls/11/comments",
+    ]) {
+      expect(classifyCommand(publisher, [
+        "/usr/local/bin/gh",
+        "api",
+        "--method=GET",
+        endpoint,
+      ])).toMatchObject({
+        allow: true,
+        operation: "gh.pr.inline-review",
+      });
+    }
+    for (const method of ["TRACE", "CONNECT", "PROPFIND"]) {
+      const command = [
+        "gh",
+        "api",
+        "--method",
+        method,
+        "repos/acme/widgets/pulls/11/reviews",
+      ];
+      for (const manifest of [ordinary, publisher]) {
+        expect(classifyCommand(manifest, command)).toMatchObject({
+          allow: false,
+          reason: expect.stringMatching(/method/i),
+        });
+      }
+    }
+
+    for (const command of [
+      ["gh", "pr", "review", "11", "--approve"],
+      ["gh", "api", "-XPOST", "repos/acme/widgets/issues/7/comments", "-f", "body=pwn"],
+      ["gh", "api", "-XPOST", "repos/acme/widgets/pulls/11/comments", "--input", "payload.json"],
+      ["gh", "api", "-XPATCH", "repos/acme/widgets/pulls/11/reviews/12", "-f", "body=pwn"],
+    ]) {
+      expect(classifyCommand(publisher, command).allow, command.join(" ")).toBe(false);
+    }
+
+    const queryOnlyDocuments = [
+      "query Viewer { viewer { login } }",
+      "{ viewer { login } }",
+      "fragment ReviewFields on PullRequestReview { id } query Review { node(id: \"R\") { ...ReviewFields } }",
+      `query Read($mutation: String!) {
+        # mutation { addPullRequestReview(input: {}) { pullRequestReview { id } } }
+        node(id: $mutation) { id }
+        repository(owner: "mutation", name: "addPullRequestReview") {
+          object(expression: """mutation { addPullRequestReview }""") { id }
+        }
+      }`,
+    ];
+    for (const document of queryOnlyDocuments) {
+      for (const method of ["GET", "POST"]) {
+        const command = [
+          "gh",
+          "api",
+          "graphql",
+          "--method",
+          method,
+          "-f",
+          `query=${document}`,
+        ];
+        expect(classifyCommand(ordinary, command)).toMatchObject({
+          allow: true,
+          operation: "cli.execute",
+        });
+        expect(classifyCommand(publisher, command)).toMatchObject({
+          allow: true,
+          operation: "gh.pr.inline-review",
+        });
+      }
+    }
+
+    for (const method of ["DELETE", "PATCH", "PUT", "TRACE", "CONNECT", "PROPFIND"]) {
+      const command = [
+        "gh",
+        "api",
+        "graphql",
+        "--method",
+        method,
+        "-f",
+        "query=query Viewer { viewer { login } }",
+      ];
+      for (const manifest of [ordinary, publisher]) {
+        expect(classifyCommand(manifest, command)).toMatchObject({
+          allow: false,
+          reason: expect.stringMatching(/method|transport/i),
+        });
+      }
     }
   });
 

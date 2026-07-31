@@ -557,6 +557,8 @@ const SHELL_TOOLS: Record<string, true> = {
   command: true,
 };
 const READ_ONLY_COMMANDS: Record<string, true> = {
+  echo: true,
+  printf: true,
   cat: true,
   cmp: true,
   diff: true,
@@ -570,7 +572,51 @@ const READ_ONLY_COMMANDS: Record<string, true> = {
   test: true,
   wc: true,
 };
-const MUTATION_COMMAND = /(?:^|[;&|]\s*|\b)(?:rm|unlink|rmdir|mv|cp|install|touch|truncate|chmod|chown|chgrp|ln|tee|dd|patch)\b|\b(?:sed|perl)\b[^;&|]*(?:-i\b|--in-place\b)|(?:^|[^<])>{1,2}/;
+const UNRESOLVED_SHELL_PATH =
+  /[$`]|[<>]\(|[?*+@!]\(|(?:^|[\s"'=])~[^ \t;&|<>]*|[*?]|\[[^\]]*\]/;
+
+function shellStructure(command: string): {
+  compound: boolean;
+  outputRedirect: boolean;
+} {
+  let quote: "'" | '"' | undefined;
+  let compound = false;
+  let outputRedirect = false;
+  for (let i = 0; i < command.length; i += 1) {
+    const char = command[i]!;
+    if (quote === "'") {
+      if (char === "'") quote = undefined;
+      continue;
+    }
+    if (quote === '"') {
+      if (char === "\\") {
+        i += 1;
+      } else if (char === '"') {
+        quote = undefined;
+      } else if (char === "`" || command.startsWith("$(", i)) {
+        compound = true;
+      }
+      continue;
+    }
+    if (char === "\\") {
+      i += 1;
+    } else if (char === "'" || char === '"') {
+      quote = char;
+    } else if (
+      char === "`" ||
+      command.startsWith("$(", i) ||
+      command.startsWith("<(", i) ||
+      command.startsWith(">(", i)
+    ) {
+      compound = true;
+    } else if (char === ";" || char === "&" || char === "|" || char === "\n" || char === "\r") {
+      compound = true;
+    } else if (char === ">") {
+      outputRedirect = true;
+    }
+  }
+  return { compound, outputRedirect };
+}
 
 function toolKind(toolName: string): string {
   return toolName.toLowerCase().split(/[._:/-]/).filter(Boolean).at(-1) ?? "";
@@ -633,17 +679,20 @@ export function createRoleMutationGuard(
           : undefined;
         const tokens = command ? shellTokens(command) : argv ?? [];
         const nestedTokens = tokens.flatMap((token) => shellTokens(token));
-        if (
+        const text = command ?? argv?.join(" ") ?? "";
+        const executable = basename(tokens[0] ?? "").toLowerCase();
+        const structure = command ? shellStructure(command) : undefined;
+        const mutationCapable = structure
+          ? structure.compound ||
+            structure.outputRedirect ||
+            READ_ONLY_COMMANDS[executable] !== true
+          : READ_ONLY_COMMANDS[executable] !== true;
+        const protectedTarget =
           targetsProtected([...tokens, ...nestedTokens], cwd) ||
-          [...protectedPaths].some((path) =>
-            (command ?? argv?.join(" ") ?? "").includes(path)
-          )
-        ) {
-          const executable = basename(tokens[0] ?? "").toLowerCase();
-          denied = command
-            ? MUTATION_COMMAND.test(command) || READ_ONLY_COMMANDS[executable] !== true
-            : READ_ONLY_COMMANDS[executable] !== true;
-        }
+          [...protectedPaths].some((path) => text.includes(path));
+        denied =
+          mutationCapable &&
+          (protectedTarget || UNRESOLVED_SHELL_PATH.test(text));
       }
 
       if (!denied) return undefined;

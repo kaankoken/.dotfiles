@@ -465,6 +465,96 @@ describe("run-scoped OMP role mutation guard", () => {
     }
   });
 
+  test("fail-closes unresolved protected-role shell mutations without changing bytes or publishing", () => {
+    const manifest = fixture();
+    const root = roots.at(-1)!;
+    const role = manifest.roles[0]!;
+    const relativeLivePath = role.livePath.slice(root.length + 1);
+    const roleFile = role.livePath.split("/").at(-1)!;
+    const liveDir = role.livePath.slice(0, -(roleFile.length + 1));
+    const originalHome = process.env.HOME;
+    const protectedRolePaths = manifest.roles.flatMap((entry) => [
+      entry.livePath,
+      entry.canonicalPath,
+    ]);
+    const before = protectedRolePaths.map((path) => readFileSync(path));
+    const calls = [
+      { toolName: "bash", input: { command: `printf tampered > "$HOME/${relativeLivePath}"` } },
+      { toolName: "bash", input: { command: `printf tampered > ~/${relativeLivePath}` } },
+      { toolName: "bash", input: { command: `rm -- "$HOME/live"/wf7-*-reviewer.md` } },
+      {
+        toolName: "bash",
+        input: {
+          command: `printf tampered > "$(printf '%s/%s' "$HOME/live" '${roleFile}')"`,
+        },
+      },
+      {
+        toolName: "bash",
+        input: { command: `cp <(printf tampered) "$HOME/${relativeLivePath}"` },
+      },
+      {
+        toolName: "bash",
+        input: {
+          command: `ROOT=HOME; printf tampered > "\${!ROOT}/${relativeLivePath}"`,
+        },
+      },
+      {
+        toolName: "bash",
+        input: {
+          command: `printf tampered > "\`printf '%s/%s' '${liveDir}' '${roleFile}'\`"`,
+        },
+      },
+      {
+        toolName: "bash",
+        input: { command: `rm -- '${liveDir}'/@(${roleFile})` },
+      },
+      {
+        toolName: "bash",
+        input: {
+          command: `printf tampered | python -c 'import pathlib,sys; pathlib.Path(sys.argv[1]).write_text(sys.stdin.read())' "$HOME/${relativeLivePath}"`,
+        },
+      },
+      { toolName: "exec", input: { argv: ["rm", `$HOME/${relativeLivePath}`] } },
+    ];
+
+    process.env.HOME = root;
+    try {
+      for (const [index, call] of calls.entries()) {
+        const journal = journalFor(manifest, `unresolved-shell-${index}`);
+        const guard = createRoleMutationGuard(manifest, journal);
+        expect(guard.handleToolCall({
+          toolName: "bash",
+          input: { command: `cat "$HOME/${relativeLivePath}"` },
+        })).toBeUndefined();
+        expect(guard.handleToolCall({
+          toolName: "bash",
+          input: { command: `printf '%s\n' "$HOME/${relativeLivePath}"` },
+        })).toBeUndefined();
+        expect(guard.handleToolCall({
+          toolName: "bash",
+          input: { command: `cat "\${!ROOT}/${relativeLivePath}" '${liveDir}'/@(${roleFile})` },
+        })).toBeUndefined();
+        expect(guard.handleToolCall(call)).toEqual({
+          block: true,
+          reason: "WF7 role mutation denied",
+        });
+        expect(receipt(journal)).toMatchObject({
+          status: "failed",
+          failure_code: "role_mutation_denied",
+          mutation_guard_active: true,
+        });
+        expect(receipt(journal).github_review_id).toBeUndefined();
+        expect(receipt(journal).github_inline_comment_ids).toBeUndefined();
+        expect(receipt(journal).event).toBeUndefined();
+        expect(receipt(journal).payload_digest).toBeUndefined();
+        expect(protectedRolePaths.map((path) => readFileSync(path))).toEqual(before);
+      }
+    } finally {
+      if (originalHome === undefined) delete process.env.HOME;
+      else process.env.HOME = originalHome;
+    }
+  });
+
   test("allows reads and unrelated writes, remains active for run, then stops cleanly", () => {
     const manifest = fixture();
     const journal = journalFor(manifest, "guard-safe");
@@ -475,6 +565,10 @@ describe("run-scoped OMP role mutation guard", () => {
     expect(guard.handleToolCall({ toolName: "read", input: { path: role.livePath } })).toBeUndefined();
     expect(guard.handleToolCall({ toolName: "bash", input: { command: `sha256sum '${role.canonicalPath}'` } })).toBeUndefined();
     expect(guard.handleToolCall({ toolName: "write", input: { path: join(roots.at(-1)!, "other.txt") } })).toBeUndefined();
+    expect(guard.handleToolCall({
+      toolName: "bash",
+      input: { command: `printf safe > '${join(roots.at(-1)!, "other-shell.txt")}'` },
+    })).toBeUndefined();
     guard.stop();
     expect(guard.active).toBe(false);
     expect(guard.handleToolCall({ toolName: "write", input: { path: role.canonicalPath } })).toBeUndefined();
