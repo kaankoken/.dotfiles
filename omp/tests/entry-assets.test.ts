@@ -123,4 +123,30 @@ describe("harness entry assets", () => {
     expect(manifest.agents.map((a) => a.name)).not.toContain("intent-router");
     expect(existsSync(join(OMP_ROOT, "agents/intent-router.md"))).toBe(true);
   });
+
+  test("commands/code-review.md maps to code-reviewer not WF7", () => {
+    const path = join(OMP_ROOT, "commands/code-review.md");
+    expect(existsSync(path)).toBe(true);
+    const raw = readFileSync(path, "utf8");
+    expect(raw).toMatch(/code-reviewer/);
+    expect(raw).toMatch(/REVIEW-POLICY|ponytail-review/i);
+    expect(raw).not.toMatch(/WF7|wf7-fable|grok-judge/i);
+    expect(raw).not.toMatch(/review-pr/);
+  });
+
+  test("stack commands do not claim routers are cold-listed", () => {
+    for (const name of ["stack-rust", "stack-ios", "stack-android"]) {
+      const raw = readFileSync(join(OMP_ROOT, "commands", `${name}.md`), "utf8");
+      expect(raw).not.toMatch(/router always cold-listed/i);
+      expect(raw).toMatch(/on-demand|not cold/i);
+    }
+  });
+
+  test("mcp-stack documents cold headroom/context-mode and opt-in context7", () => {
+    const raw = readFileSync(join(OMP_ROOT, "commands/mcp-stack.md"), "utf8");
+    expect(raw).toMatch(/context7/);
+    expect(raw).toMatch(/tokensave/);
+    // cold already has headroom + context-mode
+    expect(raw.toLowerCase()).toMatch(/already|cold/);
+  });
 });

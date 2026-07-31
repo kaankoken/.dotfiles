@@ -9,11 +9,12 @@ Activate the **Rust** domain pack for this turn. Expand `$ARGUMENTS` as optional
 
 ## Why this exists
 
-Cold-start `includeSkills` deliberately omits `rust-*` / rust-skills pack metadata so generic sessions stay lean. Pack roots remain on disk via `customDirectories`.
+Cold-start `includeSkills` is only `intent-router` + `beads`. This command
+loads the Rust pack on demand. Pack roots remain on disk via `customDirectories`.
 
 ## Do this now
 
-1. `read skill://stack-rust` (router always cold-listed).
+1. `read skill://stack-rust` (on-demand router; not cold-listed).
 2. Load entry skills by **absolute path** (or `skill://` only if this session was started with `omp --config ~/.dotfiles/omp/configs/pack-rust.yml`):
 
 ```text
