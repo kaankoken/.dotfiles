@@ -235,6 +235,7 @@ describe("lean OMP configuration", () => {
       "requesting-code-review",
       "receiving-code-review",
       "goal-harness",
+      "design-flow",
       "brainstorming",
       "writing-plans",
       "systematic-debugging",
@@ -372,7 +373,7 @@ describe("lean OMP configuration", () => {
     const files = walkFiles(OMP_ROOT);
     // Allowed: harness skill + thin on-demand pack routers (not vendored Superpowers).
     const allowedSkillMd =
-      /skills\/(goal-harness|stack-rust|stack-ios|stack-android)\/SKILL\.md$/;
+      /skills\/(goal-harness|design-flow|stack-rust|stack-ios|stack-android)\/SKILL\.md$/;
     for (const f of files) {
       if (f.endsWith("SKILL.md")) {
         expect(f).not.toMatch(/superpowers/i);

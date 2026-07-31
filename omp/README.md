@@ -32,6 +32,16 @@ OMP_AGENT_DIR=/tmp/fake-agent ./link.sh
 `compatibility.json` pins the verified OMP settings/SDK surface for the harness.
 Run `bun test` in this directory after installing `omp`.
 
+## Design flow (pre-harness)
+
+```text
+/design <system goal>
+```
+
+Sibling of `/harness`, not a harness phase. Runs PDR → Arc42 → ADR handoff.
+ADRs land in `docs/adr/`; PDR/Arc42 stay in bd/session. Superpowers plans/specs
+are never written into the repo by this flow. See `skills/design-flow/SKILL.md`.
+
 ## Stage 3 parity (Pi goal-harness)
 
 Before Pi removal / Stage 4 native hardening, prove parity:
