@@ -35,6 +35,11 @@ export interface PrReviewRunIdentity {
   runNonce: string;
 }
 
+export interface PrReviewRunStatus {
+  stage: PrReviewRunStage;
+  captureHandle?: string;
+}
+
 export interface SnapshotInput {
   owner: string;
   repo: string;
@@ -206,9 +211,21 @@ export class PrReviewStateStore {
       throw new Error("snapshot read bounds must be positive integers");
     }
     if (length > this.maxReadBytes) throw new Error("snapshot read exceeds bounded limit");
-    const snapshot = this.lookupSnapshot(snapshotHandle);
+    const runHandle = this.#snapshotRuns.get(snapshotHandle);
+    if (!runHandle) throw new Error("unknown snapshot handle");
+    const snapshot = this.#requireRun(runHandle).snapshot;
+    if (!snapshot || snapshot.snapshotHandle !== snapshotHandle) {
+      throw new Error("unknown snapshot handle");
+    }
     if (offset > snapshot.diffBytes.byteLength) throw new Error("snapshot read offset is out of range");
     return snapshot.diffBytes.slice(offset, Math.min(offset + length, snapshot.diffBytes.byteLength));
+  }
+
+  getRunStatus(runHandle: string): Readonly<PrReviewRunStatus> {
+    const run = this.#requireRun(runHandle);
+    const status: PrReviewRunStatus = { stage: run.stage };
+    if (run.stage === "captured" && run.captureHandle) status.captureHandle = run.captureHandle;
+    return Object.freeze(status);
   }
 
   transitionRun(runHandle: string, next: PrReviewRunStage): void {

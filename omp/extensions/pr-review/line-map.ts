@@ -152,6 +152,22 @@ function canonicalBlockPath(
   return candidates[0]!.path;
 }
 
+export function mapCanonicalDiffBlocks(
+  diff: string | Uint8Array,
+  changedFiles: readonly SnapshotChangedFile[],
+): ReadonlyMap<string, readonly string[]> {
+  const text = typeof diff === "string"
+    ? diff
+    : new TextDecoder("utf-8", { fatal: true }).decode(diff);
+  const mapped = new Map<string, readonly string[]>();
+  for (const block of parseBlocks(text)) {
+    const path = canonicalBlockPath(block, changedFiles);
+    if (mapped.has(path)) throw new Error(`duplicate diff block for ${path}`);
+    mapped.set(path, Object.freeze([...block.lines]));
+  }
+  return mapped;
+}
+
 function parseReviewableBlock(
   block: DiffBlock,
   path: string,
