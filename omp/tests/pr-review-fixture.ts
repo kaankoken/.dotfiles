@@ -63,7 +63,7 @@ type Command = Record<string, unknown> & {
   handler: (first: unknown, second?: unknown) => unknown;
 };
 type Hook = (
-  event: NativeTaskCallEvent | NativeTaskResultEvent,
+  event?: NativeTaskCallEvent | NativeTaskResultEvent,
   context?: { cwd?: string },
 ) => unknown;
 type StageOutput = InitialReview | Rebuttal | JudgeResult;
@@ -100,7 +100,7 @@ export class FakeExtensionApi implements PrReviewExtensionApi {
     this.tools.set(tool.name, tool);
   }
 
-  on(event: "tool_call" | "tool_result", handler: Hook): void {
+  on(event: "tool_call" | "tool_result" | "session_shutdown", handler: Hook): void {
     const handlers = this.hooks.get(event) ?? [];
     handlers.push(handler);
     this.hooks.set(event, handlers);
@@ -116,10 +116,11 @@ export class FakeExtensionApi implements PrReviewExtensionApi {
   async executeTool<T extends object>(
     name: string,
     input: Record<string, unknown>,
+    toolCallId = `${name}-call`,
   ): Promise<T> {
     const tool = this.tools.get(name);
     if (!tool) throw new Error(`missing tool ${name}`);
-    const result = await tool.execute(`${name}-call`, input, undefined, undefined, {
+    const result = await tool.execute(toolCallId, input, undefined, undefined, {
       cwd: process.cwd(),
     });
     if (
@@ -153,6 +154,12 @@ export class FakeExtensionApi implements PrReviewExtensionApi {
       await handler(event, { cwd: process.cwd() });
     }
   }
+
+  async emitShutdown(): Promise<void> {
+    for (const handler of this.hooks.get("session_shutdown") ?? []) {
+      await handler(undefined, { cwd: process.cwd() });
+    }
+  }
 }
 
 export type FakeRunOptions = {
@@ -163,6 +170,8 @@ export type FakeRunOptions = {
   probeDirectWrite?: boolean;
   probeGuardLifetime?: boolean;
   runCount?: number;
+  indeterminateAtPublish?: boolean;
+  shutdownAfterCreate?: boolean;
 };
 
 export type FakeRunResult = {
@@ -170,6 +179,9 @@ export type FakeRunResult = {
   root: string;
   targetDir: string;
   receiptRoot: string;
+  stateRoot: string;
+  runHandle?: string;
+  snapshotHandle?: string;
   receipt: PrReviewReceiptV1;
   githubCalls: readonly string[][];
   posts: readonly Record<string, unknown>[];
@@ -287,6 +299,13 @@ function fakeGithub(options: FakeRunOptions) {
     if (endpoint === "repos/owner/repo/pulls/7/comments?per_page=100&page=1") {
       return ok(publishedComments);
     }
+    if (
+      options.indeterminateAtPublish
+      && call.includes("POST")
+      && endpoint === "repos/owner/repo/pulls/7/reviews"
+    ) {
+      return { exitCode: 1, stdout: "", stderr: "network outcome unknown" };
+    }
     if (call.includes("POST") && endpoint === "repos/owner/repo/pulls/7/reviews") {
       const input = call[call.indexOf("--input") + 1];
       if (!input) throw new Error("missing private payload path");
@@ -373,7 +392,7 @@ function outputFor(
   return { ...common, adjudications, overall_rationale: "complete partition" };
 }
 
-function resultEvent(
+export function resultEvent(
   call: NativeTaskCallEvent,
   decision: NonNullable<FakeRunOptions["decision"]>,
   agentSource: NonNullable<FakeRunOptions["agentSource"]>,
@@ -472,6 +491,8 @@ export async function runFakeReview(options: FakeRunOptions = {}): Promise<FakeR
   let prePublishBlock: unknown;
   let postPublishBlock: unknown;
   let prePublishGuardActive: boolean | undefined;
+  let runHandle: string | undefined;
+  let snapshotHandle: string | undefined;
 
   for (let run = 0; run < (options.runCount ?? 1); run += 1) {
     await command.handler(`owner/repo#7${dryRun ? " --dry-run" : ""}`);
@@ -485,6 +506,14 @@ export async function runFakeReview(options: FakeRunOptions = {}): Promise<FakeR
       target,
       dry_run: controllerDryRun,
     });
+    runHandle = created.run_handle;
+    snapshotHandle = created.snapshot_handle;
+    if (options.shutdownAfterCreate) {
+      await api.emitShutdown();
+      receipts.push(findReceipt(receiptRoot));
+      publishResults.push(undefined);
+      break;
+    }
     if (!created.next_task) throw new Error("snapshot create did not expose next_task");
 
     boundaryResults = options.probeDirectWrite
@@ -531,6 +560,9 @@ export async function runFakeReview(options: FakeRunOptions = {}): Promise<FakeR
           root,
           targetDir,
           receiptRoot,
+          stateRoot,
+          runHandle,
+          snapshotHandle,
           receipt: findReceipt(receiptRoot),
           githubCalls: github.calls,
           posts: github.posts,
@@ -546,6 +578,9 @@ export async function runFakeReview(options: FakeRunOptions = {}): Promise<FakeR
           root,
           targetDir,
           receiptRoot,
+          stateRoot,
+          runHandle,
+          snapshotHandle,
           receipt: findReceipt(receiptRoot),
           githubCalls: github.calls,
           boundaryResults,
@@ -603,6 +638,9 @@ export async function runFakeReview(options: FakeRunOptions = {}): Promise<FakeR
     root,
     targetDir,
     receiptRoot,
+    stateRoot,
+    runHandle,
+    snapshotHandle,
     receipt: receipts.at(-1)!,
     receipts,
     githubCalls: github.calls,

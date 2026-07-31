@@ -304,7 +304,8 @@ export class PrReviewStateStore {
   }
 
   cleanupRun(runHandle: string): void {
-    const run = this.#requireRun(runHandle);
+    const run = this.#runs.get(runHandle);
+    if (!run) return;
     if (run.snapshot) this.#snapshotRuns.delete(run.snapshot.snapshotHandle);
     if (run.captureHandle) this.#captures.delete(run.captureHandle);
     rmSync(run.directory, { recursive: true, force: true });

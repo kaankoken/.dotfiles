@@ -75,6 +75,7 @@ export interface CaptureCoordinatorOptions {
   callNonces: Readonly<Record<Wf7TaskName, string>>;
   verifyRole: (check: CaptureRoleCheck) => void;
   releaseGuardOnCompletion?: boolean;
+  cleanupStateOnFailure?: boolean;
   now?: () => string;
 }
 
@@ -106,6 +107,7 @@ type CaptureState = {
   verifyRole: CaptureCoordinatorOptions["verifyRole"];
   now: () => string;
   releaseGuardOnCompletion: boolean;
+  cleanupStateOnFailure: boolean;
   status: "active" | "completed" | "failed";
   captureHandle?: string;
   pending?: PendingCall;
@@ -329,7 +331,7 @@ function failureCode(error: unknown, fallback: PrReviewFailureCode): PrReviewFai
 }
 
 function failCapture(state: CaptureState, code: PrReviewFailureCode, message: string): void {
-  if (state.status !== "active") return;
+  if (state.status === "failed") return;
   state.status = "failed";
   state.pending = undefined;
   try {
@@ -342,11 +344,22 @@ function failCapture(state: CaptureState, code: PrReviewFailureCode, message: st
   } catch {
     // Preserve the first durable failure when a collaborator already receipted it.
   }
-  try {
-    state.state.cleanupRun(state.snapshot.runHandle);
-  } catch {
-    // Handle revocation is best effort only when state was already removed.
+  if (state.cleanupStateOnFailure) {
+    try {
+      state.state.cleanupRun(state.snapshot.runHandle);
+    } catch {
+      // Preserve the durable capture failure if filesystem cleanup also fails.
+    }
   }
+}
+
+export function rejectCapture(
+  coordinator: CaptureCoordinator,
+  code: PrReviewFailureCode,
+  message: string,
+): { block: true; reason: string } {
+  failCapture(privateState(coordinator), code, message);
+  return { block: true, reason: "Invalid WF7 task envelope" };
 }
 
 function receiptEvidence(result: SealedTaskResult): ReceiptTaskEvidence {
@@ -541,6 +554,7 @@ export function createCaptureCoordinator(options: CaptureCoordinatorOptions): Ca
     callNonces: Object.freeze({ ...options.callNonces }),
     verifyRole: options.verifyRole,
     releaseGuardOnCompletion: options.releaseGuardOnCompletion ?? true,
+    cleanupStateOnFailure: options.cleanupStateOnFailure ?? true,
     now: options.now ?? (() => new Date().toISOString()),
     status: "active",
     sealed: new Map(),
@@ -569,7 +583,16 @@ export function observeTaskCall(
   event: NativeTaskCallEvent,
 ): void | { block: true; reason: string } {
   const state = privateState(coordinator);
-  if (state.status !== "active") return { block: true, reason: "WF7 capture is terminal" };
+  if (state.status !== "active") {
+    if (state.status === "completed") {
+      failCapture(
+        state,
+        "task_envelope_invalid",
+        "unexpected WF7 task call after capture completion",
+      );
+    }
+    return { block: true, reason: "WF7 capture is terminal" };
+  }
 
   const guardResult = state.guard.handleToolCall({
     toolName: event.toolName,

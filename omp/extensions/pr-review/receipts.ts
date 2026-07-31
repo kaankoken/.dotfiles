@@ -271,6 +271,25 @@ export class ReceiptJournal {
     return new ReceiptJournal(directory, path, receipt, now);
   }
 
+  static recordInvalidTaskCall(options: {
+    rootDir?: string;
+    roleManifestDigest: string;
+    now?: () => string;
+  }): Readonly<PrReviewJournalReceipt> {
+    return ReceiptJournal.start({
+      rootDir: options.rootDir,
+      provisionalId: randomBytes(16).toString("hex"),
+      owner: "unresolved",
+      repo: "invalid-task-call",
+      pullNumber: 1,
+      roleManifestDigest: options.roleManifestDigest,
+      now: options.now,
+    }).fail(
+      "task_envelope_invalid",
+      "Unattributed WF7 native task call was blocked",
+    );
+  }
+
   get receiptPath(): string {
     return this.#path;
   }

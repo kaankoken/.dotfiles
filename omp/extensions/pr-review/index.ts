@@ -6,6 +6,7 @@ import {
   createCaptureCoordinator,
   expectedTaskInput,
   observeTaskCall,
+  rejectCapture,
   observeTaskResult,
   type CaptureCoordinator,
   type CaptureRoleCheck,
@@ -45,6 +46,7 @@ import {
   type SnapshotCreateInput,
   type SnapshotReadInput,
   type SnapshotStatusInput,
+  type PrReviewSnapshotTool,
 } from "./snapshot-tool";
 import { PrReviewStateStore } from "./state";
 
@@ -78,7 +80,8 @@ type ExtensionHook = (
 export type PrReviewExtensionApi = {
   registerCommand: (name: string, options: Record<string, unknown>) => void;
   registerTool: (tool: PrReviewRegisteredTool) => void;
-  on: (event: "tool_call" | "tool_result", handler: ExtensionHook) => void;
+  on(event: "tool_call" | "tool_result", handler: ExtensionHook): void;
+  on(event: "session_shutdown", handler: () => void | Promise<void>): void;
   sendMessage: (
     payload: string,
     options: { deliverAs: "nextTurn"; triggerTurn: true },
@@ -256,7 +259,8 @@ export function createPrReviewExtension(
     const state = new PrReviewStateStore(
       options.stateRootDir ? { rootDir: options.stateRootDir } : {},
     );
-    const journalsAwaitingSnapshot: ReceiptJournal[] = [];
+    const journalBySnapshotCall = new Map<string, ReceiptJournal>();
+    const pendingSnapshotCalls = new Set<string>();
     const active = new Set<CaptureCoordinator>();
     const coordinatorBySnapshot = new Map<string, CaptureCoordinator>();
     const coordinatorByRun = new Map<string, CaptureCoordinator>();
@@ -264,17 +268,40 @@ export function createPrReviewExtension(
     const journalByCoordinator = new WeakMap<CaptureCoordinator, ReceiptJournal>();
     const guardByCoordinator = new Map<CaptureCoordinator, RoleMutationGuard>();
     const coordinatorByCapture = new Map<string, CaptureCoordinator>();
-    const releaseGuard = (coordinator: CaptureCoordinator) => {
+    const journalByCapture = new Map<string, ReceiptJournal>();
+    const lifecycleByCoordinator = new Map<CaptureCoordinator, {
+      runHandle: string;
+      snapshotHandle: string;
+      journal: ReceiptJournal;
+    }>();
+    let snapshot!: PrReviewSnapshotTool;
+    const teardown = (coordinator: CaptureCoordinator) => {
+      const lifecycle = lifecycleByCoordinator.get(coordinator);
+      if (!lifecycle) return;
       const guard = guardByCoordinator.get(coordinator);
-      if (!guard) return;
       try {
-        guard.stop();
+        guard?.stop();
       } catch {
-        // Terminal receipt already records release; guard.stop flips in-memory state first.
+        // Receipt is already durable; teardown remains idempotent.
+      }
+      try {
+        snapshot.cleanup(lifecycle.runHandle);
+      } catch {
+        // Durable receipt and route revocation must survive filesystem cleanup errors.
+      }
+      active.delete(coordinator);
+      coordinatorByRun.delete(lifecycle.runHandle);
+      coordinatorBySnapshot.delete(lifecycle.snapshotHandle);
+      if (coordinator.captureHandle) {
+        coordinatorByCapture.delete(coordinator.captureHandle);
+        journalByCapture.delete(coordinator.captureHandle);
+      }
+      for (const [toolCallId, routed] of coordinatorByToolCall) {
+        if (routed === coordinator) coordinatorByToolCall.delete(toolCallId);
       }
       guardByCoordinator.delete(coordinator);
-      if (coordinator.captureHandle) coordinatorByCapture.delete(coordinator.captureHandle);
-      active.delete(coordinator);
+      journalByCoordinator.delete(coordinator);
+      lifecycleByCoordinator.delete(coordinator);
     };
     const capabilityRoot = options.cwd ?? process.cwd();
     const githubClassifierCapabilities = buildPhaseCapabilities({
@@ -287,21 +314,36 @@ export function createPrReviewExtension(
         runTemp: state.rootDir,
       },
     });
-    const journalByCapture = new Map<string, ReceiptJournal>();
     const checkAtPreCall = options.checkAtPreCall ?? ((loaded, journal) =>
       checkAllRoleFiles(loaded, { boundary: "pre-call", journal }));
     const verifySlot = options.verifySlot ?? checkRoleForSlot;
     const createGuard = options.createGuard ?? createRoleMutationGuard;
+    const auditInvalidTaskCall = () => {
+      try {
+        ReceiptJournal.recordInvalidTaskCall({
+          rootDir: options.receiptRootDir,
+          roleManifestDigest: manifest.digest,
+          now: options.now,
+        });
+      } catch {
+        // Fail closed even if the separate audit receipt cannot be written.
+      }
+      return {
+        block: true as const,
+        reason: "Unattributed WF7 native task call blocked",
+      };
+    };
 
-    const snapshot = createPrReviewSnapshotTool({
+    snapshot = createPrReviewSnapshotTool({
       state,
       exec: options.exec,
       cwd: options.cwd,
       receiptRootDir: options.receiptRootDir,
       loadManifest: () => manifest,
-      checkRoles: (loaded, journal) => {
+      checkRoles: (loaded, journal, invocationId) => {
+        if (!invocationId) throw new Error("snapshot invocation is unidentifiable");
         const observations = checkAtPreCall(loaded, journal);
-        journalsAwaitingSnapshot.push(journal);
+        journalBySnapshotCall.set(invocationId, journal);
         return observations;
       },
       provisionalId: options.provisionalId,
@@ -329,16 +371,23 @@ export function createPrReviewExtension(
       parameters: snapshot.parameters,
       approval: "read",
       strict: true,
-      async execute(_toolCallId, input) {
+      async execute(toolCallId, input) {
         if (!isSnapshotInput(input)) {
-          const rejected = await snapshot.execute(input as SnapshotCreateInput);
+          const rejected = await snapshot.execute(input as SnapshotCreateInput, toolCallId);
           return agentToolResult(rejected);
         }
-        const waitingBefore = journalsAwaitingSnapshot.length;
+        if (input.action === "create") pendingSnapshotCalls.add(toolCallId);
+        const related = input.action === "read" && typeof input.snapshot_handle === "string"
+          ? coordinatorBySnapshot.get(input.snapshot_handle)
+          : input.action === "status" && typeof input.run_handle === "string"
+          ? coordinatorByRun.get(input.run_handle)
+          : undefined;
+        let createdRunHandle: string | undefined;
         try {
-          const result = await snapshot.execute(input);
+          const result = await snapshot.execute(input, toolCallId);
           if (input.action === "create" && result.status === "created") {
-            const journal = journalsAwaitingSnapshot.shift();
+            createdRunHandle = result.run_handle;
+            const journal = journalBySnapshotCall.get(toolCallId);
             if (!journal) throw new Error("snapshot receipt journal was not initialized");
             const immutable = state.lookupSnapshot(result.snapshot_handle);
             const callNonces = Object.fromEntries(
@@ -350,6 +399,7 @@ export function createPrReviewExtension(
               journal,
               guard: retainRoleGuard(roleGuard),
               releaseGuardOnCompletion: false,
+              cleanupStateOnFailure: false,
               snapshot: immutable,
               callNonces,
               verifyRole: (check: CaptureRoleCheck) => {
@@ -368,6 +418,14 @@ export function createPrReviewExtension(
             coordinatorByRun.set(result.run_handle, coordinator);
             journalByCoordinator.set(coordinator, journal);
             guardByCoordinator.set(coordinator, roleGuard);
+            lifecycleByCoordinator.set(coordinator, {
+              runHandle: result.run_handle,
+              snapshotHandle: result.snapshot_handle,
+              journal,
+            });
+            journalBySnapshotCall.delete(toolCallId);
+            pendingSnapshotCalls.delete(toolCallId);
+            snapshot.finishCreate(toolCallId);
             return agentToolResult(Object.freeze({
               ...result,
               next_task: expectedTaskInput(coordinator),
@@ -384,9 +442,27 @@ export function createPrReviewExtension(
           }
           return agentToolResult(result);
         } catch (error) {
-          if (journalsAwaitingSnapshot.length > waitingBefore) {
-            journalsAwaitingSnapshot.splice(waitingBefore, 1);
+          const journal = journalBySnapshotCall.get(toolCallId);
+          journalBySnapshotCall.delete(toolCallId);
+          pendingSnapshotCalls.delete(toolCallId);
+          snapshot.finishCreate(toolCallId);
+          if (journal?.currentReceipt.status === "prepared") {
+            try {
+              journal.fail(
+                "internal_error",
+                error instanceof Error ? error.message : "snapshot registration failed",
+              );
+            } catch {
+              // Preserve the original snapshot error.
+            }
           }
+          if (createdRunHandle) snapshot.cleanup(createdRunHandle);
+          if (
+            related
+            && ["failed", "dry_run", "published", "indeterminate"].includes(
+              lifecycleByCoordinator.get(related)?.journal.currentReceipt.status ?? "",
+            )
+          ) teardown(related);
           throw error;
         }
       },
@@ -418,7 +494,7 @@ export function createPrReviewExtension(
             ["dry_run", "published", "failed", "indeterminate"].includes(
               journal.currentReceipt.status,
             )
-          ) releaseGuard(coordinator);
+          ) teardown(coordinator);
         }
       },
     });
@@ -460,12 +536,54 @@ export function createPrReviewExtension(
         }
       }
       if (event.toolName === "task") {
+        if (
+          lifecycleByCoordinator.size === 0
+          && pendingSnapshotCalls.size === 0
+        ) return undefined;
         const handle = snapshotHandleFromTask(event.input);
-        const coordinator = handle ? coordinatorBySnapshot.get(handle) : undefined;
-        if (!coordinator) return undefined;
-        const result = observeTaskCall(coordinator, event);
-        if (!result) coordinatorByToolCall.set(event.toolCallId, coordinator);
-        if (coordinator.status === "failed") releaseGuard(coordinator);
+        if (pendingSnapshotCalls.size > 0) {
+          if (
+            !handle
+            && pendingSnapshotCalls.size === 1
+            && lifecycleByCoordinator.size === 0
+          ) {
+            const invocationId = pendingSnapshotCalls.values().next().value as string;
+            snapshot.cancelCreate(
+              invocationId,
+              "task_envelope_invalid",
+              "native task call arrived before snapshot create completed",
+            );
+            pendingSnapshotCalls.delete(invocationId);
+            journalBySnapshotCall.delete(invocationId);
+            return {
+              block: true,
+              reason: "Invalid WF7 task envelope during snapshot creation",
+            };
+          }
+          return auditInvalidTaskCall();
+        }
+        let coordinator = handle
+          ? coordinatorBySnapshot.get(handle)
+          : undefined;
+        if (
+          !handle
+          && lifecycleByCoordinator.size === 1
+        ) {
+          coordinator = lifecycleByCoordinator.keys().next().value as CaptureCoordinator;
+        }
+        if (!coordinator) return auditInvalidTaskCall();
+        const routed = coordinatorByToolCall.get(event.toolCallId);
+        const result = routed && routed !== coordinator
+          ? rejectCapture(
+            coordinator,
+            "task_envelope_invalid",
+            "duplicate native task call identifier",
+          )
+          : observeTaskCall(coordinator, event);
+        if (!result && coordinator.status === "active") {
+          coordinatorByToolCall.set(event.toolCallId, coordinator);
+        }
+        if (coordinator.status === "failed") teardown(coordinator);
         else if (coordinator.status !== "active") active.delete(coordinator);
         return result;
       }
@@ -474,15 +592,19 @@ export function createPrReviewExtension(
       for (const coordinator of active) {
         const result = observeTaskCall(coordinator, event);
         if (result) blocked = result;
-        if (coordinator.status === "failed") releaseGuard(coordinator);
+        if (coordinator.status === "failed") teardown(coordinator);
         else if (coordinator.status !== "active") active.delete(coordinator);
       }
       for (const [coordinator, guard] of guardByCoordinator) {
         if (coordinator.status !== "completed") continue;
         const result = guard.handleToolCall(event);
         if (result) {
-          blocked = result;
-          releaseGuard(coordinator);
+          blocked = rejectCapture(
+            coordinator,
+            "role_mutation_denied",
+            result.reason,
+          );
+          teardown(coordinator);
         }
       }
       return blocked;
@@ -499,9 +621,52 @@ export function createPrReviewExtension(
         if (journal) journalByCapture.set(coordinator.captureHandle, journal);
         coordinatorByCapture.set(coordinator.captureHandle, coordinator);
       }
-      if (coordinator.status === "failed") releaseGuard(coordinator);
+      if (coordinator.status === "failed") teardown(coordinator);
       else if (coordinator.status !== "active") active.delete(coordinator);
       return undefined;
+    });
+
+    api.on("session_shutdown", () => {
+      for (const [coordinator, lifecycle] of [...lifecycleByCoordinator]) {
+        if (
+          !["failed", "dry_run", "published", "indeterminate"].includes(
+            lifecycle.journal.currentReceipt.status,
+          )
+        ) {
+          try {
+            lifecycle.journal.fail(
+              "internal_error",
+              "WF7 session shut down before terminal publication",
+              { mutation_guard_active: false },
+            );
+          } catch {
+            // Teardown must still revoke every live handle.
+          }
+        }
+        teardown(coordinator);
+      }
+      for (const invocationId of pendingSnapshotCalls) {
+        const cancelled = snapshot.cancelCreate(
+          invocationId,
+          "internal_error",
+          "WF7 session shut down during snapshot creation",
+        );
+        const journal = journalBySnapshotCall.get(invocationId);
+        if (!cancelled && journal?.currentReceipt.status === "prepared") {
+          try {
+            journal.fail(
+              "internal_error",
+              "WF7 session shut down during snapshot creation",
+              { mutation_guard_active: false },
+            );
+          } catch {
+            // Pending state revocation remains mandatory.
+          }
+        }
+        journalBySnapshotCall.delete(invocationId);
+      }
+      pendingSnapshotCalls.clear();
+      journalBySnapshotCall.clear();
     });
 
     registerReviewPrCommand(api, config, options.runtime ?? compatibility);

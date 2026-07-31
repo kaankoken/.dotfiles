@@ -100,9 +100,16 @@ export interface PrReviewSnapshotTool {
   readonly name: "pr_review_snapshot";
   readonly description: string;
   readonly parameters: typeof PR_REVIEW_SNAPSHOT_PARAMETERS_SCHEMA;
-  execute(input: SnapshotCreateInput): Promise<SnapshotCreateResult>;
-  execute(input: SnapshotReadInput): Promise<SnapshotReadResult>;
-  execute(input: SnapshotStatusInput): Promise<SnapshotStatusResult>;
+  execute(input: SnapshotCreateInput, invocationId?: string): Promise<SnapshotCreateResult>;
+  execute(input: SnapshotReadInput, invocationId?: string): Promise<SnapshotReadResult>;
+  execute(input: SnapshotStatusInput, invocationId?: string): Promise<SnapshotStatusResult>;
+  cleanup(runHandle: string): void;
+  cancelCreate(
+    invocationId: string,
+    code: PrReviewFailureCode,
+    message: string,
+  ): boolean;
+  finishCreate(invocationId: string): void;
 }
 
 export interface PrReviewSnapshotToolOptions {
@@ -115,6 +122,7 @@ export interface PrReviewSnapshotToolOptions {
   checkRoles?: (
     manifest: LoadedRoleManifest,
     journal: ReceiptJournal,
+    invocationId?: string,
   ) => readonly RoleIntegrityObservation[];
   provisionalId?: () => string;
   now?: () => string;
@@ -125,6 +133,14 @@ interface SnapshotContext {
   diffSize: number;
   runHandle: string;
   snapshotHandle: string;
+}
+
+interface PendingSnapshotCreate {
+  journal?: ReceiptJournal;
+  runHandle?: string;
+  cancelled: boolean;
+  cancellationCode?: PrReviewFailureCode;
+  cancellationMessage?: string;
 }
 
 export class PrReviewSnapshotError extends Error {
@@ -243,6 +259,7 @@ class SnapshotTool implements PrReviewSnapshotTool {
   readonly #now?: () => string;
   readonly #byRun = new Map<string, SnapshotContext>();
   readonly #bySnapshot = new Map<string, SnapshotContext>();
+  readonly #pendingCreates = new Map<string, PendingSnapshotCreate>();
 
   constructor(options: PrReviewSnapshotToolOptions) {
     this.#exec = options.exec ?? defaultPrReviewExec;
@@ -259,20 +276,92 @@ class SnapshotTool implements PrReviewSnapshotTool {
     }
   }
 
-  execute(input: SnapshotCreateInput): Promise<SnapshotCreateResult>;
-  execute(input: SnapshotReadInput): Promise<SnapshotReadResult>;
-  execute(input: SnapshotStatusInput): Promise<SnapshotStatusResult>;
-  async execute(input: SnapshotCreateInput | SnapshotReadInput | SnapshotStatusInput): Promise<SnapshotCreateResult | SnapshotReadResult | SnapshotStatusResult> {
+  execute(input: SnapshotCreateInput, invocationId?: string): Promise<SnapshotCreateResult>;
+  execute(input: SnapshotReadInput, invocationId?: string): Promise<SnapshotReadResult>;
+  execute(input: SnapshotStatusInput, invocationId?: string): Promise<SnapshotStatusResult>;
+  async execute(
+    input: SnapshotCreateInput | SnapshotReadInput | SnapshotStatusInput,
+    invocationId?: string,
+  ): Promise<SnapshotCreateResult | SnapshotReadResult | SnapshotStatusResult> {
     if (!input || typeof input !== "object") {
       throw new PrReviewSnapshotError("invalid_arguments", "snapshot input must be an object");
     }
-    if (input.action === "create") return this.#create(input);
+    if (input.action === "create") {
+      const pending = invocationId ? { cancelled: false } : undefined;
+      if (invocationId) {
+        if (this.#pendingCreates.has(invocationId)) {
+          throw new PrReviewSnapshotError(
+            "invalid_arguments",
+            "duplicate snapshot invocation identifier",
+          );
+        }
+        this.#pendingCreates.set(invocationId, pending!);
+      }
+      try {
+        return await this.#create(input, invocationId, pending);
+      } catch (error) {
+        if (invocationId) this.#pendingCreates.delete(invocationId);
+        throw error;
+      }
+    }
     if (input.action === "read") return this.#read(input);
     if (input.action === "status") return this.#status(input);
     throw new PrReviewSnapshotError("invalid_arguments", "snapshot action must be create, read, or status");
   }
 
-  async #create(input: SnapshotCreateInput): Promise<SnapshotCreateResult> {
+  cancelCreate(
+    invocationId: string,
+    code: PrReviewFailureCode,
+    message: string,
+  ): boolean {
+    const pending = this.#pendingCreates.get(invocationId);
+    if (!pending) return false;
+    pending.cancelled = true;
+    pending.cancellationCode = code;
+    pending.cancellationMessage = message;
+    this.#finalizePendingCancellation(pending);
+    return true;
+  }
+
+  finishCreate(invocationId: string): void {
+    this.#pendingCreates.delete(invocationId);
+  }
+
+  #finalizePendingCancellation(pending: PendingSnapshotCreate): void {
+    if (pending.journal?.currentReceipt.status === "prepared") {
+      try {
+        pending.journal.fail(
+          pending.cancellationCode ?? "internal_error",
+          pending.cancellationMessage ?? "snapshot create was cancelled",
+          { mutation_guard_active: false },
+        );
+      } catch {
+        // State revocation must continue after durable receipt storage failure.
+      }
+    }
+    if (pending.runHandle) {
+      try {
+        this.cleanup(pending.runHandle);
+      } catch {
+        // Preserve the terminal cancellation receipt.
+      }
+    }
+  }
+
+  #assertCreateActive(pending?: PendingSnapshotCreate): void {
+    if (!pending?.cancelled) return;
+    this.#finalizePendingCancellation(pending);
+    throw new PrReviewSnapshotError(
+      pending.cancellationCode ?? "internal_error",
+      pending.cancellationMessage ?? "snapshot create was cancelled",
+    );
+  }
+
+  async #create(
+    input: SnapshotCreateInput,
+    invocationId?: string,
+    pending?: PendingSnapshotCreate,
+  ): Promise<SnapshotCreateResult> {
     const raw = exactObject(input, "create", ["action", "target", "dry_run"]);
     if (typeof raw.target !== "string" || raw.target.length < 1 || raw.target.length > 512 || typeof raw.dry_run !== "boolean") {
       throw new PrReviewSnapshotError("invalid_arguments", "create input is invalid");
@@ -343,12 +432,16 @@ class SnapshotTool implements PrReviewSnapshotTool {
       roleManifestDigest: manifest.digest,
       now: this.#now,
     });
+    if (pending) {
+      pending.journal = journal;
+      this.#assertCreateActive(pending);
+    }
     let runHandle: string | undefined;
     let roleFailureAlreadyReceipted = false;
     try {
       let roles: readonly RoleIntegrityObservation[];
       if (this.#checkRoles) {
-        roles = this.#checkRoles(manifest, journal);
+        roles = this.#checkRoles(manifest, journal, invocationId);
         journal.prepare({ roles });
       } else {
         try {
@@ -361,14 +454,18 @@ class SnapshotTool implements PrReviewSnapshotTool {
 
       const stateRun = this.#state.startRun();
       runHandle = stateRun.runHandle;
+      if (pending) pending.runHandle = stateRun.runHandle;
+      this.#assertCreateActive(pending);
       const github = new GitHubReadClient({
         exec: this.#exec,
         cwd: this.#cwd,
         maxDiffBytes: this.#maxDiffBytes,
       });
       const actor = await github.readActor();
+      this.#assertCreateActive(pending);
       journal.prepare({ authenticated_actor: actor.login, roles });
       const repository = await github.readRepository(provisionalTarget.owner, provisionalTarget.repo);
+      this.#assertCreateActive(pending);
       let target;
       try {
         target = resolvePrReviewTarget(parsed, remote, {
@@ -387,6 +484,7 @@ class SnapshotTool implements PrReviewSnapshotTool {
       }
 
       const pull = await github.readPull(target.owner, target.repo, target.pullNumber);
+      this.#assertCreateActive(pending);
       journal.promoteToHead({
         head_sha: pull.headSha,
         repositoryNodeId: repository.nodeId,
@@ -404,7 +502,9 @@ class SnapshotTool implements PrReviewSnapshotTool {
         target.pullNumber,
         pull.changedFileCount,
       );
+      this.#assertCreateActive(pending);
       const diffBytes = await github.readDiff(target.owner, target.repo, target.pullNumber);
+      this.#assertCreateActive(pending);
       if (diffBytes.byteLength > this.#maxDiffBytes) {
         throw new PrReviewSnapshotError("diff_too_large", "pull request diff exceeds the supported snapshot size");
       }
@@ -422,6 +522,7 @@ class SnapshotTool implements PrReviewSnapshotTool {
       }
 
       const current = await github.readPull(target.owner, target.repo, target.pullNumber);
+      this.#assertCreateActive(pending);
       if (current.state !== "open" || current.merged) {
         throw new PrReviewSnapshotError("pr_not_open", "pull request stopped being open during snapshot");
       }
@@ -495,7 +596,10 @@ class SnapshotTool implements PrReviewSnapshotTool {
       });
     } catch (error) {
       const failure = normalizedFailure(error, "internal_error");
-      if (!roleFailureAlreadyReceipted) journal.fail(failure.code, failure.message);
+      if (
+        !roleFailureAlreadyReceipted
+        && journal.currentReceipt.status === "prepared"
+      ) journal.fail(failure.code, failure.message);
       if (runHandle) {
         try {
           this.#state.cleanupRun(runHandle);
@@ -507,14 +611,17 @@ class SnapshotTool implements PrReviewSnapshotTool {
     }
   }
 
-  #discard(context: SnapshotContext): void {
-    this.#byRun.delete(context.runHandle);
-    this.#bySnapshot.delete(context.snapshotHandle);
-    try {
-      this.#state.cleanupRun(context.runHandle);
-    } catch {
-      // State may already have failed or been removed; handles are still revoked.
+  cleanup(runHandle: string): void {
+    const context = this.#byRun.get(runHandle);
+    if (context) {
+      this.#byRun.delete(context.runHandle);
+      this.#bySnapshot.delete(context.snapshotHandle);
     }
+    this.#state.cleanupRun(runHandle);
+  }
+
+  #discard(context: SnapshotContext): void {
+    this.cleanup(context.runHandle);
   }
 
   async #read(input: SnapshotReadInput): Promise<SnapshotReadResult> {

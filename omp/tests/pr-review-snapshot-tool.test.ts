@@ -6,6 +6,7 @@ import {
   readFileSync,
   readdirSync,
   rmSync,
+  statSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -322,6 +323,37 @@ describe("read-only GitHub snapshot tool", () => {
         diff_digest: digest(diff),
       }),
     ]);
+  });
+
+  test("idempotent cleanup revokes handles and removes the private diff", async () => {
+    const files = fixtureFiles(3);
+    const fixture = toolFixture(fakeGithub(files, fixtureDiff(files)));
+    const created = await fixture.tool.execute({
+      action: "create",
+      target: "octo/repo#7",
+      dry_run: true,
+    });
+    const runDirectory = join(fixture.root, "state", readdirSync(join(fixture.root, "state"))[0]!);
+    const diffPath = join(runDirectory, `${created.snapshot_handle}.diff`);
+    expect(statSync(diffPath).mode & 0o777).toBe(0o600);
+
+    fixture.tool.cleanup(created.run_handle);
+    fixture.tool.cleanup(created.run_handle);
+
+    expect(readdirSync(join(fixture.root, "state"))).toEqual([]);
+    expect(() => fixture.state.lookupSnapshot(created.snapshot_handle)).toThrow(
+      "unknown snapshot handle",
+    );
+    await expectFailure(fixture.tool.execute({
+      action: "read",
+      snapshot_handle: created.snapshot_handle,
+      offset: 0,
+      length: 1,
+    }), "snapshot_incomplete");
+    await expectFailure(fixture.tool.execute({
+      action: "status",
+      run_handle: created.run_handle,
+    }), "invalid_arguments");
   });
 
   test("fails closed on incomplete textual patches and records promoted receipt", async () => {
