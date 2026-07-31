@@ -158,7 +158,7 @@ export const REQUIRED_SKILLS_BY_ROLE: Record<SkillRole, RoleSkillRequirement> =
       forbid: ["receiving-code-review"],
     },
     "task-reviewer": {
-      skills: [],
+      skills: ["ponytail-review", "ponytail-audit"],
       fromParityManifest: true,
       parityAgent: "code-reviewer",
       forbid: ["receiving-code-review"],

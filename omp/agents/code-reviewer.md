@@ -22,7 +22,8 @@ wrong or unsafe.
 ## Skills (live)
 
 - `requesting-code-review` (reviewer contract)
-- `ponytail-review` by name when overbuild is in scope
+- **`ponytail-review`** (diff overbuild) — load by name every review
+- **`ponytail-audit`** when the review scope is multi-file / whole-tree / milestone
 - Stack skills as needed
 
 **Do not load `receiving-code-review`** — that skill is for producers applying feedback.

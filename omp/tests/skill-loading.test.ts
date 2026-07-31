@@ -441,7 +441,11 @@ describe("attestation and tool unlock", () => {
   });
 
   test("reviewer has no receiving-code-review", () => {
-    const roots = rootsWith("requesting-code-review");
+    const roots = rootsWith(
+      "requesting-code-review",
+      "ponytail-review",
+      "ponytail-audit",
+    );
     const session = attestAndUnlock({
       role: "task-reviewer",
       skillRoots: roots,
@@ -450,13 +454,20 @@ describe("attestation and tool unlock", () => {
         agents: [
           {
             name: "code-reviewer",
-            requiredSuperpowers: ["requesting-code-review"],
+            requiredSuperpowers: [
+              "requesting-code-review",
+              "ponytail-review",
+              "ponytail-audit",
+            ],
           },
         ],
       },
     });
     expect(session.required.map((s) => s.name)).not.toContain(
       "receiving-code-review",
+    );
+    expect(session.required.map((s) => s.name)).toEqual(
+      expect.arrayContaining(["ponytail-review", "ponytail-audit"]),
     );
   });
 
