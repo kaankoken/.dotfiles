@@ -85,7 +85,9 @@ describe("harness entry assets", () => {
     expect(sk).toMatch(/double-start|already active|at most one/i);
     expect(sk).toMatch(/buildStartMessage|handleHarnessCommand|\/harness/);
     expect(sk).toMatch(/buildDesignStartMessage|\/design/);
-    expect(sk).toMatch(/buildReviewPrControllerMessage|\/pr-reviewer/);
+    expect(sk).toMatch(/buildReviewPrControllerMessage/);
+    expect(sk).toMatch(/\/pr-reviewer/);
+    expect(sk).not.toMatch(/\/review-pr\b/);
     expect(sk).not.toMatch(/intent-dispatch\.ts/);
     expect(sk).not.toMatch(/\bcaveman\b/i);
     // agent is thin optional spawn
@@ -110,9 +112,11 @@ describe("harness entry assets", () => {
     expect(text).toMatch(/headroom/);
     expect(text).toMatch(/context-mode/);
     expect(text).toMatch(/context7/);
-    // cold skills claim
     expect(text).toMatch(/intent-router/);
     expect(text).toMatch(/beads/);
+    expect(text).toMatch(/\/pr-reviewer/);
+    expect(text).toMatch(/\/code-review/);
+    expect(text).not.toMatch(/\/review-pr\b/);
   });
 
   test("intent-router agent is outside parity-manifest 19", () => {
@@ -130,8 +134,9 @@ describe("harness entry assets", () => {
     const raw = readFileSync(path, "utf8");
     expect(raw).toMatch(/code-reviewer/);
     expect(raw).toMatch(/REVIEW-POLICY|ponytail-review/i);
+    expect(raw).toMatch(/\/pr-reviewer/);
     expect(raw).not.toMatch(/WF7|wf7-|pr-fable-reviewer|pr-grok-judge/i);
-    expect(raw).not.toMatch(/review-pr/);
+    expect(raw).not.toMatch(/\/review-pr\b/);
   });
 
   test("stack commands do not claim routers are cold-listed", () => {

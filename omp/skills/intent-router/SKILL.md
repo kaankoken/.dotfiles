@@ -81,7 +81,7 @@ intent-dispatch middleware module and **no** second harness registration.
 | `harness` | Same as `/harness`: `handleHarnessCommand(boundGoal)` → one `sendMessage` of `buildStartMessage` / `{ kind: "goal-harness-start", ... }` with `{ triggerTurn: true }`. If the model cannot call the extension API, emit user-equivalent `/harness <boundGoal>` once. |
 | `design` | `buildDesignStartMessage(boundGoal)` → design start send, or `/design <boundGoal>`. |
 | `init` | Follow `commands/init.md` / `runProjectInit` — no Spec/Plan issues. |
-| `review_pr` | Require parseable target; `buildReviewPrControllerMessage({ target, dryRun })` → sendMessage. Missing target → ask once. |
+| `review_pr` | Same as `/pr-reviewer`: require parseable target; `buildReviewPrControllerMessage({ target, dryRun })` → sendMessage. Missing target → ask once. |
 | `code_review` | Follow `commands/code-review.md` → `agents/code-reviewer.md` + live skills there. **Not** PR dual-review. |
 | `stack` | Follow matching `commands/stack-{rust,ios,android}.md`; load entry skills by absolute path. |
 | `mcp` | Point at `/mcp-stack` / `/mcp enable context7` (headroom+context-mode already cold). |
