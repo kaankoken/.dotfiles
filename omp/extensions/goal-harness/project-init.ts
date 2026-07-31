@@ -193,7 +193,7 @@ Project-local agent instructions for the shared agent stack (Claude / Codex / Cu
 
 ## Tools
 
-Prefer: rtk, bd, tokensave, sg, headroom, context-mode, context7, caveman, ponytail.
+Prefer: rtk, bd, tokensave, sg, headroom, context-mode, context7, ponytail.
 Never codebase-memory.
 
 ## Stack tools

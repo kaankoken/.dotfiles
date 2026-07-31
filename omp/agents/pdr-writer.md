@@ -12,7 +12,7 @@ Produce a **PDR** for the bound design goal. No code, no implementation plan tas
 ## Skills (live read required)
 
 - `brainstorming`
-- `caveman`, `ponytail`
+- `ponytail`
 - `receiving-code-review` only when applying a failed reviewer’s blocking feedback
 
 When skill `architect` exists later, load it; until then brainstorming only.

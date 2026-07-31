@@ -16,7 +16,7 @@ Process engine: **Superpowers** (read live `SKILL.md` by path + SHA). Named role
 1. No errors, no warnings, no test failures.
 2. No warning suppressions in production (test-only OK with reason).
 3. Everything wired — no stubs, TODO/TBD/FIXME, unfinished work.
-4. Mandated skills: using-superpowers + project stack skills + caveman + ponytail (exact skill:// names; never empty skill://).
+4. Mandated skills: using-superpowers + project stack skills + ponytail (exact skill:// names; never empty skill://).
 5. Latest dependencies — verify on the web (not training data alone).
 6. Complete all superpowers-derived spec/plan tasks.
 7. Specs, plans, goals, updates tracked in **bd** (SoT).

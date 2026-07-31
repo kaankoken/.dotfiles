@@ -59,4 +59,99 @@ describe("harness entry assets", () => {
     expect(root).toMatch(/preserve|do not overwrite|existing AGENTS/i);
     expect(sub).toMatch(/ln -sfn AGENTS\.md CLAUDE\.md/);
   });
+
+  test("intent-router skill and agent exist with route taxonomy", () => {
+    const skill = join(OMP_ROOT, "skills/intent-router/SKILL.md");
+    const agent = join(OMP_ROOT, "agents/intent-router.md");
+    expect(existsSync(skill)).toBe(true);
+    expect(existsSync(agent)).toBe(true);
+    const sk = readFileSync(skill, "utf8");
+    const ag = readFileSync(agent, "utf8");
+    // §4.3 route ids
+    for (const route of [
+      "harness",
+      "design",
+      "init",
+      "review_pr",
+      "code_review",
+      "stack",
+      "mcp",
+      "local",
+      "ambiguous",
+    ]) {
+      expect(sk).toContain(route);
+    }
+    expect(sk).toMatch(/boundGoal/);
+    expect(sk).toMatch(/double-start|already active|at most one/i);
+    expect(sk).toMatch(/buildStartMessage|handleHarnessCommand|\/harness/);
+    expect(sk).toMatch(/buildDesignStartMessage|\/design/);
+    expect(sk).toMatch(/buildReviewPrControllerMessage/);
+    expect(sk).toMatch(/\/pr-reviewer/);
+    expect(sk).not.toMatch(/\/review-pr\b/);
+    expect(sk).not.toMatch(/intent-dispatch\.ts/);
+    expect(sk).not.toMatch(/\bcaveman\b/i);
+    // agent is thin optional spawn
+    expect(ag).toMatch(/intent-router/);
+    expect(ag).toMatch(/tools:\s*\[.*read/i);
+  });
+
+  test("still no commands/harness.md (extension-only /harness)", () => {
+    const files = readdirSync(join(OMP_ROOT, "commands"));
+    expect(files).not.toContain("harness.md");
+    expect(files).not.toContain("goal.md");
+    expect(files).not.toContain("guided-goal.md");
+  });
+
+  test("AGENTS.md documents freeform intent routing and lean cold catalog", () => {
+    const text = readFileSync(join(OMP_ROOT, "AGENTS.md"), "utf8");
+    expect(text).toMatch(/intent-router/);
+    expect(text).toMatch(/freeform/i);
+    expect(text).not.toMatch(/ultra-core Superpowers|caveman\/ponytail roots/i);
+    expect(text.toLowerCase()).not.toMatch(/\bcaveman\b/);
+    expect(text).toMatch(/tokensave/);
+    expect(text).toMatch(/headroom/);
+    expect(text).toMatch(/context-mode/);
+    expect(text).toMatch(/context7/);
+    expect(text).toMatch(/intent-router/);
+    expect(text).toMatch(/beads/);
+    expect(text).toMatch(/\/pr-reviewer/);
+    expect(text).toMatch(/\/code-review/);
+    expect(text).not.toMatch(/\/review-pr\b/);
+  });
+
+  test("intent-router agent is outside parity-manifest 19", () => {
+    const manifest = JSON.parse(
+      readFileSync(join(OMP_ROOT, "agents/parity-manifest.json"), "utf8"),
+    ) as { agentCount: number; agents: Array<{ name: string }> };
+    expect(manifest.agentCount).toBe(19);
+    expect(manifest.agents.map((a) => a.name)).not.toContain("intent-router");
+    expect(existsSync(join(OMP_ROOT, "agents/intent-router.md"))).toBe(true);
+  });
+
+  test("commands/code-review.md maps to code-reviewer not PR dual-review controller", () => {
+    const path = join(OMP_ROOT, "commands/code-review.md");
+    expect(existsSync(path)).toBe(true);
+    const raw = readFileSync(path, "utf8");
+    expect(raw).toMatch(/code-reviewer/);
+    expect(raw).toMatch(/REVIEW-POLICY|ponytail-review/i);
+    expect(raw).toMatch(/\/pr-reviewer/);
+    expect(raw).not.toMatch(/WF7|wf7-|pr-fable-reviewer|pr-grok-judge/i);
+    expect(raw).not.toMatch(/\/review-pr\b/);
+  });
+
+  test("stack commands do not claim routers are cold-listed", () => {
+    for (const name of ["stack-rust", "stack-ios", "stack-android"]) {
+      const raw = readFileSync(join(OMP_ROOT, "commands", `${name}.md`), "utf8");
+      expect(raw).not.toMatch(/router always cold-listed/i);
+      expect(raw).toMatch(/on-demand|not cold/i);
+    }
+  });
+
+  test("mcp-stack documents cold headroom/context-mode and opt-in context7", () => {
+    const raw = readFileSync(join(OMP_ROOT, "commands/mcp-stack.md"), "utf8");
+    expect(raw).toMatch(/context7/);
+    expect(raw).toMatch(/tokensave/);
+    // cold already has headroom + context-mode
+    expect(raw.toLowerCase()).toMatch(/already|cold/);
+  });
 });

@@ -1,41 +1,31 @@
 ---
 name: mcp-stack
-description: Enable on-demand stack MCPs (headroom, context-mode, context7). Tokensave is always cold-loaded.
+description: Enable opt-in docs MCP (context7). headroom/context-mode are already cold.
 ---
 
 # /mcp-stack
 
-Cold start only connects **tokensave**. Other stack MCPs stay defined with `enabled: false` so they do not inflate the xd:// inventory.
+## Cold MCP (already connected)
 
-## Enable now (this session)
+- **tokensave** — code graph
+- **headroom** — compress/retrieve large tool outputs
+- **context-mode** — sandbox + FTS for big logs/files
 
-Run or instruct (OMP native):
+RTK remains shell/hooks, not MCP.
+
+## Opt-in now
 
 ```text
-/mcp enable headroom
-/mcp enable context-mode
 /mcp enable context7
 ```
 
-Or enable only what the task needs:
-
 | Server | When |
 |--------|------|
-| **headroom** | Large tool outputs need compress/retrieve |
-| **context-mode** | Big logs/files → sandbox + FTS index |
 | **context7** | Library/API docs (docs-scout primary path) |
 
-## After enable
-
-- Prefer TokenSave for code structure (always available).
-- Prefer context7 over inventing APIs from training data.
-- Prefer context-mode / headroom over dumping huge blobs into chat.
+`headroom` / `context-mode` should already be on; re-enable only if a session disabled them.
 
 ## Do not
 
-- Re-enable codebase-memory / chrome-devtools / node_repl (blocked in `disabledServers`).
-- Leave all three on forever after a one-off docs look — disable again if cold % matters:
-
-```text
-/mcp disable context7
-```
+- Re-enable codebase-memory / chrome-devtools / node_repl (`disabledServers`).
+- Invent APIs from training data when context7 can answer.

@@ -9,11 +9,12 @@ Activate the **iOS / Axiom** domain pack for this turn. Expand `$ARGUMENTS` as o
 
 ## Why this exists
 
-Cold-start `includeSkills` deliberately omits `axiom-*` so non-iOS sessions stay lean. Pack roots remain on disk via `customDirectories`.
+Cold-start `includeSkills` is only `intent-router` + `beads`. This command
+loads the iOS/Axiom pack on demand. Pack roots remain on disk via `customDirectories`.
 
 ## Do this now
 
-1. `read skill://stack-ios` (router always cold-listed).
+1. `read skill://stack-ios` (on-demand router; not cold-listed).
 2. Load entry skills by **absolute path** (or `skill://` if session used `omp --config ~/.dotfiles/omp/configs/pack-ios.yml`):
 
 ```text

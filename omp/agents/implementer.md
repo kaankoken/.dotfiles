@@ -20,7 +20,7 @@ Implement one claimed bd task inside a harness-assigned git worktree.
   - ios → `stack-ios` router + Axiom entry paths
   - android → `stack-android` router + Android entry paths
   - Prefer harness `prepareStackSkills` / `domain-packs` absolute paths over assuming `skill://rust-*` exists in the catalog
-- `caveman`, `ponytail` by name
+- `ponytail` by name
 
 Load complete current `SKILL.md` paths; never vendor skill bodies.
 

@@ -67,7 +67,7 @@ describe("lean OMP configuration", () => {
     expect(versionPin).toBe("2.3.0");
   });
 
-  test("mcp.json cold-loads tokensave only; stack MCPs are opt-in", () => {
+  test("mcp.json cold-loads tokensave, headroom, context-mode; context7 opt-in", () => {
     const path = join(OMP_ROOT, "mcp.json");
     expect(existsSync(path)).toBe(true);
     const mcp = JSON.parse(readFileSync(path, "utf8")) as {
@@ -78,11 +78,14 @@ describe("lean OMP configuration", () => {
     expect(keys).toEqual(
       ["context-mode", "context7", "headroom", "tokensave"].sort(),
     );
-    // Cold start: only tokensave connects (no xd:// flood from optional stack MCPs).
+    // Cold: tokensave + headroom + context-mode connect; context7 stays opt-in.
     expect(mcp.mcpServers.tokensave?.enabled).not.toBe(false);
-    for (const name of ["headroom", "context-mode", "context7"] as const) {
-      expect(mcp.mcpServers[name]?.enabled).toBe(false);
-    }
+    expect(mcp.mcpServers.headroom?.enabled).not.toBe(false);
+    expect(mcp.mcpServers["context-mode"]?.enabled).not.toBe(false);
+    // Prefer explicit enabled: true in mcp.json for clarity.
+    expect(mcp.mcpServers.headroom?.enabled).toBe(true);
+    expect(mcp.mcpServers["context-mode"]?.enabled).toBe(true);
+    expect(mcp.mcpServers.context7?.enabled).toBe(false);
     // Foreign MCP from VS Code / Claude plugins / Codex must not cold-mount.
     const disabled = mcp.disabledServers ?? [];
     for (const name of [
@@ -181,7 +184,7 @@ describe("lean OMP configuration", () => {
       "superpowers",
       ".agents/skills",
       "omp/agent/skills",
-      "marketplaces/caveman/skills",
+      // NO marketplaces/caveman/skills
       "marketplaces/rust-skills/skills",
       "axiom-marketplace/axiom-codex/skills",
     ];
@@ -191,11 +194,12 @@ describe("lean OMP configuration", () => {
         `missing customDirectories entry containing ${frag}`,
       ).toBe(true);
     }
+    // Explicitly forbid caveman root
+    expect(dirs.some((d) => d.includes("caveman"))).toBe(false);
 
     // Each root exists and has at least one name/SKILL.md child
     const probeSkill: Record<string, string> = {
       superpowers: "using-superpowers",
-      "marketplaces/caveman/skills": "caveman",
       "marketplaces/rust-skills/skills": "rust-router",
       "axiom-marketplace/axiom-codex/skills": "axiom-swiftui",
       "omp/agent/skills": "goal-harness",
@@ -207,6 +211,11 @@ describe("lean OMP configuration", () => {
       expect(existsSync(abs)).toBe(true);
       expect(existsSync(join(abs, skill, "SKILL.md"))).toBe(true);
     }
+    // intent-router lives under omp skills tree (B4); probe worktree SoT, not
+    // ~/.omp/agent/skills symlink which may still point at main checkout.
+    expect(existsSync(join(OMP_ROOT, "skills/intent-router/SKILL.md"))).toBe(
+      true,
+    );
   });
 
   test("includeSkills is cold-core only (domain packs on demand)", () => {
@@ -214,47 +223,42 @@ describe("lean OMP configuration", () => {
       readFileSync(join(OMP_ROOT, "config.yml"), "utf8"),
     ) as Record<string, any>;
     const include: string[] = config.skills.includeSkills ?? [];
-    // Pack/group labels that are NOT skill directory names — historically
-    // filtered out using-superpowers / requesting-code-review entirely.
-    const forbiddenPackLabels = [
-      "superpowers",
-      "rust-skills",
-      "axiom",
-      "android",
-      "compose-performance",
-      "android-testing",
-    ];
-    for (const label of forbiddenPackLabels) {
-      expect(include).not.toContain(label);
-    }
 
-    // Cold catalog: harness + superpowers core + caveman/ponytail roots + routers.
-    // Domain packs and sub-skills (caveman-*, ponytail-*, webwright) are on-demand.
-    const requiredSkillNames = [
+    // Exact cold allowlist (order-insensitive)
+    expect([...include].sort()).toEqual(["beads", "intent-router"].sort());
+
+    const forbiddenCold = [
+      // former superpowers cold set
       "using-superpowers",
-      "requesting-code-review",
-      "receiving-code-review",
-      "goal-harness",
-      "design-flow",
+
       "brainstorming",
       "writing-plans",
+      "requesting-code-review",
+      "receiving-code-review",
       "systematic-debugging",
       "test-driven-development",
       "subagent-driven-development",
       "using-git-worktrees",
       "verification-before-completion",
       "finishing-a-development-branch",
-      "ponytail",
+      "dispatching-parallel-agents",
+      "executing-plans",
+      // flow skills
+      "goal-harness",
+      "design-flow",
+      // brevity / stacks
       "caveman",
+      "ponytail",
       "stack-rust",
       "stack-ios",
       "stack-android",
-    ];
-    for (const name of requiredSkillNames) {
-      expect(include).toContain(name);
-    }
-
-    const forbiddenColdExtras = [
+      // pack labels + domain extras
+      "superpowers",
+      "rust-skills",
+      "axiom",
+      "android",
+      "compose-performance",
+      "android-testing",
       "webwright",
       "writing-skills",
       "caveman-*",
@@ -286,7 +290,7 @@ describe("lean OMP configuration", () => {
       "styles",
       "verified-email",
     ];
-    for (const name of forbiddenColdExtras) {
+    for (const name of forbiddenCold) {
       expect(include).not.toContain(name);
     }
 
@@ -297,7 +301,7 @@ describe("lean OMP configuration", () => {
     expect(config.tools?.xdev).toBe(true);
     expect(config.tools?.xdevDocs).toBe("catalog");
 
-    // Thin routers exist under omp/skills
+    // Thin routers still on disk for on-demand /stack-*
     for (const name of ["stack-rust", "stack-ios", "stack-android"]) {
       expect(
         existsSync(join(OMP_ROOT, "skills", name, "SKILL.md")),
@@ -315,6 +319,7 @@ describe("lean OMP configuration", () => {
       const oInclude: string[] = overlay.skills?.includeSkills ?? [];
       expect(oInclude).toContain("using-superpowers");
       expect(oInclude).toContain("goal-harness");
+      expect(oInclude).not.toContain("caveman");
     }
     const rustOverlay = parseYaml(
       readFileSync(join(OMP_ROOT, "configs", "pack-rust.yml"), "utf8"),
@@ -334,8 +339,7 @@ describe("lean OMP configuration", () => {
       expect(existsSync(join(OMP_ROOT, "commands", `${cmd}.md`))).toBe(true);
     }
 
-    // Superpowers root must exist and every non-glob include that lives there
-    // must resolve as name/SKILL.md (guards wrong allowlist again).
+    // Superpowers root must exist and known skills still resolve on demand
     const superpowersRoot = (config.skills.customDirectories as string[])
       .find((d) => d.includes("superpowers"))!
       .replace(/^~/, process.env.HOME ?? "");
@@ -371,9 +375,9 @@ describe("lean OMP configuration", () => {
 
   test("no Superpowers SKILL.md bodies under omp/", () => {
     const files = walkFiles(OMP_ROOT);
-    // Allowed: harness skill + thin on-demand pack routers (not vendored Superpowers).
+    // Allowed: harness/design skills + intent-router + thin on-demand pack routers.
     const allowedSkillMd =
-      /skills\/(goal-harness|design-flow|stack-rust|stack-ios|stack-android)\/SKILL\.md$/;
+      /skills\/(goal-harness|design-flow|intent-router|stack-rust|stack-ios|stack-android)\/SKILL\.md$/;
     for (const f of files) {
       if (f.endsWith("SKILL.md")) {
         expect(f).not.toMatch(/superpowers/i);

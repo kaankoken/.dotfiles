@@ -12,7 +12,7 @@ Produce **Arc42** structured output from the accepted PDR. Design only.
 ## Skills (live read required)
 
 - `brainstorming`
-- `caveman`, `ponytail`
+- `ponytail`
 - `receiving-code-review` only when applying failed review blocking feedback
 
 ## Diagrams

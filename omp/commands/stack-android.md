@@ -9,11 +9,12 @@ Activate the **Android / Compose** domain pack for this turn. Expand `$ARGUMENTS
 
 ## Why this exists
 
-Cold-start `includeSkills` deliberately omits Android skill names so non-Android sessions stay lean. Skills remain under `~/.agents/skills` via `customDirectories`.
+Cold-start `includeSkills` is only `intent-router` + `beads`. This command
+loads the Android pack on demand. Skills remain under `~/.agents/skills` via `customDirectories`.
 
 ## Do this now
 
-1. `read skill://stack-android` (router always cold-listed).
+1. `read skill://stack-android` (on-demand router; not cold-listed).
 2. Load entry skills by **absolute path** (or `skill://` if session used `omp --config ~/.dotfiles/omp/configs/pack-android.yml`):
 
 ```text

@@ -15,7 +15,6 @@ Project-local agent instructions for the **shared agent stack** (Claude / Codex 
 | Tool/MCP flood | **context-mode** | Large reads → sandbox. |
 | Structural edits | **ast-grep** (`sg`) | AST over regex sed. |
 | External docs | **context7** | Library docs. |
-| Output brevity | **caveman** | `/caveman` |
 | Code minimalism | **ponytail** | `/ponytail` |
 
 ## Stack tools
@@ -46,7 +45,7 @@ Used when `/harness` runs without override text:
 1. No errors, no warnings, no test failures.
 2. No warning suppressions in production (test-only OK with reason).
 3. Everything wired — no stubs, TODO/TBD/FIXME, unfinished work.
-4. Mandated skills: superpowers + stack + caveman + ponytail.
+4. Mandated skills: superpowers + stack + ponytail.
 5. Latest dependencies — verify on the web.
 6. Complete all superpowers-derived spec/plan tasks.
 7. Specs/plans/goals tracked in **bd** (SoT).
@@ -55,7 +54,7 @@ Used when `/harness` runs without override text:
 ## Skills
 
 - **superpowers** (process)
-- **caveman**, **ponytail**
+- **ponytail**
 - Stack skills under Stack tools
 - OMP: **goal-harness** when using `/harness` / `/init` under Oh My Pi
 

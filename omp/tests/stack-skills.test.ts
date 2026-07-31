@@ -134,7 +134,6 @@ describe("stack skill resolution and blocking", () => {
       "test-driven-development",
       "receiving-code-review",
       "ponytail",
-      "caveman",
     ]);
     const session = attestImplementerWithStack({
       worktreeRoot: proj,

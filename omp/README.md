@@ -100,18 +100,20 @@ Most residual cold cost is **not** skill bodies — it is OMP system prompt +
 
 | Lever | Config |
 |-------|--------|
-| Skill catalog | `skills.includeSkills` — ultra-core + `stack-*` routers only |
+| Skill catalog | `skills.includeSkills`: **intent-router**, **beads** only |
+| Intent | freeform → `skill://intent-router` → one dispatch into existing flows |
 | Domain packs | On demand: `/stack-*`, stack-scout, `configs/pack-*.yml` |
-| Cold MCP | **tokensave only** — headroom / context-mode / context7 have `enabled: false` until `/mcp enable` or `/mcp-stack` |
+| Cold MCP | tokensave + headroom + context-mode; context7 opt-in via `/mcp enable` or `/mcp-stack` |
 | Foreign MCP | `mcp.json` `disabledServers` (codebase-memory, chrome-devtools, node_repl, …) |
 | xd:// docs | `tools.xdev: true`, `tools.xdevDocs: catalog` (names only, not long summaries) |
 | Optional tools | `generate_image.enabled: false`, `browser.enabled: false`, `inspect_image.mode: off` |
+| GCP pack | deferred (see `extensions/goal-harness/domain-packs.ts` comment) |
 
 | Surface | When |
 |---------|------|
-| Cold catalog | Superpowers workflow, harness, caveman/ponytail roots, beads, `stack-*` routers |
+| Cold catalog | `intent-router`, `beads` |
 | `/stack-rust` `/stack-ios` `/stack-android` | Activate pack for current turn via path loads |
-| `/mcp-stack` / `/mcp enable <name>` | Connect headroom, context-mode, and/or context7 |
+| `/mcp-stack` / `/mcp enable <name>` | Connect context7 (headroom + context-mode already cold) |
 | `stack-scout` / implementer / harness markers | Detect stack → entry skills by absolute path |
 | `omp --config configs/pack-rust.yml` (etc.) | Optional **new session** with full pack skill catalog |
 
@@ -119,8 +121,7 @@ Pack roots remain in `customDirectories`. Never vendor skill bodies into prompts
 See `extensions/goal-harness/domain-packs.ts`.
 
 **Floor:** tokensave still contributes dozens of xd:// lines (code-graph-first).
-After optional MCPs stay off, cold % should drop further; single-digit still needs
-a smaller base system prompt (upstream / `SYSTEM.md`).
+Single-digit cold % still needs a smaller base system prompt (upstream / `SYSTEM.md`).
 
 ## Tool auto mode (Claude/Grok-style)
 
