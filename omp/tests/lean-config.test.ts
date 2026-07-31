@@ -211,6 +211,11 @@ describe("lean OMP configuration", () => {
       expect(existsSync(abs)).toBe(true);
       expect(existsSync(join(abs, skill, "SKILL.md"))).toBe(true);
     }
+    // intent-router lives under omp skills tree (B4); probe worktree SoT, not
+    // ~/.omp/agent/skills symlink which may still point at main checkout.
+    expect(existsSync(join(OMP_ROOT, "skills/intent-router/SKILL.md"))).toBe(
+      true,
+    );
   });
 
   test("includeSkills is cold-core only (domain packs on demand)", () => {
@@ -370,10 +375,9 @@ describe("lean OMP configuration", () => {
 
   test("no Superpowers SKILL.md bodies under omp/", () => {
     const files = walkFiles(OMP_ROOT);
-    // Allowed: harness/design skills + thin on-demand pack routers (not vendored Superpowers).
-    // intent-router SKILL.md lands in B4 — do not allowlist until the file exists.
+    // Allowed: harness/design skills + intent-router + thin on-demand pack routers.
     const allowedSkillMd =
-      /skills\/(goal-harness|design-flow|stack-rust|stack-ios|stack-android)\/SKILL\.md$/;
+      /skills\/(goal-harness|design-flow|intent-router|stack-rust|stack-ios|stack-android)\/SKILL\.md$/;
     for (const f of files) {
       if (f.endsWith("SKILL.md")) {
         expect(f).not.toMatch(/superpowers/i);
