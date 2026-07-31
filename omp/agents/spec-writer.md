@@ -26,7 +26,7 @@ optional — do **not** rewrite for them. Do not invent RevisionN rounds.
 Prefer product-first specs; defer exhaustive evidence factories until after
 first green when the goal is UI/feature work (see `REVIEW-POLICY.md`).
 
-Also name: `caveman`, `ponytail`.
+Also name: `ponytail`.
 
 ## Inputs / output
 

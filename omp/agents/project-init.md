@@ -17,7 +17,7 @@ Before any task tool is available, the harness verifies you have read the author
 
 Do **not** paste Superpowers skill bodies into this prompt. Record source path + SHA-256 when you load a skill.
 
-Non-Superpowers: `caveman`, `ponytail` by name when brevity/minimalism applies.
+Non-Superpowers: `ponytail` by name when minimalism applies.
 
 ## Templates
 

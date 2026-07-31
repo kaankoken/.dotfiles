@@ -36,7 +36,7 @@ Reviewers follow `agents/REVIEW-POLICY.md` (default PASS).
 ## Skills (live load by name)
 
 - `brainstorming` (required)
-- `caveman`, `ponytail` on writers
+- `ponytail` on writers
 - When skill `architect` exists later, load it; until then brainstorming only
 - Never vendor Superpowers bodies into prompts
 
