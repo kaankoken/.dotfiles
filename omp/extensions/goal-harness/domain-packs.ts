@@ -2,7 +2,14 @@
  * Domain skill packs loaded on demand — not in cold-start includeSkills.
  *
  * Pack roots stay in config.yml customDirectories so harness resolveSkill and
- * filesystem reads work. Cold catalog only lists core + thin stack-* routers.
+ * filesystem reads work. Cold includeSkills is only intent-router + beads;
+ * stack-* routers and pack entry skills load via /stack-* or stack-scout.
+ *
+ * Future — not implemented this phase:
+ *   export type DomainPackId = "rust" | "ios" | "android" | "gcp";
+ *   // DOMAIN_PACKS.gcp = { id: "gcp", stackLabels: ["gcp","google-cloud"], ... }
+ *   // Research: https://github.com/google/skills
+ *   // When added: audit android includeGlobs for GCP bleed (follow-up).
  */
 
 import { existsSync, readdirSync } from "node:fs";

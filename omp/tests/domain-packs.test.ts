@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import {
   DOMAIN_PACKS,
   DOMAIN_COLD_START_FORBIDDEN_GLOBS,
@@ -8,6 +10,8 @@ import {
   packOverlayIncludeGlobs,
   skillMatchesAnyGlob,
 } from "../extensions/goal-harness/domain-packs";
+
+const OMP_ROOT = join(import.meta.dir, "..");
 
 describe("domain packs (on-demand)", () => {
   test("stack markers map to pack ids", () => {
@@ -55,5 +59,32 @@ describe("domain packs (on-demand)", () => {
     expect(DOMAIN_PACKS.rust.stackLabels).toEqual(["rust-skills"]);
     expect(DOMAIN_PACKS.ios.stackLabels).toEqual(["axiom"]);
     expect(DOMAIN_PACKS.android.stackLabels).toContain("android");
+  });
+
+  test("domain-packs documents deferred GCP without implementing pack", () => {
+    const src = readFileSync(
+      join(OMP_ROOT, "extensions/goal-harness/domain-packs.ts"),
+      "utf8",
+    );
+    expect(src).toMatch(/DomainPackId = "rust" \| "ios" \| "android"/);
+    expect(src).toMatch(/Future|GCP|gcp/);
+    // Live assignment forbidden; deferred comment may mention DOMAIN_PACKS.gcp =
+    const withoutComments = src
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .replace(/\/\/.*$/gm, "");
+    expect(withoutComments).not.toMatch(/DOMAIN_PACKS\.gcp\s*=/);
+    // cold header must not claim stack routers are cold-listed
+    expect(src).not.toMatch(
+      /Cold catalog only lists core \+ thin stack-\* routers/,
+    );
+  });
+
+  test("README cold catalog matches lean allowlist", () => {
+    const text = readFileSync(join(OMP_ROOT, "README.md"), "utf8");
+    expect(text).toMatch(/intent-router/);
+    expect(text).toMatch(/beads/);
+    expect(text.toLowerCase()).not.toMatch(/\bcaveman\b/);
+    expect(text).toMatch(/headroom/);
+    expect(text).toMatch(/context-mode/);
   });
 });
