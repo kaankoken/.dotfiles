@@ -473,6 +473,8 @@ describe("run-scoped OMP role mutation guard", () => {
     const roleFile = role.livePath.split("/").at(-1)!;
     const liveDir = role.livePath.slice(0, -(roleFile.length + 1));
     const escapedRoleFile = roleFile.replace("-", "\\-");
+    const ddTarget = join(root, "preexisting-symlink-to-protected-role");
+    symlinkSync(role.canonicalPath, ddTarget);
     const originalHome = process.env.HOME;
     const protectedRolePaths = manifest.roles.flatMap((entry) => [
       entry.livePath,
@@ -550,6 +552,10 @@ describe("run-scoped OMP role mutation guard", () => {
       {
         toolName: "bash",
         input: { command: `cp '/tmp/replacement-role.md' '${liveDir}'` },
+      },
+      {
+        toolName: "bash",
+        input: { command: `dd if=/dev/zero of=${ddTarget} bs=1 count=1` },
       },
       {
         toolName: "bash",
