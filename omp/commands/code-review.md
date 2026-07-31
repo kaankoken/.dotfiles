@@ -9,7 +9,7 @@ Local milestone-style review. Expand `$ARGUMENTS` as scope (paths, branch, "stag
 
 ## Not this command
 
-- GitHub PR dual-agent review → use the PR review slash flow (extension controller).
+- GitHub PR dual-agent review → use **`/pr-reviewer`** (extension controller; agents `pr-*`).
 - Multi-step build → `/harness`.
 
 ## Skills / agent

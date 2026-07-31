@@ -85,7 +85,7 @@ describe("harness entry assets", () => {
     expect(sk).toMatch(/double-start|already active|at most one/i);
     expect(sk).toMatch(/buildStartMessage|handleHarnessCommand|\/harness/);
     expect(sk).toMatch(/buildDesignStartMessage|\/design/);
-    expect(sk).toMatch(/buildReviewPrControllerMessage|\/review-pr/);
+    expect(sk).toMatch(/buildReviewPrControllerMessage|\/pr-reviewer/);
     expect(sk).not.toMatch(/intent-dispatch\.ts/);
     expect(sk).not.toMatch(/\bcaveman\b/i);
     // agent is thin optional spawn
@@ -124,13 +124,13 @@ describe("harness entry assets", () => {
     expect(existsSync(join(OMP_ROOT, "agents/intent-router.md"))).toBe(true);
   });
 
-  test("commands/code-review.md maps to code-reviewer not WF7", () => {
+  test("commands/code-review.md maps to code-reviewer not PR dual-review controller", () => {
     const path = join(OMP_ROOT, "commands/code-review.md");
     expect(existsSync(path)).toBe(true);
     const raw = readFileSync(path, "utf8");
     expect(raw).toMatch(/code-reviewer/);
     expect(raw).toMatch(/REVIEW-POLICY|ponytail-review/i);
-    expect(raw).not.toMatch(/WF7|wf7-fable|grok-judge/i);
+    expect(raw).not.toMatch(/WF7|wf7-|pr-fable-reviewer|pr-grok-judge/i);
     expect(raw).not.toMatch(/review-pr/);
   });
 
