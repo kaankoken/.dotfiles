@@ -60,6 +60,15 @@ const FORBIDDEN_GIT = [
   ["filter-repo"],
 ];
 
+const GH_MUTATING_METHODS: Record<string, true> = {
+  POST: true,
+  PATCH: true,
+  PUT: true,
+  DELETE: true,
+};
+const GH_INLINE_REVIEW_ENDPOINT =
+  /^repos\/[^/]+\/[^/]+\/(?:issues\/(?:[^/]+\/comments|comments\/[^/]+)|pulls\/(?:[^/]+\/(?:comments|reviews)|comments\/[^/]+))(?:\/[^/]+)*\/?$/;
+
 /**
  * Resolve path component-by-component with lstat; return canonical path
  * of existing target or nearest existing parent.
@@ -435,7 +444,38 @@ function classifyGh(
   manifest: PhaseCapabilityManifest,
   args: string[],
 ): SandboxDecision {
-  if (args[0] === "pr" && (args[1] === "create" || args[1] === "merge")) {
+  let commandIndex = 0;
+  while (commandIndex < args.length) {
+    const arg = args[commandIndex]!;
+    if (arg === "-R" || arg === "--repo") {
+      commandIndex += 2;
+    } else if (
+      arg.startsWith("--repo=") ||
+      (arg.startsWith("-R") && arg.length > 2)
+    ) {
+      commandIndex += 1;
+    } else {
+      break;
+    }
+  }
+
+  const command = args[commandIndex];
+  let prActionIndex = commandIndex + 1;
+  while (command === "pr" && prActionIndex < args.length) {
+    const arg = args[prActionIndex]!;
+    if (arg === "-R" || arg === "--repo") {
+      prActionIndex += 2;
+    } else if (
+      arg.startsWith("--repo=") ||
+      (arg.startsWith("-R") && arg.length > 2)
+    ) {
+      prActionIndex += 1;
+    } else {
+      break;
+    }
+  }
+  const prAction = command === "pr" ? args[prActionIndex] : undefined;
+  if (prAction === "create" || prAction === "merge") {
     if (!manifest.operations.includes("gh.pr")) {
       return {
         allow: false,
@@ -444,6 +484,137 @@ function classifyGh(
     }
     return { allow: true, reason: "gh.pr allowed", operation: "gh.pr" };
   }
+
+  let explicitApiMethod: string | undefined;
+  let apiDefaultsToPost = false;
+  let apiEndpoint: string | undefined;
+  if (command === "api") {
+    for (let i = commandIndex + 1; i < args.length; i += 1) {
+      const arg = args[i]!;
+      if (arg === "--") {
+        apiEndpoint ??= args[i + 1];
+        break;
+      }
+      let option = arg;
+      while (option.startsWith("-i") && option.length > 2) {
+        option = `-${option.slice(2)}`;
+      }
+      if (option === "--method" || option === "-X") {
+        explicitApiMethod = args[i + 1]?.toUpperCase();
+        i += 1;
+        continue;
+      }
+      if (option.startsWith("--method=")) {
+        explicitApiMethod = option.slice("--method=".length).toUpperCase();
+        continue;
+      }
+      if (option.startsWith("-X") && option.length > 2) {
+        explicitApiMethod = option.slice(2).replace(/^=/, "").toUpperCase();
+        continue;
+      }
+      if (
+        option === "-f" ||
+        option === "-F" ||
+        option === "--raw-field" ||
+        option === "--field" ||
+        option === "--input"
+      ) {
+        apiDefaultsToPost = true;
+        i += 1;
+        continue;
+      }
+      if (
+        (option.startsWith("-f") && option.length > 2) ||
+        (option.startsWith("-F") && option.length > 2) ||
+        option.startsWith("--raw-field=") ||
+        option.startsWith("--field=") ||
+        option.startsWith("--input=")
+      ) {
+        apiDefaultsToPost = true;
+        continue;
+      }
+      if (
+        option === "--cache" ||
+        option === "-H" ||
+        option === "--header" ||
+        option === "--hostname" ||
+        option === "-q" ||
+        option === "--jq" ||
+        option === "-p" ||
+        option === "--preview" ||
+        option === "-t" ||
+        option === "--template"
+      ) {
+        i += 1;
+        continue;
+      }
+      if (
+        option.startsWith("--cache=") ||
+        (option.startsWith("-H") && option.length > 2) ||
+        option.startsWith("--header=") ||
+        option.startsWith("--hostname=") ||
+        (option.startsWith("-q") && option.length > 2) ||
+        option.startsWith("--jq=") ||
+        (option.startsWith("-p") && option.length > 2) ||
+        option.startsWith("--preview=") ||
+        (option.startsWith("-t") && option.length > 2) ||
+        option.startsWith("--template=")
+      ) {
+        continue;
+      }
+      if (!arg.startsWith("-") && apiEndpoint === undefined) {
+        apiEndpoint = arg;
+      }
+    }
+  }
+
+  const apiMethod =
+    explicitApiMethod ?? (apiDefaultsToPost ? "POST" : "GET");
+  let apiPath: string | undefined;
+  let malformedAbsoluteApiUrl = false;
+  if (apiEndpoint !== undefined) {
+    if (/^https?:\/\//i.test(apiEndpoint)) {
+      try {
+        apiPath = new URL(apiEndpoint).pathname.replace(
+          /^\/(?:api\/v3\/)?/,
+          "",
+        );
+      } catch {
+        malformedAbsoluteApiUrl = true;
+      }
+    } else {
+      apiPath = apiEndpoint.replace(/^\//, "").replace(/[?#].*$/, "");
+    }
+  }
+  if (
+    command === "api" &&
+    GH_MUTATING_METHODS[apiMethod] === true &&
+    malformedAbsoluteApiUrl
+  ) {
+    return { allow: false, reason: "malformed mutating GitHub API URL denied" };
+  }
+  const isInlineReviewMutation =
+    (command === "pr" &&
+      (prAction === "comment" || prAction === "review")) ||
+    (command === "api" &&
+      GH_MUTATING_METHODS[apiMethod] === true &&
+      apiPath !== undefined &&
+      GH_INLINE_REVIEW_ENDPOINT.test(apiPath));
+
+  if (isInlineReviewMutation) {
+    if (!manifest.operations.includes("gh.pr.inline-review")) {
+      return {
+        allow: false,
+        reason: `inline review mutation requires gh.pr.inline-review (phase=${manifest.phase})`,
+      };
+    }
+    return {
+      allow: true,
+      reason: "gh.pr.inline-review allowed",
+      operation: "gh.pr.inline-review",
+    };
+  }
+
   if (!manifest.operations.includes("cli.execute")) {
     return { allow: false, reason: "gh not allowed" };
   }

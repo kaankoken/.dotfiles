@@ -79,6 +79,16 @@ function implManifest(repo: string): PhaseCapabilityManifest {
   });
 }
 
+function publisherManifest(repo: string): PhaseCapabilityManifest {
+  return buildPhaseCapabilities({
+    phase: "PrReviewPublish",
+    agent: "pr-review-publisher",
+    runId: "run-1",
+    issueId: "iss-1",
+    canonicalRoots: baseRoots(repo),
+  });
+}
+
 describe("phase capabilities", () => {
   test("manifest requires phase agent runId issueId roots network operations", () => {
     expect(PHASE_CAPABILITIES_SCHEMA).toBeTruthy();
@@ -157,6 +167,38 @@ describe("phase capabilities", () => {
       controller: true,
     });
     expect(early.operations).not.toContain("git.push");
+  });
+
+  test("inline review capability belongs only to its publisher context", () => {
+    const repo = tmp();
+    const publisher = publisherManifest(repo);
+    expect(publisher.operations).toContain("gh.pr.inline-review");
+    expect(PHASE_CAPABILITIES_SCHEMA.properties.phase.enum).toContain(
+      "PrReviewPublish",
+    );
+    expect(PHASE_CAPABILITIES_SCHEMA.properties.operations.items.enum).toContain(
+      "gh.pr.inline-review",
+    );
+
+    for (const phase of [
+      "Init",
+      "Research",
+      "Spec",
+      "Plan",
+      "BiteSize",
+      "Implement",
+      "Integration",
+      "Milestone",
+      "PR",
+    ] as const) {
+      const manifest = buildPhaseCapabilities({
+        phase,
+        agent: "ordinary-agent",
+        runId: "r1",
+        canonicalRoots: baseRoots(tmp()),
+      });
+      expect(manifest.operations).not.toContain("gh.pr.inline-review");
+    }
   });
 
   test("migration-target writes require explicit targets", () => {
@@ -300,6 +342,172 @@ describe("path and command policy", () => {
       false,
     );
     expect(classifyCommand(m, ["gh", "pr", "create"]).allow).toBe(false);
+  });
+
+  test("gates every inline review mutation outside its publisher context", () => {
+    const ordinary = implManifest(tmp());
+    const endpoints = [
+      "repos/acme/widgets/issues/7/comments",
+      "/repos/acme/widgets/issues/comments/8?notification_id=1",
+      "/repos/acme/widgets/pulls/9/comments?side=RIGHT",
+      "repos/acme/widgets/pulls/comments/10",
+      "/repos/acme/widgets/pulls/11/reviews?per_page=100",
+      "repos/acme/widgets/pulls/11/reviews/12",
+    ];
+
+    const commands = [
+      ["gh", "pr", "comment", "11", "--body", "no"],
+      ["gh", "pr", "review", "11", "--approve"],
+      ["gh", "-R", "acme/widgets", "pr", "comment", "11", "--body", "no"],
+      ["gh", "-Racme/widgets", "pr", "review", "11", "--approve"],
+      ["gh", "--repo", "acme/widgets", "pr", "comment", "11", "--body", "no"],
+      ["gh", "--repo=acme/widgets", "pr", "review", "11", "--approve"],
+      ["gh", "pr", "-R", "acme/widgets", "comment", "11", "--body", "no"],
+      ["gh", "pr", "--repo", "acme/widgets", "review", "11", "--approve"],
+      ["gh", "pr", "--repo=acme/widgets", "comment", "11", "--body", "no"],
+      ["gh", "api", "-f", "body=x", "/repos/acme/widgets/pulls/11/reviews"],
+      ["gh", "api", "-fbody=x", "/repos/acme/widgets/pulls/11/reviews"],
+      ["gh", "api", "--raw-field", "body=x", "/repos/acme/widgets/pulls/11/reviews"],
+      ["gh", "api", "--raw-field=body=x", "/repos/acme/widgets/pulls/11/reviews"],
+      ["gh", "api", "-F", "body=x", "/repos/acme/widgets/pulls/11/reviews"],
+      ["gh", "api", "-Fbody=x", "/repos/acme/widgets/pulls/11/reviews"],
+      ["gh", "api", "--field", "body=x", "/repos/acme/widgets/pulls/11/reviews"],
+      ["gh", "api", "--field=body=x", "/repos/acme/widgets/pulls/11/reviews"],
+      ["gh", "api", "--input", "payload.json", "/repos/acme/widgets/pulls/11/reviews"],
+      ["gh", "api", "--input=payload.json", "/repos/acme/widgets/pulls/11/reviews"],
+      ["gh", "api", "--input", "--method=GET", "/repos/acme/widgets/pulls/11/reviews"],
+      ["gh", "api", "-iXPOST", "/repos/acme/widgets/pulls/11/reviews"],
+      ["gh", "api", "-iFbody=x", "/repos/acme/widgets/pulls/11/reviews"],
+      ["gh", "api", "-ifbody=x", "/repos/acme/widgets/pulls/11/reviews"],
+      ["gh", "api", "-X=POST", "/repos/acme/widgets/pulls/11/reviews"],
+      ["gh", "api", "-iX=POST", "/repos/acme/widgets/pulls/11/reviews"],
+      [
+        "gh",
+        "api",
+        "--method=POST",
+        "https://api.github.com/repos/acme/widgets/pulls/11/reviews?draft=true",
+      ],
+      [
+        "gh",
+        "api",
+        "-XPOST",
+        "https://github.example.com/api/v3/repos/acme/widgets/pulls/11/reviews",
+      ],
+      [
+        "gh",
+        "api",
+        "--hostname",
+        "github.com",
+        "-XPOST",
+        "/repos/acme/widgets/pulls/11/reviews",
+      ],
+      ...["POST", "PATCH", "PUT", "DELETE"].flatMap((method) =>
+        endpoints.map((endpoint) => [
+          "gh",
+          "api",
+          "--method",
+          method,
+          endpoint,
+        ]),
+      ),
+    ];
+
+    for (const command of commands) {
+      const denied = classifyCommand(ordinary, command);
+      expect(denied.allow, command.join(" ")).toBe(false);
+      expect(denied.reason).toMatch(/inline review/i);
+    }
+
+    const publisher = publisherManifest(tmp());
+    for (const command of commands) {
+      const allowed = classifyCommand(publisher, command);
+      expect(allowed.allow, command.join(" ")).toBe(true);
+      expect(allowed.operation).toBe("gh.pr.inline-review");
+    }
+  });
+
+  test("fails closed on malformed mutating absolute API URLs", () => {
+    for (const manifest of [implManifest(tmp()), publisherManifest(tmp())]) {
+      const decision = classifyCommand(manifest, [
+        "gh",
+        "api",
+        "--method=POST",
+        "https://[invalid/repos/acme/widgets/pulls/11/reviews",
+      ]);
+      expect(decision.allow).toBe(false);
+      expect(decision.reason).toMatch(/malformed.*URL/i);
+    }
+  });
+
+  test("keeps GitHub GET and existing PR classification unchanged", () => {
+    const ordinary = implManifest(tmp());
+    for (const endpoint of [
+      "/repos/acme/widgets/issues/7/comments?per_page=100",
+      "repos/acme/widgets/pulls/9/comments",
+      "/repos/acme/widgets/pulls/11/reviews",
+    ]) {
+      const decision = classifyCommand(ordinary, [
+        "gh",
+        "api",
+        "--method=GET",
+        endpoint,
+      ]);
+      expect(decision.allow).toBe(true);
+      expect(decision.operation).toBe("cli.execute");
+    }
+
+    for (const command of [
+      [
+        "gh",
+        "api",
+        "--method",
+        "GET",
+        "-f",
+        "body=x",
+        "/repos/acme/widgets/pulls/11/reviews",
+      ],
+      [
+        "gh",
+        "api",
+        "-XGET",
+        "--input",
+        "payload.json",
+        "/repos/acme/widgets/pulls/11/reviews",
+      ],
+    ]) {
+      const decision = classifyCommand(ordinary, command);
+      expect(decision.allow, command.join(" ")).toBe(true);
+      expect(decision.operation).toBe("cli.execute");
+    }
+
+    expect(
+      classifyCommand(ordinary, [
+        "gh",
+        "api",
+        "--input",
+        "/repos/acme/widgets/pulls/11/reviews",
+        "/repos/acme/widgets/issues/7/labels",
+      ]).operation,
+    ).toBe("cli.execute");
+
+    expect(
+      classifyCommand(ordinary, [
+        "gh",
+        "api",
+        "-X",
+        "POST",
+        "/repos/acme/widgets/issues/7/labels",
+      ]).operation,
+    ).toBe("cli.execute");
+
+    const pr = buildPhaseCapabilities({
+      phase: "PR",
+      agent: "pr-opener",
+      runId: "r1",
+      canonicalRoots: baseRoots(tmp()),
+    });
+    expect(classifyCommand(pr, ["gh", "pr", "create"]).operation).toBe("gh.pr");
+    expect(classifyCommand(pr, ["gh", "pr", "merge"]).operation).toBe("gh.pr");
   });
 
   test("denies child Beads mutation without controller op", () => {
