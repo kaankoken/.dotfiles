@@ -74,6 +74,7 @@ export interface CaptureCoordinatorOptions {
   snapshot: Readonly<ImmutableSnapshot>;
   callNonces: Readonly<Record<Wf7TaskName, string>>;
   verifyRole: (check: CaptureRoleCheck) => void;
+  releaseGuardOnCompletion?: boolean;
   now?: () => string;
 }
 
@@ -104,6 +105,7 @@ type CaptureState = {
   callNonces: Readonly<Record<Wf7TaskName, string>>;
   verifyRole: CaptureCoordinatorOptions["verifyRole"];
   now: () => string;
+  releaseGuardOnCompletion: boolean;
   status: "active" | "completed" | "failed";
   captureHandle?: string;
   pending?: PendingCall;
@@ -538,6 +540,7 @@ export function createCaptureCoordinator(options: CaptureCoordinatorOptions): Ca
     snapshot: options.snapshot,
     callNonces: Object.freeze({ ...options.callNonces }),
     verifyRole: options.verifyRole,
+    releaseGuardOnCompletion: options.releaseGuardOnCompletion ?? true,
     now: options.now ?? (() => new Date().toISOString()),
     status: "active",
     sealed: new Map(),
@@ -682,10 +685,10 @@ export function completeCapture(coordinator: CaptureCoordinator): Readonly<Compl
   const ordered = WF7_TASK_SLOTS.map((slot) => state.sealed.get(slot.name)!);
   try {
     const capture = state.state.completeCapture(state.snapshot.runHandle, ordered, state.now());
-    state.guard.stop();
+    if (state.releaseGuardOnCompletion) state.guard.stop();
     state.journal.prepare({
       tasks: ordered.map(receiptEvidence),
-      mutation_guard_active: false,
+      mutation_guard_active: !state.releaseGuardOnCompletion,
       completed_capture_digest: createHash("sha256").update(capture.captureHandle).digest("hex"),
     });
     state.captureHandle = capture.captureHandle;

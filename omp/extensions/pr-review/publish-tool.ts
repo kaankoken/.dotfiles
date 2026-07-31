@@ -347,6 +347,7 @@ class PublishTool implements PrReviewPublishTool {
         if (journal.currentReceipt.status === "prepared") {
           journal.dryRun({
             ...update,
+            mutation_guard_active: false,
             ...(existing ? {
               github_review_id: existing.reviewId,
               github_inline_comment_ids: existing.inlineCommentIds,
@@ -370,6 +371,7 @@ class PublishTool implements PrReviewPublishTool {
         if (journal.currentReceipt.status === "prepared") {
           journal.publish({
             ...update,
+            mutation_guard_active: false,
             github_review_id: existing.reviewId,
             github_inline_comment_ids: existing.inlineCommentIds,
             github_inline_comment_markers: plan.findings.map((finding) => finding.marker),
@@ -437,6 +439,7 @@ class PublishTool implements PrReviewPublishTool {
       const superseded = post.headSha !== capture.snapshot.headSha;
       journal.publish({
         ...update,
+        mutation_guard_active: false,
         github_review_id: published.reviewId,
         github_inline_comment_ids: published.inlineCommentIds,
         github_inline_comment_markers: plan.findings.map((finding) => finding.marker),
@@ -456,9 +459,13 @@ class PublishTool implements PrReviewPublishTool {
       const failure = normalized(error, "binding_mismatch");
       if (journal.currentReceipt.status === "prepared") {
         if (failure.code === "publication_indeterminate") {
-          journal.indeterminate(failure.code, failure.message);
+          journal.indeterminate(failure.code, failure.message, {
+            mutation_guard_active: false,
+          });
         } else {
-          journal.fail(failure.code, failure.message);
+          journal.fail(failure.code, failure.message, {
+            mutation_guard_active: false,
+          });
         }
       }
       throw failure;
