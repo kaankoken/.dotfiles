@@ -195,16 +195,19 @@ function validateManifestRole(value: unknown, index: number, strictPaths: boolea
 export class RoleIntegrityError extends Error {
   readonly code: PrReviewFailureCode;
   readonly observation?: RoleIntegrityObservation;
+  readonly observations?: readonly RoleIntegrityObservation[];
 
   constructor(
     code: PrReviewFailureCode,
     message: string,
     observation?: RoleIntegrityObservation,
+    observations?: readonly RoleIntegrityObservation[],
   ) {
     super(message);
     this.name = "RoleIntegrityError";
     this.code = code;
     this.observation = observation;
+    this.observations = observations?.map((entry) => Object.freeze({ ...entry }));
   }
 }
 
@@ -366,9 +369,15 @@ function checkAllRoleFilesInternal(
       if (integrityError.observation) {
         observations = mergeObservation(observations, integrityError.observation);
       }
+      const accumulatedError = new RoleIntegrityError(
+        integrityError.code,
+        integrityError.message,
+        integrityError.observation,
+        observations,
+      );
       return receiptFailure(
         "journal" in options ? options.journal : undefined,
-        integrityError,
+        accumulatedError,
         observations,
       );
     }
@@ -381,6 +390,16 @@ export function checkAllRoleFilesAtRegistration(
   manifest: LoadedRoleManifest,
 ): RoleIntegrityObservation[] {
   return checkAllRoleFilesInternal(manifest, { boundary: "registration" });
+}
+
+export function checkAllRoleFilesAtPublish(
+  manifest: LoadedRoleManifest,
+  previousObservations: readonly RoleIntegrityObservation[],
+): RoleIntegrityObservation[] {
+  return checkAllRoleFilesInternal(manifest, {
+    boundary: "pre-publish",
+    previousObservations,
+  });
 }
 
 export function checkAllRoleFiles(

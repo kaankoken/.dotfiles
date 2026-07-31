@@ -41,6 +41,7 @@ export interface GitHubPullRequest {
   headSha: string;
   headRepository: string;
   fork: boolean;
+  authorLogin?: string;
 }
 
 export interface GitHubChangedFile {
@@ -57,6 +58,16 @@ export interface GitHubReadClientOptions {
   maxDiffBytes?: number;
 }
 
+export interface PrReviewPublishOptions {
+  exec?: PrReviewExec;
+  cwd?: string;
+}
+
+export interface PublishedReview {
+  reviewId: number;
+  inlineCommentIds: readonly number[];
+}
+
 export class GitHubReadError extends Error {
   readonly code: PrReviewFailureCode;
 
@@ -64,6 +75,18 @@ export class GitHubReadError extends Error {
     super(message);
     this.name = "GitHubReadError";
     this.code = code;
+  }
+}
+
+export class GitHubPublishError extends Error {
+  readonly code: PrReviewFailureCode;
+  readonly ambiguous: boolean;
+
+  constructor(code: PrReviewFailureCode, message: string, ambiguous = false) {
+    super(message);
+    this.name = "GitHubPublishError";
+    this.code = code;
+    this.ambiguous = ambiguous;
   }
 }
 
@@ -198,6 +221,9 @@ export class GitHubReadClient {
       throw new GitHubReadError("github_api_failed", "pull request response is invalid");
     }
     const headRepository = string(headRepo.full_name, "pull request head repository");
+    const authorLogin = raw.user === undefined
+      ? undefined
+      : string(object(raw.user, "pull request author").login, "pull request author");
     return Object.freeze({
       state: string(raw.state, "pull request"),
       draft: raw.draft,
@@ -206,6 +232,7 @@ export class GitHubReadClient {
       baseSha: string(base.sha, "pull request base"),
       headSha: string(head.sha, "pull request head"),
       headRepository,
+      ...(authorLogin === undefined ? {} : { authorLogin }),
       fork: headRepository.toLowerCase() !== `${owner}/${repo}`.toLowerCase(),
     });
   }
@@ -318,5 +345,83 @@ export class GitHubReadClient {
       throw new GitHubReadError(rateLimited ? "rate_limited" : "github_api_failed", "GitHub read failed");
     }
     return result;
+  }
+}
+
+export class PrReviewPublish {
+  readonly #exec: PrReviewExec;
+  readonly #cwd?: string;
+
+  constructor(options: PrReviewPublishOptions = {}) {
+    this.#exec = options.exec ?? defaultPrReviewExec;
+    this.#cwd = options.cwd;
+  }
+
+  async submitGroupedReview(
+    owner: string,
+    repo: string,
+    pullNumber: number,
+    payload: unknown,
+  ): Promise<PublishedReview> {
+    return withPrivateJsonFile(payload, async (path) => {
+      const result = await this.#exec([
+        "gh",
+        "api",
+        "--method",
+        "POST",
+        `repos/${owner}/${repo}/pulls/${pullNumber}/reviews`,
+        "--input",
+        path,
+      ], { cwd: this.#cwd, maxBufferBytes: 64 * 1024 * 1024 });
+      if (
+        !result
+        || !Number.isInteger(result.exitCode)
+        || (typeof result.stdout !== "string" && !(result.stdout instanceof Uint8Array))
+        || typeof result.stderr !== "string"
+      ) {
+        throw new GitHubPublishError(
+          "publication_indeterminate",
+          "GitHub publish executor returned an invalid result",
+          true,
+        );
+      }
+      if (result.exitCode !== 0) {
+        const rateLimited = /rate.?limit|secondary rate|HTTP 429/i.test(result.stderr);
+        const apiRejected = /\bHTTP [45]\d{2}\b/i.test(result.stderr);
+        const indeterminate = !rateLimited && !apiRejected;
+        throw new GitHubPublishError(
+          rateLimited ? "rate_limited" : apiRejected ? "github_api_failed" : "publication_indeterminate",
+          rateLimited
+            ? "GitHub publish was rate limited"
+            : apiRejected
+            ? "GitHub rejected the review publication"
+            : "GitHub publish outcome is ambiguous",
+          indeterminate,
+        );
+      }
+
+      try {
+        const review = object(
+          JSON.parse(stdoutText(result.stdout, "published review")),
+          "published review",
+        );
+        const reviewId = integer(review.id, "published review");
+        const comments = review.comments === undefined ? [] : review.comments;
+        if (!Array.isArray(comments)) throw new Error("invalid inline comments");
+        const inlineCommentIds = comments.map((comment) =>
+          integer(object(comment, "published inline comment").id, "published inline comment")
+        );
+        return Object.freeze({
+          reviewId,
+          inlineCommentIds: Object.freeze(inlineCommentIds),
+        });
+      } catch {
+        throw new GitHubPublishError(
+          "publication_indeterminate",
+          "GitHub publish returned an invalid response",
+          true,
+        );
+      }
+    });
   }
 }

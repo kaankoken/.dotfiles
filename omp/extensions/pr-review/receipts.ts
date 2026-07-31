@@ -273,6 +273,10 @@ export class ReceiptJournal {
     return this.#path;
   }
 
+  get currentReceipt(): Readonly<PrReviewJournalReceipt> {
+    return Object.freeze(structuredClone(this.#receipt));
+  }
+
   promoteToHead(
     update: ReceiptUpdate & { head_sha: string; repositoryNodeId: string },
   ): string {
