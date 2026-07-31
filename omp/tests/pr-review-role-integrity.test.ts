@@ -543,6 +543,20 @@ describe("run-scoped OMP role mutation guard", () => {
         toolName: "bash",
         input: { command: `cd '${join(root, "unrelated")}' && rm 'other.txt'` },
       },
+      {
+        toolName: "bash",
+        input: { command: `rm -rf '${liveDir}'` },
+      },
+      {
+        toolName: "bash",
+        input: { command: `cp '/tmp/replacement-role.md' '${liveDir}'` },
+      },
+      {
+        toolName: "bash",
+        input: {
+          command: `python3 -c 'from pathlib import Path; p="${liveDir}/"; Path(p+"wf7-"+"fable-reviewer.md").write_text("tampered")'`,
+        },
+      },
       { toolName: "exec", input: { argv: ["rm", `$HOME/${relativeLivePath}`] } },
     ];
 

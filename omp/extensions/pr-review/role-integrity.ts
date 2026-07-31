@@ -13,6 +13,7 @@ import {
   join,
   normalize,
   resolve,
+  sep,
 } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "yaml";
@@ -572,6 +573,43 @@ const READ_ONLY_COMMANDS: Record<string, true> = {
   test: true,
   wc: true,
 };
+const TRANSPARENT_MUTATION_COMMANDS: Record<string, true> = {
+  chmod: true,
+  chgrp: true,
+  chown: true,
+  cp: true,
+  dd: true,
+  install: true,
+  ln: true,
+  mv: true,
+  patch: true,
+  rm: true,
+  rmdir: true,
+  tee: true,
+  touch: true,
+  truncate: true,
+  unlink: true,
+};
+const OPAQUE_COMMAND_WRAPPERS: Record<string, true> = {
+  bash: true,
+  bun: true,
+  dash: true,
+  env: true,
+  eval: true,
+  fish: true,
+  ksh: true,
+  lua: true,
+  node: true,
+  perl: true,
+  php: true,
+  python: true,
+  python3: true,
+  ruby: true,
+  sh: true,
+  xargs: true,
+  zsh: true,
+};
+
 const UNRESOLVED_SHELL_PATH =
   /[$`]|[<>]\(|[?*+@!]\(|(?:^|[\s"'=])~[^ \t;&|<>]*|[*?]|\[[^\]]*\]/;
 
@@ -664,11 +702,17 @@ export function createRoleMutationGuard(
   let failed = false;
   journal.prepare({ mutation_guard_active: true });
 
+  const coversProtected = (candidate: string): boolean => {
+    const prefix = candidate.endsWith(sep) ? candidate : `${candidate}${sep}`;
+    return [...protectedPaths].some((path) =>
+      path === candidate || path.startsWith(prefix)
+    );
+  };
   const targetsProtected = (paths: readonly string[], cwd: string): boolean => paths.some((path) => {
     const candidate = normalizedCandidate(path, cwd);
-    if (protectedPaths.has(candidate)) return true;
+    if (coversProtected(candidate)) return true;
     const resolved = resolvedCandidate(candidate);
-    return resolved !== undefined && protectedPaths.has(normalize(resolved));
+    return resolved !== undefined && coversProtected(normalize(resolved));
   });
 
   return {
@@ -716,10 +760,24 @@ export function createRoleMutationGuard(
             const command = basename(token).toLowerCase();
             return command === "cd" || command === "pushd";
           });
+        const opaqueMutation =
+          mutationCapable &&
+          (
+            (
+              READ_ONLY_COMMANDS[executable] !== true &&
+              TRANSPARENT_MUTATION_COMMANDS[executable] !== true
+            ) ||
+            allTokens.some((token) => {
+              const name = basename(token).toLowerCase();
+              return OPAQUE_COMMAND_WRAPPERS[name] === true ||
+                /^python\d+(?:\.\d+)*$/.test(name);
+            })
+          );
         denied =
           mutationCapable &&
           (protectedTarget ||
             compoundCwd ||
+            opaqueMutation ||
             UNRESOLVED_SHELL_PATH.test(text) ||
             structure?.noncanonicalPath === true);
       }
