@@ -1,4 +1,4 @@
-import { execFile } from "node:child_process";
+import { execFile, type ChildProcess } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -7,6 +7,9 @@ import type { PrReviewFailureCode } from "./contracts";
 export interface PrReviewExecOptions {
   cwd?: string;
   maxBufferBytes?: number;
+  signal?: AbortSignal;
+  timeoutMs?: number;
+  terminationGraceMs?: number;
 }
 
 export interface PrReviewExecResult {
@@ -18,7 +21,7 @@ export interface PrReviewExecResult {
 export type PrReviewExec = (
   argv: readonly string[],
   options?: PrReviewExecOptions,
-) => PrReviewExecResult | Promise<PrReviewExecResult>;
+) => Promise<PrReviewExecResult>;
 
 export interface GitHubActor {
   login: string;
@@ -56,11 +59,15 @@ export interface GitHubReadClientOptions {
   cwd?: string;
   maxPages?: number;
   maxDiffBytes?: number;
+  signal?: AbortSignal;
+  timeoutMs?: number;
 }
 
 export interface PrReviewPublishOptions {
   exec?: PrReviewExec;
   cwd?: string;
+  signal?: AbortSignal;
+  timeoutMs?: number;
 }
 
 export interface PublishedReview {
@@ -90,23 +97,88 @@ export class GitHubPublishError extends Error {
   }
 }
 
+export const DEFAULT_PR_REVIEW_EXEC_TIMEOUT_MS = 120_000;
+
 export function defaultPrReviewExec(
   argv: readonly string[],
   options: PrReviewExecOptions = {},
 ): Promise<PrReviewExecResult> {
+  const timeoutMs = options.timeoutMs ?? DEFAULT_PR_REVIEW_EXEC_TIMEOUT_MS;
+  const terminationGraceMs = options.terminationGraceMs ?? 250;
+  if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1) {
+    throw new RangeError("timeoutMs must be a positive integer");
+  }
+  if (!Number.isSafeInteger(terminationGraceMs) || terminationGraceMs < 0) {
+    throw new RangeError("terminationGraceMs must be a non-negative integer");
+  }
+  if (options.signal?.aborted) {
+    return Promise.resolve({
+      exitCode: 1,
+      stdout: new Uint8Array(),
+      stderr: "argv execution aborted",
+    });
+  }
+
   const { promise, resolve } = Promise.withResolvers<PrReviewExecResult>();
-  execFile(argv[0]!, argv.slice(1), {
-    cwd: options.cwd,
-    env: process.env,
-    maxBuffer: options.maxBufferBytes ?? 64 * 1024 * 1024,
-    shell: false,
-  }, (error, stdout, stderr) => {
-    resolve({
+  let completed: PrReviewExecResult | undefined;
+  let closed = false;
+  let terminationReason: "aborted" | "timed out" | undefined;
+  let timeoutTimer: NodeJS.Timeout | undefined;
+  let graceTimer: NodeJS.Timeout | undefined;
+  let child: ChildProcess | undefined;
+  const onAbort = () => terminate("aborted");
+  const cleanup = () => {
+    clearTimeout(timeoutTimer);
+    clearTimeout(graceTimer);
+    options.signal?.removeEventListener("abort", onAbort);
+  };
+  const terminate = (reason?: "aborted" | "timed out") => {
+    if (closed || !child) return;
+    if (reason && !terminationReason) terminationReason = reason;
+    child.kill("SIGTERM");
+    graceTimer ??= setTimeout(() => {
+      if (!closed) child?.kill("SIGKILL");
+    }, terminationGraceMs);
+  };
+  const finish = (
+    error: NodeJS.ErrnoException & { signal?: string } | null,
+    stdout: string | Buffer,
+    stderr: string | Buffer,
+  ) => {
+    completed = {
       exitCode: typeof error?.code === "number" ? error.code : error ? 1 : 0,
       stdout: new Uint8Array(stdout ?? []),
-      stderr: [String(stderr ?? ""), String(error?.message ?? "")].filter(Boolean).join("\n"),
+      stderr: [
+        String(stderr ?? ""),
+        String(error?.message ?? ""),
+        error?.signal ? `terminated by signal ${error.signal}` : "",
+        terminationReason ? `argv execution ${terminationReason}` : "",
+      ].filter(Boolean).join("\n"),
+    };
+    if (error && !closed) terminate();
+    if (closed && completed) resolve(completed);
+  };
+
+  try {
+    child = execFile(argv[0]!, argv.slice(1), {
+      cwd: options.cwd,
+      env: process.env,
+      maxBuffer: options.maxBufferBytes ?? 64 * 1024 * 1024,
+      shell: false,
+    }, finish);
+    child.once("close", () => {
+      closed = true;
+      cleanup();
+      if (completed) resolve(completed);
     });
-  });
+    options.signal?.addEventListener("abort", onAbort, { once: true });
+    if (options.signal?.aborted) onAbort();
+    timeoutTimer = setTimeout(() => terminate("timed out"), timeoutMs);
+  } catch (error) {
+    closed = true;
+    cleanup();
+    finish(error instanceof Error ? error : new Error("argv execution failed"), "", "");
+  }
   return promise;
 }
 
@@ -165,12 +237,16 @@ export class GitHubReadClient {
   readonly #cwd?: string;
   readonly #maxPages: number;
   readonly #maxDiffBytes: number;
+  readonly #signal?: AbortSignal;
+  readonly #timeoutMs: number;
 
   constructor(options: GitHubReadClientOptions = {}) {
     this.#exec = options.exec ?? defaultPrReviewExec;
     this.#cwd = options.cwd;
     this.#maxPages = options.maxPages ?? 100;
     this.#maxDiffBytes = options.maxDiffBytes ?? 8 * 1024 * 1024;
+    this.#signal = options.signal;
+    this.#timeoutMs = options.timeoutMs ?? DEFAULT_PR_REVIEW_EXEC_TIMEOUT_MS;
     if (!Number.isSafeInteger(this.#maxPages) || this.#maxPages < 1) {
       throw new Error("maxPages must be a positive integer");
     }
@@ -185,7 +261,7 @@ export class GitHubReadClient {
       raw = await this.#getJson("user");
     } catch (error) {
       if (error instanceof GitHubReadError) {
-        if (error.code === "rate_limited") throw error;
+        if (error.code === "rate_limited" || error.code === "task_cancelled") throw error;
         throw new GitHubReadError("auth_failed", "GitHub authentication failed");
       }
       throw error;
@@ -328,7 +404,23 @@ export class GitHubReadClient {
     maxBufferBytes = 64 * 1024 * 1024,
     overflowCode: PrReviewFailureCode = "github_api_failed",
   ): Promise<PrReviewExecResult> {
-    const result = await this.#exec(argv, { cwd: this.#cwd, maxBufferBytes });
+    let result: PrReviewExecResult;
+    try {
+      result = await this.#exec(argv, {
+        cwd: this.#cwd,
+        maxBufferBytes,
+        signal: this.#signal,
+        timeoutMs: this.#timeoutMs,
+      });
+    } catch (error) {
+      if (this.#signal?.aborted) {
+        throw new GitHubReadError("task_cancelled", "GitHub read was cancelled");
+      }
+      throw error;
+    }
+    if (this.#signal?.aborted) {
+      throw new GitHubReadError("task_cancelled", "GitHub read was cancelled");
+    }
     if (
       !result
       || !Number.isInteger(result.exitCode)
@@ -351,10 +443,14 @@ export class GitHubReadClient {
 export class PrReviewPublish {
   readonly #exec: PrReviewExec;
   readonly #cwd?: string;
+  readonly #signal?: AbortSignal;
+  readonly #timeoutMs: number;
 
   constructor(options: PrReviewPublishOptions = {}) {
     this.#exec = options.exec ?? defaultPrReviewExec;
     this.#cwd = options.cwd;
+    this.#signal = options.signal;
+    this.#timeoutMs = options.timeoutMs ?? DEFAULT_PR_REVIEW_EXEC_TIMEOUT_MS;
   }
 
   async submitGroupedReview(
@@ -363,16 +459,47 @@ export class PrReviewPublish {
     pullNumber: number,
     payload: unknown,
   ): Promise<PublishedReview> {
+    if (this.#signal?.aborted) {
+      throw new GitHubPublishError("task_cancelled", "GitHub publication was cancelled before POST");
+    }
     return withPrivateJsonFile(payload, async (path) => {
-      const result = await this.#exec([
-        "gh",
-        "api",
-        "--method",
-        "POST",
-        `repos/${owner}/${repo}/pulls/${pullNumber}/reviews`,
-        "--input",
-        path,
-      ], { cwd: this.#cwd, maxBufferBytes: 64 * 1024 * 1024 });
+      if (this.#signal?.aborted) {
+        throw new GitHubPublishError("task_cancelled", "GitHub publication was cancelled before POST");
+      }
+      let result: PrReviewExecResult;
+      try {
+        result = await this.#exec([
+          "gh",
+          "api",
+          "--method",
+          "POST",
+          `repos/${owner}/${repo}/pulls/${pullNumber}/reviews`,
+          "--input",
+          path,
+        ], {
+          cwd: this.#cwd,
+          maxBufferBytes: 64 * 1024 * 1024,
+          signal: this.#signal,
+          timeoutMs: this.#timeoutMs,
+        });
+      } catch (error) {
+        throw new GitHubPublishError(
+          "publication_indeterminate",
+          this.#signal?.aborted
+            ? "GitHub publication was cancelled after POST may have started"
+            : error instanceof Error
+            ? error.message
+            : "GitHub publish executor failed",
+          true,
+        );
+      }
+      if (this.#signal?.aborted) {
+        throw new GitHubPublishError(
+          "publication_indeterminate",
+          "GitHub publication was cancelled after POST may have started",
+          true,
+        );
+      }
       if (
         !result
         || !Number.isInteger(result.exitCode)

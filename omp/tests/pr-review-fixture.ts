@@ -117,10 +117,11 @@ export class FakeExtensionApi implements PrReviewExtensionApi {
     name: string,
     input: Record<string, unknown>,
     toolCallId = `${name}-call`,
+    signal?: AbortSignal,
   ): Promise<T> {
     const tool = this.tools.get(name);
     if (!tool) throw new Error(`missing tool ${name}`);
-    const result = await tool.execute(toolCallId, input, undefined, undefined, {
+    const result = await tool.execute(toolCallId, input, signal, undefined, {
       cwd: process.cwd(),
     });
     if (

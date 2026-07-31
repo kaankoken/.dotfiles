@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test } from "bun:test";
 import { createHash } from "node:crypto";
+import { once } from "node:events";
 import {
   existsSync,
   mkdtempSync,
@@ -7,6 +8,7 @@ import {
   readdirSync,
   rmSync,
   statSync,
+  watch,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -261,6 +263,66 @@ describe("default PR review executor", () => {
     expect(result.stderr).toMatch(/maxBuffer|stdout.*exceeded/i);
     expect(result.stderr).toContain("warning");
   });
+
+  test("forces an abort-resistant argv child closed without a survivor", async () => {
+    const root = tempRoot("wf7-exec-abort-");
+    const pidPath = join(root, "pid");
+    const termPath = join(root, "sigterm");
+    const escapedPath = join(root, "escaped");
+    const watcher = watch(root);
+    const ready = once(watcher, "change");
+    const controller = new AbortController();
+    // Platform integration: child timer is a RED escape hatch for broken forced termination.
+    const pending = defaultPrReviewExec([
+      process.execPath,
+      "-e",
+      "const fs=require('node:fs');fs.writeFileSync(process.argv[1],String(process.pid));process.on('SIGTERM',()=>fs.writeFileSync(process.argv[2],'SIGTERM'));setTimeout(()=>fs.writeFileSync(process.argv[3],'escaped'),500)",
+      pidPath,
+      termPath,
+      escapedPath,
+    ], { signal: controller.signal, terminationGraceMs: 10 });
+    await ready;
+    watcher.close();
+
+    controller.abort();
+    const result = await pending;
+    const pid = Number(readFileSync(pidPath, "utf8"));
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toMatch(/abort/i);
+    expect(readFileSync(termPath, "utf8")).toBe("SIGTERM");
+    expect(existsSync(escapedPath)).toBe(false);
+    expect(() => process.kill(pid, 0)).toThrow();
+  });
+
+  test("forces a timeout-resistant argv child closed without a survivor", async () => {
+    const root = tempRoot("wf7-exec-timeout-");
+    const pidPath = join(root, "pid");
+    const termPath = join(root, "sigterm");
+    const escapedPath = join(root, "escaped");
+    const watcher = watch(root);
+    const ready = once(watcher, "change");
+    // Platform integration: child timer is a RED escape hatch for broken forced termination.
+    const pending = defaultPrReviewExec([
+      process.execPath,
+      "-e",
+      "const fs=require('node:fs');fs.writeFileSync(process.argv[1],String(process.pid));process.on('SIGTERM',()=>fs.writeFileSync(process.argv[2],'SIGTERM'));setTimeout(()=>fs.writeFileSync(process.argv[3],'escaped'),500)",
+      pidPath,
+      termPath,
+      escapedPath,
+    ], { timeoutMs: 25, terminationGraceMs: 10 });
+    await ready;
+    watcher.close();
+
+    const result = await pending;
+    const pid = Number(readFileSync(pidPath, "utf8"));
+
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr).toMatch(/timed out/i);
+    expect(readFileSync(termPath, "utf8")).toBe("SIGTERM");
+    expect(existsSync(escapedPath)).toBe(false);
+    expect(() => process.kill(pid, 0)).toThrow();
+  });
 });
 
 describe("read-only GitHub snapshot tool", () => {
@@ -323,6 +385,88 @@ describe("read-only GitHub snapshot tool", () => {
         diff_digest: digest(diff),
       }),
     ]);
+  });
+
+  test("aborts an in-flight snapshot GET with a typed receipt and no live state", async () => {
+    const files = fixtureFiles(3);
+    const github = fakeGithub(files, fixtureDiff(files));
+    const originalExec = github.exec;
+    const observedOptions: PrReviewExecOptions[] = [];
+    const started = Promise.withResolvers<void>();
+    let blocked = false;
+    github.exec = async (argv, options = {}) => {
+      observedOptions.push(options);
+      if (!blocked && argv.at(-1) === "repos/octo/repo/pulls/7") {
+        blocked = true;
+        started.resolve();
+        if (!options.signal) {
+          return { exitCode: 1, stdout: "", stderr: "missing AbortSignal" };
+        }
+        await new Promise<void>((resolve) => {
+          options.signal!.addEventListener("abort", () => resolve(), { once: true });
+        });
+        return {
+          exitCode: 1,
+          stdout: "",
+          stderr: "operation aborted token=github_pat_ABORTSECRET",
+        };
+      }
+      return originalExec(argv, options);
+    };
+    const fixture = toolFixture(github);
+    const controller = new AbortController();
+    const pending = fixture.tool.execute(
+      { action: "create", target: "octo/repo#7", dry_run: false },
+      "cancelled-create",
+      controller.signal,
+    );
+    await started.promise;
+
+    controller.abort();
+    await expectFailure(pending, "task_cancelled");
+
+    expect(observedOptions.every((options) => options.signal === controller.signal)).toBe(true);
+    expect(observedOptions.every((options) =>
+      Number.isSafeInteger(options.timeoutMs) && Number(options.timeoutMs) > 0
+    )).toBe(true);
+    expect(github.calls.some((argv) => argv.includes("POST"))).toBe(false);
+    expect(readdirSync(join(fixture.root, "state"))).toEqual([]);
+    expect(receipts(fixture.receiptRootDir)).toEqual([
+      expect.objectContaining({
+        status: "failed",
+        failure_code: "task_cancelled",
+        mutation_guard_active: false,
+      }),
+    ]);
+    expect(JSON.stringify(receipts(fixture.receiptRootDir))).not.toContain("ABORTSECRET");
+  });
+
+  test("aborted snapshot reads revoke handles instead of returning bytes", async () => {
+    const files = fixtureFiles(3);
+    const fixture = toolFixture(fakeGithub(files, fixtureDiff(files)));
+    const created = await fixture.tool.execute({
+      action: "create",
+      target: "octo/repo#7",
+      dry_run: true,
+    });
+    const controller = new AbortController();
+    controller.abort();
+
+    await expectFailure(fixture.tool.execute({
+      action: "read",
+      snapshot_handle: created.snapshot_handle,
+      offset: 0,
+      length: 8,
+    }, "cancelled-read", controller.signal), "task_cancelled");
+
+    expect(() => fixture.state.lookupSnapshot(created.snapshot_handle)).toThrow(
+      "unknown snapshot handle",
+    );
+    expect(receipts(fixture.receiptRootDir)[0]).toMatchObject({
+      status: "failed",
+      failure_code: "task_cancelled",
+      mutation_guard_active: false,
+    });
   });
 
   test("idempotent cleanup revokes handles and removes the private diff", async () => {

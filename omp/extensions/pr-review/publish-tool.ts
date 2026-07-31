@@ -12,6 +12,7 @@ import {
   GitHubReadClient,
   GitHubReadError,
   PrReviewPublish,
+  DEFAULT_PR_REVIEW_EXEC_TIMEOUT_MS,
   defaultPrReviewExec,
   type PrReviewExec,
   type PublishedReview,
@@ -49,7 +50,10 @@ export interface PrReviewPublishTool {
   readonly name: "pr_review_publish";
   readonly description: string;
   readonly parameters: typeof PR_REVIEW_PUBLISH_PARAMETERS_SCHEMA;
-  execute(input: PrReviewPublishInput): Promise<PrReviewPublishResult>;
+  execute(
+    input: PrReviewPublishInput,
+    signal?: AbortSignal,
+  ): Promise<PrReviewPublishResult>;
 }
 
 export interface PrReviewPublishToolOptions {
@@ -172,6 +176,8 @@ function normalized(error: unknown, fallback: PrReviewFailureCode): PrReviewPubl
   );
 }
 
+const RECONCILIATION_TIMEOUT_MS = 30_000;
+
 class PublishTool implements PrReviewPublishTool {
   readonly name = "pr_review_publish" as const;
   readonly description = "Publish one validated, deduplicated grouped GitHub pull-request review.";
@@ -195,7 +201,10 @@ class PublishTool implements PrReviewPublishTool {
       checkAllRoleFilesAtPublish(manifest, previous));
   }
 
-  async execute(input: PrReviewPublishInput): Promise<PrReviewPublishResult> {
+  async execute(
+    input: PrReviewPublishInput,
+    signal?: AbortSignal,
+  ): Promise<PrReviewPublishResult> {
     if (
       !input
       || typeof input !== "object"
@@ -234,7 +243,7 @@ class PublishTool implements PrReviewPublishTool {
     this.#locks.set(lockKey, tail);
     await prior;
     try {
-      return await this.#executeLocked(input, capture, journal);
+      return await this.#executeLocked(input, capture, journal, signal);
     } finally {
       release();
       if (this.#locks.get(lockKey) === tail) {
@@ -247,8 +256,12 @@ class PublishTool implements PrReviewPublishTool {
     input: PrReviewPublishInput,
     capture: Readonly<CompletedCapture>,
     journal: ReceiptJournal,
+    signal?: AbortSignal,
   ): Promise<PrReviewPublishResult> {
     try {
+      if (signal?.aborted) {
+        throw new PrReviewPublishError("task_cancelled", "PR review publication was cancelled before POST");
+      }
       const plan = buildReviewPlanFromCapture(capture);
       const currentReceipt = journal.currentReceipt;
       if (
@@ -289,7 +302,12 @@ class PublishTool implements PrReviewPublishTool {
         ))
       ) throw new PrReviewPublishError("role_integrity_drift", "WF7 role integrity recheck was incomplete");
 
-      const github = new GitHubReadClient({ exec: this.#exec, cwd: this.#cwd });
+      const github = new GitHubReadClient({
+        exec: this.#exec,
+        cwd: this.#cwd,
+        signal,
+        timeoutMs: DEFAULT_PR_REVIEW_EXEC_TIMEOUT_MS,
+      });
       const actor = await github.readActor();
       const repository = await github.readRepository(
         capture.snapshot.owner,
@@ -328,13 +346,15 @@ class PublishTool implements PrReviewPublishTool {
         throw new PrReviewPublishError("permission_denied", `authenticated actor lacks permission for ${plan.event}`);
       }
 
-      const findExisting = async (): Promise<ExistingReview | "conflict" | undefined> => {
-        const reviews = await github.readReviews(
+      const findExisting = async (
+        client: GitHubReadClient = github,
+      ): Promise<ExistingReview | "conflict" | undefined> => {
+        const reviews = await client.readReviews(
           capture.snapshot.owner,
           capture.snapshot.repo,
           capture.snapshot.pullNumber,
         );
-        const comments = await github.readReviewComments(
+        const comments = await client.readReviewComments(
           capture.snapshot.owner,
           capture.snapshot.repo,
           capture.snapshot.pullNumber,
@@ -436,11 +456,19 @@ class PublishTool implements PrReviewPublishTool {
       if (journal.currentReceipt.status !== "prepared") {
         throw new PrReviewPublishError("same_head_conflict", "terminal receipt cannot authorize another publication");
       }
+      if (signal?.aborted) {
+        throw new PrReviewPublishError("task_cancelled", "PR review publication was cancelled before POST");
+      }
 
       let response: PublishedReview | undefined;
       let publishFailure: PrReviewPublishError | undefined;
       try {
-        response = await new PrReviewPublish({ exec: this.#exec, cwd: this.#cwd })
+        response = await new PrReviewPublish({
+          exec: this.#exec,
+          cwd: this.#cwd,
+          signal,
+          timeoutMs: DEFAULT_PR_REVIEW_EXEC_TIMEOUT_MS,
+        })
           .submitGroupedReview(
             capture.snapshot.owner,
             capture.snapshot.repo,
@@ -451,6 +479,7 @@ class PublishTool implements PrReviewPublishTool {
         publishFailure = normalized(error, "publication_indeterminate");
       }
 
+      let postPublishGithub = github;
       let published: ExistingReview;
       if (response && response.inlineCommentIds.length === plan.payload.comments.length) {
         published = Object.freeze({
@@ -458,9 +487,17 @@ class PublishTool implements PrReviewPublishTool {
           inlineCommentIds: response.inlineCommentIds,
         });
       } else {
+        const reconciliationSignal = AbortSignal.timeout(RECONCILIATION_TIMEOUT_MS);
+        const reconciliationGithub = new GitHubReadClient({
+          exec: this.#exec,
+          cwd: this.#cwd,
+          signal: reconciliationSignal,
+          timeoutMs: RECONCILIATION_TIMEOUT_MS,
+        });
+        postPublishGithub = reconciliationGithub;
         let recovered: ExistingReview | "conflict" | undefined;
         try {
-          recovered = await findExisting();
+          recovered = await findExisting(reconciliationGithub);
         } catch {
           recovered = undefined;
         }
@@ -499,7 +536,7 @@ class PublishTool implements PrReviewPublishTool {
       } as const;
       let postHeadSha: string;
       try {
-        postHeadSha = (await github.readPull(
+        postHeadSha = (await postPublishGithub.readPull(
           capture.snapshot.owner,
           capture.snapshot.repo,
           capture.snapshot.pullNumber,

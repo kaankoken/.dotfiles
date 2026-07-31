@@ -15,6 +15,7 @@ import {
   GitHubReadClient,
   GitHubReadError,
   defaultPrReviewExec,
+  DEFAULT_PR_REVIEW_EXEC_TIMEOUT_MS,
   type GitHubChangedFile,
   type PrReviewExec,
 } from "./github";
@@ -100,9 +101,21 @@ export interface PrReviewSnapshotTool {
   readonly name: "pr_review_snapshot";
   readonly description: string;
   readonly parameters: typeof PR_REVIEW_SNAPSHOT_PARAMETERS_SCHEMA;
-  execute(input: SnapshotCreateInput, invocationId?: string): Promise<SnapshotCreateResult>;
-  execute(input: SnapshotReadInput, invocationId?: string): Promise<SnapshotReadResult>;
-  execute(input: SnapshotStatusInput, invocationId?: string): Promise<SnapshotStatusResult>;
+  execute(
+    input: SnapshotCreateInput,
+    invocationId?: string,
+    signal?: AbortSignal,
+  ): Promise<SnapshotCreateResult>;
+  execute(
+    input: SnapshotReadInput,
+    invocationId?: string,
+    signal?: AbortSignal,
+  ): Promise<SnapshotReadResult>;
+  execute(
+    input: SnapshotStatusInput,
+    invocationId?: string,
+    signal?: AbortSignal,
+  ): Promise<SnapshotStatusResult>;
   cleanup(runHandle: string): void;
   cancelCreate(
     invocationId: string,
@@ -276,12 +289,25 @@ class SnapshotTool implements PrReviewSnapshotTool {
     }
   }
 
-  execute(input: SnapshotCreateInput, invocationId?: string): Promise<SnapshotCreateResult>;
-  execute(input: SnapshotReadInput, invocationId?: string): Promise<SnapshotReadResult>;
-  execute(input: SnapshotStatusInput, invocationId?: string): Promise<SnapshotStatusResult>;
+  execute(
+    input: SnapshotCreateInput,
+    invocationId?: string,
+    signal?: AbortSignal,
+  ): Promise<SnapshotCreateResult>;
+  execute(
+    input: SnapshotReadInput,
+    invocationId?: string,
+    signal?: AbortSignal,
+  ): Promise<SnapshotReadResult>;
+  execute(
+    input: SnapshotStatusInput,
+    invocationId?: string,
+    signal?: AbortSignal,
+  ): Promise<SnapshotStatusResult>;
   async execute(
     input: SnapshotCreateInput | SnapshotReadInput | SnapshotStatusInput,
     invocationId?: string,
+    signal?: AbortSignal,
   ): Promise<SnapshotCreateResult | SnapshotReadResult | SnapshotStatusResult> {
     if (!input || typeof input !== "object") {
       throw new PrReviewSnapshotError("invalid_arguments", "snapshot input must be an object");
@@ -298,14 +324,14 @@ class SnapshotTool implements PrReviewSnapshotTool {
         this.#pendingCreates.set(invocationId, pending!);
       }
       try {
-        return await this.#create(input, invocationId, pending);
+        return await this.#create(input, invocationId, pending, signal);
       } catch (error) {
         if (invocationId) this.#pendingCreates.delete(invocationId);
         throw error;
       }
     }
-    if (input.action === "read") return this.#read(input);
-    if (input.action === "status") return this.#status(input);
+    if (input.action === "read") return this.#read(input, signal);
+    if (input.action === "status") return this.#status(input, signal);
     throw new PrReviewSnapshotError("invalid_arguments", "snapshot action must be create, read, or status");
   }
 
@@ -361,6 +387,7 @@ class SnapshotTool implements PrReviewSnapshotTool {
     input: SnapshotCreateInput,
     invocationId?: string,
     pending?: PendingSnapshotCreate,
+    signal?: AbortSignal,
   ): Promise<SnapshotCreateResult> {
     const raw = exactObject(input, "create", ["action", "target", "dry_run"]);
     if (typeof raw.target !== "string" || raw.target.length < 1 || raw.target.length > 512 || typeof raw.dry_run !== "boolean") {
@@ -378,8 +405,15 @@ class SnapshotTool implements PrReviewSnapshotTool {
       try {
         const remoteResult = await this.#exec(
           ["git", "remote", "get-url", "origin"],
-          { cwd: this.#cwd },
+          {
+            cwd: this.#cwd,
+            signal,
+            timeoutMs: DEFAULT_PR_REVIEW_EXEC_TIMEOUT_MS,
+          },
         );
+        if (signal?.aborted) {
+          throw new PrReviewSnapshotError("task_cancelled", "snapshot creation was cancelled");
+        }
         if (remoteResult.exitCode !== 0) throw new Error("origin remote is unavailable");
         const remoteText = typeof remoteResult.stdout === "string"
           ? remoteResult.stdout
@@ -395,7 +429,9 @@ class SnapshotTool implements PrReviewSnapshotTool {
           roleManifestDigest: "0".repeat(64),
           now: this.#now,
         });
-        const failure = normalizedFailure(error, "target_resolution_failed");
+        const failure = signal?.aborted
+          ? new PrReviewSnapshotError("task_cancelled", "snapshot creation was cancelled")
+          : normalizedFailure(error, "target_resolution_failed");
         journal.fail(failure.code, failure.message);
         throw failure;
       }
@@ -460,6 +496,8 @@ class SnapshotTool implements PrReviewSnapshotTool {
         exec: this.#exec,
         cwd: this.#cwd,
         maxDiffBytes: this.#maxDiffBytes,
+        signal,
+        timeoutMs: DEFAULT_PR_REVIEW_EXEC_TIMEOUT_MS,
       });
       const actor = await github.readActor();
       this.#assertCreateActive(pending);
@@ -624,7 +662,10 @@ class SnapshotTool implements PrReviewSnapshotTool {
     this.cleanup(context.runHandle);
   }
 
-  async #read(input: SnapshotReadInput): Promise<SnapshotReadResult> {
+  async #read(
+    input: SnapshotReadInput,
+    signal?: AbortSignal,
+  ): Promise<SnapshotReadResult> {
     const raw = exactObject(input, "read", ["action", "snapshot_handle", "offset", "length"]);
     const snapshotHandle = safeHandle(raw.snapshot_handle, "snapshot handle");
     if (
@@ -638,6 +679,9 @@ class SnapshotTool implements PrReviewSnapshotTool {
     }
     const context = this.#bySnapshot.get(snapshotHandle);
     try {
+      if (signal?.aborted) {
+        throw new PrReviewSnapshotError("task_cancelled", "snapshot read was cancelled");
+      }
       const offset = Number(raw.offset);
       const requestedEnd = Math.min(offset + Number(raw.length), context?.diffSize ?? Number.MAX_SAFE_INTEGER);
       if (context && offset < context.diffSize) {
@@ -685,10 +729,16 @@ class SnapshotTool implements PrReviewSnapshotTool {
     }
   }
 
-  async #status(input: SnapshotStatusInput): Promise<SnapshotStatusResult> {
+  async #status(
+    input: SnapshotStatusInput,
+    signal?: AbortSignal,
+  ): Promise<SnapshotStatusResult> {
     const raw = exactObject(input, "status", ["action", "run_handle"]);
     const runHandle = safeHandle(raw.run_handle, "run handle");
     try {
+      if (signal?.aborted) {
+        throw new PrReviewSnapshotError("task_cancelled", "snapshot status was cancelled");
+      }
       const status = this.#state.getRunStatus(runHandle);
       if (status.stage === "captured" && status.captureHandle) {
         return Object.freeze({ status: "completed", capture_handle: status.captureHandle });

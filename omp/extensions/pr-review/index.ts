@@ -371,9 +371,13 @@ export function createPrReviewExtension(
       parameters: snapshot.parameters,
       approval: "read",
       strict: true,
-      async execute(toolCallId, input) {
+      async execute(toolCallId, input, signal) {
         if (!isSnapshotInput(input)) {
-          const rejected = await snapshot.execute(input as SnapshotCreateInput, toolCallId);
+          const rejected = await snapshot.execute(
+            input as SnapshotCreateInput,
+            toolCallId,
+            signal,
+          );
           return agentToolResult(rejected);
         }
         if (input.action === "create") pendingSnapshotCalls.add(toolCallId);
@@ -384,7 +388,7 @@ export function createPrReviewExtension(
           : undefined;
         let createdRunHandle: string | undefined;
         try {
-          const result = await snapshot.execute(input, toolCallId);
+          const result = await snapshot.execute(input, toolCallId, signal);
           if (input.action === "create" && result.status === "created") {
             createdRunHandle = result.run_handle;
             const journal = journalBySnapshotCall.get(toolCallId);
@@ -475,7 +479,7 @@ export function createPrReviewExtension(
       parameters: publisher.parameters,
       approval: "exec",
       strict: true,
-      async execute(_toolCallId, input) {
+      async execute(_toolCallId, input, signal) {
         const coordinator = isPublishInput(input)
           ? coordinatorByCapture.get(input.capture_handle)
           : undefined;
@@ -484,8 +488,8 @@ export function createPrReviewExtension(
           : undefined;
         try {
           const result = !isPublishInput(input)
-            ? await publisher.execute(input as PrReviewPublishInput)
-            : await publisher.execute(input);
+            ? await publisher.execute(input as PrReviewPublishInput, signal)
+            : await publisher.execute(input, signal);
           return agentToolResult(result);
         } finally {
           if (

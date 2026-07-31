@@ -22,7 +22,11 @@ import {
   type SealedTaskResult,
   type Wf7TaskSlot,
 } from "../extensions/pr-review/contracts";
-import type { PrReviewExec, PrReviewExecResult } from "../extensions/pr-review/github";
+import type {
+  PrReviewExec,
+  PrReviewExecOptions,
+  PrReviewExecResult,
+} from "../extensions/pr-review/github";
 import { buildReviewPlanFromCapture, type ReviewPlan } from "../extensions/pr-review/publisher";
 import {
   createPrReviewPublishTool,
@@ -317,6 +321,7 @@ type FakeOptions = {
   actor?: string;
   author?: string;
   permissions?: Record<string, boolean>;
+  actorWait?: (signal?: AbortSignal) => Promise<void>;
   state?: string;
   merged?: boolean;
   pullHeads?: string[];
@@ -324,12 +329,13 @@ type FakeOptions = {
   commentPages?: (call: number, page: number) => unknown[];
   postResult?: PrReviewExecResult;
   postStarted?: () => void;
-  postWait?: Promise<void>;
+  postWait?: Promise<void> | ((signal?: AbortSignal) => Promise<void>);
   postPullResult?: PrReviewExecResult;
 };
 
 interface FakeGitHub {
   calls: string[][];
+  options: PrReviewExecOptions[];
   exec: PrReviewExec;
   inputPaths: string[];
   payloads: unknown[];
@@ -361,7 +367,9 @@ function fakeGitHub(options: FakeOptions = {}): FakeGitHub {
   let pullCall = 0;
   let reviewCall = 0;
   let commentCall = 0;
-  const exec: PrReviewExec = async (argv) => {
+  const execOptions: PrReviewExecOptions[] = [];
+  const exec: PrReviewExec = async (argv, callOptions = {}) => {
+    execOptions.push(callOptions);
     const args = [...argv];
     calls.push(args);
     const methodIndex = args.indexOf("--method");
@@ -374,7 +382,9 @@ function fakeGitHub(options: FakeOptions = {}): FakeGitHub {
       const payload = JSON.parse(readFileSync(path, "utf8")) as { comments?: unknown[] };
       payloads.push(payload);
       options.postStarted?.();
-      await options.postWait;
+      await (typeof options.postWait === "function"
+        ? options.postWait(callOptions.signal)
+        : options.postWait);
       return options.postResult ?? {
         exitCode: 0,
         stdout: JSON.stringify({
@@ -385,6 +395,7 @@ function fakeGitHub(options: FakeOptions = {}): FakeGitHub {
       };
     }
     if (endpoint === "user") {
+      await options.actorWait?.(callOptions.signal);
       return { exitCode: 0, stdout: JSON.stringify({ login: options.actor ?? "bot", id: 1 }), stderr: "" };
     }
     if (endpoint === "repos/acme/widgets") {
@@ -431,7 +442,7 @@ function fakeGitHub(options: FakeOptions = {}): FakeGitHub {
     }
     throw new Error(`unexpected fake GitHub argv: ${args.join(" ")}`);
   };
-  return { calls, exec, inputPaths, payloads };
+  return { calls, options: execOptions, exec, inputPaths, payloads };
 }
 
 function toolForCaptures(
@@ -498,6 +509,41 @@ describe("pr_review_publish", () => {
     expect(result).toMatchObject({ status: "dry_run", event: "COMMENT", comment_count: 1 });
     expect(fake.calls.filter((argv) => argv.includes("POST"))).toHaveLength(0);
     expect(receipt(journal)).toMatchObject({ status: "dry_run", event: "COMMENT" });
+  });
+
+  test("cancels preflight before POST with a terminal task_cancelled receipt", async () => {
+    const source = capture();
+    const journal = journalFor(source);
+    const started = Promise.withResolvers<void>();
+    const fake = fakeGitHub({
+      actorWait: async (signal) => {
+        started.resolve();
+        if (!signal?.aborted) {
+          await new Promise<void>((resolve) => {
+            signal?.addEventListener("abort", () => resolve(), { once: true });
+            if (!signal) resolve();
+          });
+        }
+      },
+    });
+    const controller = new AbortController();
+    const pending = toolFor(source, journal, fake).execute(
+      { capture_handle: CAPTURE_HANDLE, dry_run: false },
+      controller.signal,
+    );
+    await started.promise;
+
+    controller.abort("token=github_pat_CANCELSECRET");
+    await expect(pending).rejects.toMatchObject({ code: "task_cancelled" });
+
+    expect(fake.calls.filter((argv) => argv.includes("POST"))).toHaveLength(0);
+    expect(fake.options[0]?.signal).toBe(controller.signal);
+    expect(receipt(journal)).toMatchObject({
+      status: "failed",
+      failure_code: "task_cancelled",
+      mutation_guard_active: false,
+    });
+    expect(JSON.stringify(receipt(journal))).not.toContain("CANCELSECRET");
   });
 
   for (const event of ["COMMENT", "REQUEST_CHANGES", "APPROVE"] as const) {
@@ -802,6 +848,133 @@ describe("pr_review_publish", () => {
     expect(fake.calls.filter((argv) => argv.some((arg) => arg.includes("/reviews?per_page=100&page=1")))).toHaveLength(2);
     expect(fake.calls.filter((argv) => argv.some((arg) => arg.includes("/comments?per_page=100&page=1")))).toHaveLength(2);
     expect(receipt(journal)).toMatchObject({ status: "published", github_review_id: 800 });
+  });
+
+  for (const markerVisible of [true, false]) {
+    test(`aborted POST performs one fresh bounded marker reconciliation (${markerVisible ? "recovered" : "indeterminate"})`, async () => {
+      const source = capture();
+      const plan = buildReviewPlanFromCapture(source);
+      const remote = remoteFor(plan, 850);
+      const journal = journalFor(source);
+      const postStarted = Promise.withResolvers<void>();
+      const fake = fakeGitHub({
+        postStarted: () => postStarted.resolve(),
+        postWait: async (signal) => {
+          if (!signal?.aborted) {
+            await new Promise<void>((resolve) => {
+              signal?.addEventListener("abort", () => resolve(), { once: true });
+              if (!signal) resolve();
+            });
+          }
+        },
+        postResult: {
+          exitCode: 1,
+          stdout: "",
+          stderr: "operation aborted token=github_pat_POSTSECRET",
+        },
+        reviewPages: (call) => call === 1 || !markerVisible ? [] : [remote.review],
+        commentPages: (call) => call === 1 || !markerVisible ? [] : remote.comments,
+      });
+      const controller = new AbortController();
+      const pending = toolFor(source, journal, fake).execute(
+        { capture_handle: CAPTURE_HANDLE, dry_run: false },
+        controller.signal,
+      );
+      await postStarted.promise;
+
+      controller.abort();
+      if (markerVisible) {
+        await expect(pending).resolves.toMatchObject({
+          status: "published",
+          github_review_id: 850,
+          github_inline_comment_ids: [851],
+        });
+      } else {
+        await expect(pending).rejects.toMatchObject({
+          code: "publication_indeterminate",
+        });
+      }
+
+      const postIndex = fake.calls.findIndex((argv) => argv.includes("POST"));
+      expect(postIndex).toBeGreaterThan(-1);
+      expect(fake.options[postIndex]?.signal).toBe(controller.signal);
+      const reconciliationIndexes = fake.calls.flatMap((argv, index) =>
+        argv.some((arg) =>
+            arg.includes("/reviews?per_page=100&page=1")
+            || arg.includes("/comments?per_page=100&page=1")
+          )
+          ? [index]
+          : []
+      ).slice(2);
+      expect(reconciliationIndexes).toHaveLength(2);
+      for (const index of reconciliationIndexes) {
+        expect(fake.options[index]?.signal).not.toBe(controller.signal);
+        expect(fake.options[index]?.signal?.aborted).toBe(false);
+        expect(Number(fake.options[index]?.timeoutMs)).toBeGreaterThan(0);
+      }
+      expect(fake.calls.filter((argv) => argv.includes("POST"))).toHaveLength(1);
+      expect(receipt(journal)).toMatchObject(markerVisible
+        ? {
+          status: "published",
+          github_review_id: 850,
+          github_inline_comment_ids: [851],
+        }
+        : {
+          status: "indeterminate",
+          failure_code: "publication_indeterminate",
+          github_inline_comment_markers: plan.findings.map((finding) => finding.marker),
+        });
+      expect(JSON.stringify(receipt(journal))).not.toContain("POSTSECRET");
+    });
+  }
+
+  test("caller abort during fresh marker lookup cannot cancel recovered post-head verification", async () => {
+    const source = capture();
+    const plan = buildReviewPlanFromCapture(source);
+    const remote = remoteFor(plan, 875);
+    const journal = journalFor(source);
+    const fake = fakeGitHub({
+      postResult: { exitCode: 1, stdout: "", stderr: "request timed out" },
+      reviewPages: (call) => call === 1 ? [] : [remote.review],
+      commentPages: (call) => call === 1 ? [] : remote.comments,
+    });
+    const controller = new AbortController();
+    const originalExec = fake.exec;
+    let reviewReads = 0;
+    fake.exec = async (argv, options) => {
+      if (argv.some((arg) => arg.includes("/reviews?per_page=100&page=1"))) {
+        reviewReads += 1;
+        if (reviewReads === 2) controller.abort();
+      }
+      return originalExec(argv, options);
+    };
+
+    const result = await toolFor(source, journal, fake).execute(
+      { capture_handle: CAPTURE_HANDLE, dry_run: false },
+      controller.signal,
+    );
+
+    const recoveryReviewIndex = fake.calls.findLastIndex((argv) =>
+      argv.some((arg) => arg.includes("/reviews?per_page=100&page=1"))
+    );
+    const postHeadIndex = fake.calls.findLastIndex((argv) =>
+      argv.at(-1) === "repos/acme/widgets/pulls/42"
+    );
+    expect(result).toMatchObject({
+      status: "published",
+      github_review_id: 875,
+      github_inline_comment_ids: [876],
+    });
+    expect(controller.signal.aborted).toBe(true);
+    expect(fake.options[recoveryReviewIndex]?.signal).not.toBe(controller.signal);
+    expect(fake.options[postHeadIndex]?.signal).toBe(
+      fake.options[recoveryReviewIndex]?.signal,
+    );
+    expect(receipt(journal)).toMatchObject({
+      status: "published",
+      github_review_id: 875,
+      github_inline_comment_ids: [876],
+    });
   });
 
   test("default role recheck is read-only on an identical rerun with a terminal published receipt", async () => {

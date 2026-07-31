@@ -57,6 +57,7 @@ interface DualRunFixture {
   guardRoutes: string[];
   alphaAtRepository: Promise<void>;
   releaseAlpha: () => void;
+  signals: Array<AbortSignal | undefined>;
 }
 
 function receiptFiles(root: string): Array<Record<string, unknown>> {
@@ -114,7 +115,9 @@ async function dualRunFixture(): Promise<DualRunFixture> {
     releaseAlpha = resolve;
   });
   let delayedAlpha = false;
-  const exec: PrReviewExec = async (argv) => {
+  const signals: Array<AbortSignal | undefined> = [];
+  const exec: PrReviewExec = async (argv, callOptions = {}) => {
+    signals.push(callOptions.signal);
     const call = [...argv];
     const endpoint = call.find((argument) => argument.startsWith("repos/")) ?? call.at(-1)!;
     if (endpoint === "user") return execOk({ login: "reviewer", id: 1 });
@@ -123,7 +126,15 @@ async function dualRunFixture(): Promise<DualRunFixture> {
         if (repo === "alpha" && !delayedAlpha) {
           delayedAlpha = true;
           alphaReached();
-          await alphaRelease;
+          await Promise.race([
+            alphaRelease,
+            new Promise<void>((resolve) => {
+              callOptions.signal?.addEventListener("abort", () => resolve(), { once: true });
+            }),
+          ]);
+          if (callOptions.signal?.aborted) {
+            return { exitCode: 1, stdout: "", stderr: "operation aborted" };
+          }
         }
         return execOk({
           id: target.pull,
@@ -222,6 +233,7 @@ async function dualRunFixture(): Promise<DualRunFixture> {
     guardRoutes,
     alphaAtRepository,
     releaseAlpha,
+    signals,
   };
 }
 
@@ -347,6 +359,70 @@ describe("production PR-review extension", () => {
     expect(run.api.hooks.get("tool_call")).toHaveLength(1);
     expect(run.api.hooks.get("tool_result")).toHaveLength(1);
     expect(run.api.hooks.get("session_shutdown")).toHaveLength(1);
+  });
+
+  test("registered snapshot cancellation reaches argv execution and tears down state", async () => {
+    const fixture = await dualRunFixture();
+    const controller = new AbortController();
+    const pending = fixture.api.executeTool<PublicSnapshotCreate>(
+      "pr_review_snapshot",
+      { action: "create", target: "owner/alpha#1", dry_run: true },
+      "cancel-alpha",
+      controller.signal,
+    ).then(
+      (value) => ({ value }),
+      (error: unknown) => ({ error }),
+    );
+    await fixture.alphaAtRepository;
+
+    controller.abort("token=github_pat_REGISTEREDSECRET");
+    fixture.releaseAlpha();
+    const outcome = await pending;
+
+    if (!("error" in outcome)) throw new Error("cancelled snapshot unexpectedly completed");
+    expect(outcome.error).toMatchObject({ code: "task_cancelled" });
+    expect(fixture.signals.length).toBeGreaterThan(0);
+    expect(fixture.signals.every((signal) => signal === controller.signal)).toBe(true);
+    expect(readdirSync(fixture.stateRoot)).toEqual([]);
+    const stored = receiptFiles(fixture.receiptRoot).find((receipt) =>
+      receipt.repo === "alpha"
+    );
+    expect(stored).toMatchObject({
+      status: "failed",
+      failure_code: "task_cancelled",
+      mutation_guard_active: false,
+    });
+    expect(JSON.stringify(stored)).not.toContain("REGISTEREDSECRET");
+  });
+
+  test("registered publish forwards its signal through every preflight child", async () => {
+    const fixture = await dualRunFixture();
+    const created = await fixture.api.executeTool<PublicSnapshotCreate>(
+      "pr_review_snapshot",
+      { action: "create", target: "owner/beta#2", dry_run: true },
+      "signal-beta",
+    );
+    const captureHandle = await completeReview(
+      fixture.api,
+      created,
+      "signal-beta",
+      fixture.targetDir,
+    );
+    const controller = new AbortController();
+    const priorCalls = fixture.signals.length;
+
+    const result = await fixture.api.executeTool<PrReviewPublishResult>(
+      "pr_review_publish",
+      { capture_handle: captureHandle, dry_run: true },
+      "signal-publish-beta",
+      controller.signal,
+    );
+
+    const publishSignals = fixture.signals.slice(priorCalls);
+    expect(result.status).toBe("dry_run");
+    expect(publishSignals.length).toBeGreaterThan(0);
+    expect(publishSignals.every((signal) => signal === controller.signal)).toBe(true);
+    expect(readdirSync(fixture.stateRoot)).toEqual([]);
   });
 
   test("correlates reversed creates and audits an unattributed concurrent task call", async () => {
