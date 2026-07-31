@@ -32,6 +32,12 @@ describe("durable harness phase machine", () => {
     expect(GATE_BUDGETS.Milestone).toBe(3);
   });
 
+  test("PHASE_ORDER has no design phases", () => {
+    for (const p of PHASE_ORDER) {
+      expect(p.toLowerCase()).not.toMatch(/design/);
+    }
+  });
+
   test("no phase begins before Beads predecessor transition", () => {
     const snap = createInitialSnapshot("run-1", "goal text");
     expect(canBeginPhase(snap, "Init")).toBe(true);
@@ -74,6 +80,7 @@ describe("durable harness phase machine", () => {
     s = applyTransition(s, { type: "complete", phase: "Init" });
     s = applyTransition(s, { type: "complete", phase: "Research" });
     s = applyTransition(s, { type: "begin", phase: "Spec" });
+    // Spec ceiling is GATE_BUDGETS.Spec (3)
     for (let i = 0; i < 3; i++) {
       s = applyTransition(s, {
         type: "gate_fail",

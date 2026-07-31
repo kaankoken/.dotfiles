@@ -25,7 +25,7 @@ import {
 import defaultExtension, {
   createPrReviewExtension,
 } from "../extensions/pr-review/index";
-import { WF7_ROLE_SPECS } from "../extensions/pr-review/contracts";
+import { PR_REVIEW_ROLE_SPECS } from "../extensions/pr-review/contracts";
 import roleManifestJson from "../extensions/pr-review/role-manifest.json";
 import type { LoadedRoleManifest } from "../extensions/pr-review/role-integrity";
 import type {
@@ -86,7 +86,7 @@ function execOk(value: unknown) {
 async function dualRunFixture(
   options: { ignoreAbort?: boolean } = {},
 ): Promise<DualRunFixture> {
-  const root = mkdtempSync(join(tmpdir(), "wf7-dual-run-"));
+  const root = mkdtempSync(join(tmpdir(), "pr-review-dual-run-"));
   roots.push(root);
   const targetDir = join(root, "repo");
   const receiptRoot = join(root, "receipts");
@@ -192,7 +192,7 @@ async function dualRunFixture(
 
   const guardRoutes: string[] = [];
   const api = new FakeExtensionApi();
-  const roleObservations = WF7_ROLE_SPECS.map((role) => ({
+  const roleObservations = PR_REVIEW_ROLE_SPECS.map((role) => ({
     agent: role.agent,
     livePath: `/live/${role.agent}.md`,
     preCallSha256: "1".repeat(64),
@@ -290,7 +290,7 @@ async function completeReview(
 
 describe("production PR-review extension", () => {
   test("loads the exported default factory from an arbitrary cwd", async () => {
-    const root = mkdtempSync(join(tmpdir(), "wf7-default-extension-"));
+    const root = mkdtempSync(join(tmpdir(), "pr-review-default-extension-"));
     roots.push(root);
     const arbitraryRepo = join(root, "repo");
     const stateHome = join(root, "state");
@@ -335,7 +335,7 @@ describe("production PR-review extension", () => {
       if (priorStateHome === undefined) delete process.env.XDG_STATE_HOME;
       else process.env.XDG_STATE_HOME = priorStateHome;
     }
-    expect([...api.commands.keys()]).toEqual(["review-pr"]);
+    expect([...api.commands.keys()]).toEqual(["pr-reviewer"]);
     expect([...api.tools.keys()]).toEqual([
       "pr_review_snapshot",
       "pr_review_publish",
@@ -349,7 +349,7 @@ describe("production PR-review extension", () => {
 
     const run = await runFakeReview({ dryRun: true, decision: "reject" });
     roots.push(run.root);
-    expect([...run.api.commands.keys()]).toEqual(["review-pr"]);
+    expect([...run.api.commands.keys()]).toEqual(["pr-reviewer"]);
     expect([...run.api.tools.keys()]).toEqual([
       "pr_review_snapshot",
       "pr_review_publish",
@@ -493,7 +493,7 @@ describe("production PR-review extension", () => {
     });
     expect(unknownCall).toEqual({
       block: true,
-      reason: expect.stringContaining("WF7"),
+      reason: expect.stringContaining("PR review"),
     });
     expect(await fixture.api.executeTool(
       "pr_review_snapshot",
@@ -593,7 +593,7 @@ describe("production PR-review extension", () => {
       toolCallId: "alpha-extra-task",
     })).toEqual({
       block: true,
-      reason: expect.stringContaining("Invalid WF7 task envelope"),
+      reason: expect.stringContaining("Invalid PR review task envelope"),
     });
     await expect(fixture.api.executeTool(
       "pr_review_snapshot",
@@ -605,7 +605,7 @@ describe("production PR-review extension", () => {
       toolCallId: "alpha-revoked-handle",
     })).toEqual({
       block: true,
-      reason: expect.stringContaining("Unattributed WF7"),
+      reason: expect.stringContaining("Unattributed PR review"),
     });
     expect(await fixture.api.executeTool(
       "pr_review_snapshot",
@@ -684,7 +684,7 @@ describe("production PR-review extension", () => {
       cwd: fixture.targetDir,
     })).toEqual({
       block: true,
-      reason: expect.stringContaining("WF7"),
+      reason: expect.stringContaining("PR review"),
     });
     const beta = await fixture.api.executeTool<PublicSnapshotCreate>(
       "pr_review_snapshot",
@@ -750,7 +750,7 @@ describe("production PR-review extension", () => {
       deliverAs: "nextTurn",
       triggerTurn: true,
     });
-    expect(run.api.messages[0]!.payload).toContain("WF7 PR REVIEW CONTROLLER PROTOCOL v1");
+    expect(run.api.messages[0]!.payload).toContain("PR REVIEW CONTROLLER PROTOCOL v1");
     expect(run.api.messages[0]!.payload).toContain("TARGET: owner/repo#7");
     expect(run.api.messages[0]!.payload).toContain("DRY_RUN: true");
     expect(run.githubCalls.some((call) => call.includes("repos/owner/repo"))).toBe(true);
@@ -774,17 +774,17 @@ describe("production PR-review extension", () => {
       });
     });
     expect(batches).toEqual([
-      ["wf7-fable-initial", "wf7-sol-initial"],
-      ["wf7-fable-rebuttal", "wf7-sol-rebuttal"],
-      ["wf7-grok-judge"],
+      ["pr-fable-initial", "pr-sol-initial"],
+      ["pr-fable-rebuttal", "pr-sol-rebuttal"],
+      ["pr-grok-judge"],
     ]);
     expect(run.receipt.status).toBe("dry_run");
     expect(run.receipt.tasks.map((task) => task.task)).toEqual([
-      "wf7-fable-initial",
-      "wf7-sol-initial",
-      "wf7-fable-rebuttal",
-      "wf7-sol-rebuttal",
-      "wf7-grok-judge",
+      "pr-fable-initial",
+      "pr-sol-initial",
+      "pr-fable-rebuttal",
+      "pr-sol-rebuttal",
+      "pr-grok-judge",
     ]);
     expect(new Set(run.receipt.tasks.map((task) => task.nativeToolCallId))).toEqual(
       new Set(["task-1", "task-2", "task-3"]),
@@ -1016,7 +1016,7 @@ describe("production PR-review extension", () => {
   });
 
   test("link/config discovery is user-scoped from an arbitrary repository", () => {
-    const root = mkdtempSync(join(tmpdir(), "wf7-link-integration-"));
+    const root = mkdtempSync(join(tmpdir(), "pr-review-link-integration-"));
     roots.push(root);
     const agentDir = join(root, "home", ".omp", "agent");
     const arbitraryRepo = join(root, "other-repo");
@@ -1031,7 +1031,7 @@ describe("production PR-review extension", () => {
     expect(result.exitCode).toBe(0);
     expect(existsSync(join(agentDir, "config.yml"))).toBe(true);
     expect(existsSync(join(agentDir, "extensions", "pr-review", "index.ts"))).toBe(true);
-    for (const role of ["wf7-fable-reviewer", "wf7-sol-reviewer", "wf7-grok-judge"]) {
+    for (const role of ["pr-fable-reviewer", "pr-sol-reviewer", "pr-grok-judge"]) {
       const live = join(agentDir, "agents", `${role}.md`);
       expect(existsSync(live)).toBe(true);
       expect(realpathSync(live)).toBe(join(ompRoot, "agents", `${role}.md`));

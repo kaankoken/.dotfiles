@@ -38,7 +38,7 @@ function startJournal(rootDir: string, provisionalId = "attempt-1"): ReceiptJour
 
 describe("early private receipt journal", () => {
   test("durably starts unresolved, then atomically promotes to the known head", () => {
-    const rootDir = mkdtempSync(join(tmpdir(), "wf7-receipts-"));
+    const rootDir = mkdtempSync(join(tmpdir(), "pr-review-receipts-"));
     try {
       const journal = startJournal(rootDir);
       const provisionalPath = join(rootDir, "octo", "repo", "7", "unresolved-attempt-1.json");
@@ -117,7 +117,7 @@ describe("early private receipt journal", () => {
   });
 
   test("records redacted terminal failure before any capture handle exists", () => {
-    const rootDir = mkdtempSync(join(tmpdir(), "wf7-receipts-"));
+    const rootDir = mkdtempSync(join(tmpdir(), "pr-review-receipts-"));
     try {
       const journal = startJournal(rootDir);
       journal.fail(
@@ -161,7 +161,7 @@ describe("early private receipt journal", () => {
   });
 
   test("requires head promotion for publication terminal states", () => {
-    const rootDir = mkdtempSync(join(tmpdir(), "wf7-receipts-"));
+    const rootDir = mkdtempSync(join(tmpdir(), "pr-review-receipts-"));
     try {
       const dryRun = startJournal(rootDir, "unresolved-dry");
       expect(() => dryRun.dryRun()).toThrow("head promotion required");
@@ -183,7 +183,7 @@ describe("early private receipt journal", () => {
   });
 
   test("uses atomic redacted prepare, dry-run, publish, and indeterminate transitions", () => {
-    const rootDir = mkdtempSync(join(tmpdir(), "wf7-receipts-"));
+    const rootDir = mkdtempSync(join(tmpdir(), "pr-review-receipts-"));
     try {
       const prepared = startJournal(rootDir, "prepared");
       prepared.promoteToHead({ head_sha: "head-prepared", repositoryNodeId: "R_node", base_sha: "base" });
@@ -192,7 +192,7 @@ describe("early private receipt journal", () => {
         completed_capture_digest: digest("capture"),
         event: "COMMENT",
         roles: [{
-          agent: "wf7-fable-reviewer",
+          agent: "pr-fable-reviewer",
           livePath: "/safe/role.md",
           preCallValid: true,
           raw_nonce: "nested-raw-nonce",
@@ -205,7 +205,7 @@ describe("early private receipt journal", () => {
         completed_capture_digest: digest("capture"),
         event: "COMMENT",
         roles: [{
-          agent: "wf7-fable-reviewer",
+          agent: "pr-fable-reviewer",
           livePath: "/safe/role.md",
           preCallValid: true,
         }],
@@ -257,7 +257,7 @@ describe("early private receipt journal", () => {
   });
 
   test("versions same-head attempts without clobbering prior evidence", () => {
-    const rootDir = mkdtempSync(join(tmpdir(), "wf7-receipts-"));
+    const rootDir = mkdtempSync(join(tmpdir(), "pr-review-receipts-"));
     try {
       expect(() => startJournal(rootDir, "../escape")).toThrow("invalid provisional id");
       const first = startJournal(rootDir, "first");
@@ -289,7 +289,7 @@ describe("early private receipt journal", () => {
   });
 
   test("rejects raw handles or noncanonical values in every digest authority field", () => {
-    const rootDir = mkdtempSync(join(tmpdir(), "wf7-receipts-"));
+    const rootDir = mkdtempSync(join(tmpdir(), "pr-review-receipts-"));
     const rawHandle = "A".repeat(43);
     const rawNonce = "B".repeat(43);
     try {
@@ -320,8 +320,8 @@ describe("early private receipt journal", () => {
       expect(() => journal.prepare({
         tasks: [{
           stage: "initial",
-          task: "wf7-fable-initial",
-          agent: "wf7-fable-reviewer",
+          task: "pr-fable-initial",
+          agent: "pr-fable-reviewer",
           nonceDigest: rawNonce,
           nativeToolCallId: "tool",
           nativeResultId: "result",

@@ -33,15 +33,15 @@ import {
   type LoadedRoleManifest,
   type RoleManifestEntry,
 } from "../extensions/pr-review/role-integrity";
-import type { PrReviewReceiptV1, Wf7AgentName } from "../extensions/pr-review/contracts";
+import type { PrReviewReceiptV1, PrReviewAgentName } from "../extensions/pr-review/contracts";
 
 const roots: string[] = [];
 const ROLE_SOURCE_DIR = join(import.meta.dir, "..", "agents");
 
 const ROLE_DATA = [
   {
-    agent: "wf7-fable-reviewer",
-    file: "wf7-fable-reviewer.md",
+    agent: "pr-fable-reviewer",
+    file: "pr-fable-reviewer.md",
     model: "anthropic/claude-fable-5:max",
     schemas: [
       { identity: INITIAL_REVIEW_SCHEMA.$id, sha256: INITIAL_REVIEW_SCHEMA_SHA256 },
@@ -49,8 +49,8 @@ const ROLE_DATA = [
     ],
   },
   {
-    agent: "wf7-sol-reviewer",
-    file: "wf7-sol-reviewer.md",
+    agent: "pr-sol-reviewer",
+    file: "pr-sol-reviewer.md",
     model: "openai-codex/gpt-5.6-sol:xhigh",
     schemas: [
       { identity: INITIAL_REVIEW_SCHEMA.$id, sha256: INITIAL_REVIEW_SCHEMA_SHA256 },
@@ -58,8 +58,8 @@ const ROLE_DATA = [
     ],
   },
   {
-    agent: "wf7-grok-judge",
-    file: "wf7-grok-judge.md",
+    agent: "pr-grok-judge",
+    file: "pr-grok-judge.md",
     model: "xai-oauth/grok-4.5:xhigh",
     schemas: [{ identity: JUDGE_RESULT_SCHEMA.$id, sha256: JUDGE_RESULT_SCHEMA_SHA256 }],
   },
@@ -70,7 +70,7 @@ function sha256(value: string | Uint8Array): string {
 }
 
 function fixture(): LoadedRoleManifest {
-  const root = realpathSync.native(mkdtempSync(join(tmpdir(), "wf7-role-integrity-")));
+  const root = realpathSync.native(mkdtempSync(join(tmpdir(), "pr-review-role-integrity-")));
   roots.push(root);
   const canonicalDir = join(root, "canonical");
   const liveDir = join(root, "live");
@@ -130,7 +130,7 @@ afterEach(() => {
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
 });
 
-describe("canonical WF7 role manifest", () => {
+describe("canonical PR review role manifest", () => {
   test("pins exact absolute paths, role contracts, selectors, schemas, and role bytes", () => {
     const manifest = loadRoleManifest();
     expect(manifest.version).toBe(1);
@@ -163,15 +163,15 @@ describe("role realpath, bytes, and frontmatter checks", () => {
 
     const preCall = checkRoleForSlot(manifest, {
       boundary: "pre-call",
-      taskName: "wf7-fable-initial",
+      taskName: "pr-fable-initial",
       task: {
-        agent: "wf7-fable-reviewer",
+        agent: "pr-fable-reviewer",
         schemaIdentity: INITIAL_REVIEW_SCHEMA.$id,
         schemaSha256: INITIAL_REVIEW_SCHEMA_SHA256,
       },
       journal,
     });
-    expect(preCall).toMatchObject({ agent: "wf7-fable-reviewer", preCallValid: true });
+    expect(preCall).toMatchObject({ agent: "pr-fable-reviewer", preCallValid: true });
 
     const prePublish = checkAllRoleFiles(manifest, { boundary: "pre-publish", journal });
     expect(prePublish.every((role) => role.prePublishValid)).toBe(true);
@@ -218,7 +218,7 @@ describe("role realpath, bytes, and frontmatter checks", () => {
 
   test("rejects hash-consistent frontmatter role, model, tool, and spawn drift", () => {
     const replacements = [
-      ["name: wf7-fable-reviewer", "name: wf7-sol-reviewer"],
+      ["name: pr-fable-reviewer", "name: pr-sol-reviewer"],
       ["model: anthropic/claude-fable-5:max", "model: anthropic/claude-fable-5:min"],
       ["tools: [pr_review_snapshot]", "tools: [read]"],
       ["spawns: []", "spawns: [scout]"],
@@ -250,9 +250,9 @@ describe("slot provenance and selector checks", () => {
     expectFailure(() => {
       checkRoleForSlot(manifest, {
         boundary: "pre-call",
-        taskName: "wf7-sol-initial",
+        taskName: "pr-sol-initial",
         task: {
-          agent: "wf7-sol-reviewer",
+          agent: "pr-sol-reviewer",
           schemaIdentity: INITIAL_REVIEW_SCHEMA.$id,
           schemaSha256: INITIAL_REVIEW_SCHEMA_SHA256,
         },
@@ -278,9 +278,9 @@ describe("slot provenance and selector checks", () => {
     const validJournal = journalFor(validManifest, "valid-settlement");
     expect(checkRoleForSlot(validManifest, {
       boundary: "pre-call",
-      taskName: "wf7-sol-initial",
+      taskName: "pr-sol-initial",
       task: {
-        agent: "wf7-sol-reviewer",
+        agent: "pr-sol-reviewer",
         schemaIdentity: INITIAL_REVIEW_SCHEMA.$id,
         schemaSha256: INITIAL_REVIEW_SCHEMA_SHA256,
       },
@@ -297,9 +297,9 @@ describe("slot provenance and selector checks", () => {
     const journal = journalFor(missingManifest, "missing-requested-model");
     expectFailure(() => checkRoleForSlot(missingManifest, {
       boundary: "pre-call",
-      taskName: "wf7-sol-initial",
+      taskName: "pr-sol-initial",
       task: {
-        agent: "wf7-sol-reviewer",
+        agent: "pr-sol-reviewer",
         schemaIdentity: INITIAL_REVIEW_SCHEMA.$id,
         schemaSha256: INITIAL_REVIEW_SCHEMA_SHA256,
       },
@@ -315,15 +315,15 @@ describe("slot provenance and selector checks", () => {
 
   test("checks all three pinned roles before accepting a slot-specific task", () => {
     const manifest = fixture();
-    const nonSlotRole = manifest.roles.find((role) => role.agent === "wf7-grok-judge")!;
+    const nonSlotRole = manifest.roles.find((role) => role.agent === "pr-grok-judge")!;
     writeFileSync(nonSlotRole.canonicalPath, `${readFileSync(nonSlotRole.canonicalPath, "utf8")}\ndrift`);
     const journal = journalFor(manifest, "non-slot-drift");
 
     expectFailure(() => checkRoleForSlot(manifest, {
       boundary: "pre-call",
-      taskName: "wf7-fable-initial",
+      taskName: "pr-fable-initial",
       task: {
-        agent: "wf7-fable-reviewer",
+        agent: "pr-fable-reviewer",
         schemaIdentity: INITIAL_REVIEW_SCHEMA.$id,
         schemaSha256: INITIAL_REVIEW_SCHEMA_SHA256,
       },
@@ -348,7 +348,7 @@ describe("slot provenance and selector checks", () => {
       const manifest = fixture();
       const journal = journalFor(manifest, `override-${index}`);
       const task = {
-        agent: "wf7-sol-reviewer" as const,
+        agent: "pr-sol-reviewer" as const,
         schemaIdentity: INITIAL_REVIEW_SCHEMA.$id,
         schemaSha256: "schemaSha256" in override ? override.schemaSha256 : INITIAL_REVIEW_SCHEMA_SHA256,
         ...(override.callerModel ? { model: override.callerModel } : {}),
@@ -364,7 +364,7 @@ describe("slot provenance and selector checks", () => {
       expectFailure(
         () => checkRoleForSlot(manifest, {
           boundary: "pre-call",
-          taskName: "wf7-sol-initial",
+          taskName: "pr-sol-initial",
           task,
           settlement,
           journal,
@@ -399,7 +399,7 @@ describe("run-scoped OMP role mutation guard", () => {
         ]),
       );
       const decision = guard.handleToolCall({ toolName: call.toolName, input });
-      expect(decision).toEqual({ block: true, reason: "WF7 role mutation denied" });
+      expect(decision).toEqual({ block: true, reason: "PR review role mutation denied" });
       expect(receipt(journal)).toMatchObject({
         status: "failed",
         failure_code: "role_mutation_denied",
@@ -417,7 +417,7 @@ describe("run-scoped OMP role mutation guard", () => {
     expect(guard.handleToolCall({
       toolName: "edit",
       input: { patch: `*** Begin Patch\n[${role.livePath}#ABCD]\nCUT 1\n*** End Patch` },
-    })).toEqual({ block: true, reason: "WF7 role mutation denied" });
+    })).toEqual({ block: true, reason: "PR review role mutation denied" });
     expect(receipt(journal).failure_code).toBe("role_mutation_denied");
   });
 
@@ -435,7 +435,7 @@ describe("run-scoped OMP role mutation guard", () => {
       const guard = createRoleMutationGuard(manifest, journal);
       expect(guard.handleToolCall(makeCall(manifest.roles[0]!))).toEqual({
         block: true,
-        reason: "WF7 role mutation denied",
+        reason: "PR review role mutation denied",
       });
       expect(receipt(journal).failure_code).toBe("role_mutation_denied");
     }
@@ -459,7 +459,7 @@ describe("run-scoped OMP role mutation guard", () => {
       const guard = createRoleMutationGuard(manifest, journal);
       expect(guard.handleToolCall(makeCall(manifest.roles[0]!))).toEqual({
         block: true,
-        reason: "WF7 role mutation denied",
+        reason: "PR review role mutation denied",
       });
       expect(receipt(journal).failure_code).toBe("role_mutation_denied");
     }
@@ -488,7 +488,7 @@ describe("run-scoped OMP role mutation guard", () => {
     const calls = [
       { toolName: "bash", input: { command: `printf tampered > "$HOME/${relativeLivePath}"` } },
       { toolName: "bash", input: { command: `printf tampered > ~/${relativeLivePath}` } },
-      { toolName: "bash", input: { command: `rm -- "$HOME/live"/wf7-*-reviewer.md` } },
+      { toolName: "bash", input: { command: `rm -- "$HOME/live"/pr-review-*-reviewer.md` } },
       {
         toolName: "bash",
         input: {
@@ -531,7 +531,7 @@ describe("run-scoped OMP role mutation guard", () => {
       },
       {
         toolName: "bash",
-        input: { command: `printf tampered | tee ${liveDir}/wf7-{fable,sol}-reviewer.md` },
+        input: { command: `printf tampered | tee ${liveDir}/pr-{fable,sol}-reviewer.md` },
       },
       {
         toolName: "bash",
@@ -564,7 +564,7 @@ describe("run-scoped OMP role mutation guard", () => {
       {
         toolName: "bash",
         input: {
-          command: `python3 -c 'from pathlib import Path; p="${liveDir}/"; Path(p+"wf7-"+"fable-reviewer.md").write_text("tampered")'`,
+          command: `python3 -c 'from pathlib import Path; p="${liveDir}/"; Path(p+"pr-review-"+"fable-reviewer.md").write_text("tampered")'`,
         },
       },
       {
@@ -592,7 +592,7 @@ describe("run-scoped OMP role mutation guard", () => {
         expect(guard.handleToolCall({
           toolName: "bash",
           input: {
-            command: `cat '${liveDir}/'"${roleFile}" ${liveDir}/${escapedRoleFile} ${liveDir}/wf7-{fable,sol}-reviewer.md`,
+            command: `cat '${liveDir}/'"${roleFile}" ${liveDir}/${escapedRoleFile} ${liveDir}/pr-{fable,sol}-reviewer.md`,
           },
         })).toBeUndefined();
         expect(guard.handleToolCall({
@@ -605,7 +605,7 @@ describe("run-scoped OMP role mutation guard", () => {
         })).toBeUndefined();
         expect(guard.handleToolCall(call)).toEqual({
           block: true,
-          reason: "WF7 role mutation denied",
+          reason: "PR review role mutation denied",
         });
         expect(receipt(journal)).toMatchObject({
           status: "failed",

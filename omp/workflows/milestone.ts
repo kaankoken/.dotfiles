@@ -16,6 +16,7 @@ import {
   type VerifyCommand,
 } from "../extensions/goal-harness/verification";
 
+/** Align with GATE_BUDGETS.Milestone — budget exactly 3. */
 export const MILESTONE_BUDGET = 3;
 
 export const MILESTONE_ANGLES = [
@@ -24,7 +25,7 @@ export const MILESTONE_ANGLES = [
   "wiring/warnings",
   "stack conventions",
   "security",
-  "ponytail/YAGNI",
+  "ponytail/YAGNI (skills: ponytail-review + ponytail-audit)",
 ] as const;
 
 export type MilestoneAngle = (typeof MILESTONE_ANGLES)[number];

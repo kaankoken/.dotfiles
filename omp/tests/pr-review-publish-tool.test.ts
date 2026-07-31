@@ -14,13 +14,13 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   PR_REVIEW_PUBLISH_PARAMETERS_SCHEMA,
-  WF7_ROLE_SPECS,
-  WF7_TASK_SLOTS,
+  PR_REVIEW_ROLE_SPECS,
+  PR_REVIEW_TASK_SLOTS,
   type CompletedCapture,
   type NativeSingleResult,
   type RoleIntegrityObservation,
   type SealedTaskResult,
-  type Wf7TaskSlot,
+  type PrReviewTaskSlot,
 } from "../extensions/pr-review/contracts";
 import type {
   PrReviewExec,
@@ -54,7 +54,7 @@ afterEach(() => {
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
 });
 
-function binding(slot: Wf7TaskSlot, index: number) {
+function binding(slot: PrReviewTaskSlot, index: number) {
   return {
     schema_version: 1 as const,
     stage: slot.stage,
@@ -68,8 +68,8 @@ function binding(slot: Wf7TaskSlot, index: number) {
   };
 }
 
-function sealed(slot: Wf7TaskSlot, index: number, data: unknown): SealedTaskResult {
-  const role = WF7_ROLE_SPECS.find((candidate) => candidate.agent === slot.agent)!;
+function sealed(slot: PrReviewTaskSlot, index: number, data: unknown): SealedTaskResult {
+  const role = PR_REVIEW_ROLE_SPECS.find((candidate) => candidate.agent === slot.agent)!;
   const structuredOutput = {
     source: "caller" as const,
     mode: "strict" as const,
@@ -142,7 +142,7 @@ function capture(
     body: "reviewer body",
     evidence: "evidence",
   };
-  const initial = (slot: Wf7TaskSlot, index: number, reviewer: "fable" | "sol", findings: typeof candidate[]): InitialReview => ({
+  const initial = (slot: PrReviewTaskSlot, index: number, reviewer: "fable" | "sol", findings: typeof candidate[]): InitialReview => ({
     schema_version: 1,
     reviewer,
     run_nonce: RUN_NONCE,
@@ -152,9 +152,9 @@ function capture(
     diff_digest: DIFF,
     findings,
   });
-  const fable = initial(WF7_TASK_SLOTS[0], 0, "fable", event === "APPROVE" ? [] : [candidate]);
-  const sol = initial(WF7_TASK_SLOTS[1], 1, "sol", []);
-  const rebuttal = (slot: Wf7TaskSlot, index: number, reviewer: "fable" | "sol", peer: InitialReview): Rebuttal => ({
+  const fable = initial(PR_REVIEW_TASK_SLOTS[0], 0, "fable", event === "APPROVE" ? [] : [candidate]);
+  const sol = initial(PR_REVIEW_TASK_SLOTS[1], 1, "sol", []);
+  const rebuttal = (slot: PrReviewTaskSlot, index: number, reviewer: "fable" | "sol", peer: InitialReview): Rebuttal => ({
     schema_version: 1,
     reviewer,
     run_nonce: RUN_NONCE,
@@ -173,7 +173,7 @@ function capture(
     schema_version: 1,
     run_nonce: RUN_NONCE,
     snapshot_nonce: SNAPSHOT_NONCE,
-    call_nonce: binding(WF7_TASK_SLOTS[4], 4).call_nonce,
+    call_nonce: binding(PR_REVIEW_TASK_SLOTS[4], 4).call_nonce,
     head_sha: HEAD,
     diff_digest: DIFF,
     adjudications: event === "APPROVE" ? [] : [{
@@ -188,8 +188,8 @@ function capture(
   const outputs = [
     fable,
     sol,
-    rebuttal(WF7_TASK_SLOTS[2], 2, "fable", sol),
-    rebuttal(WF7_TASK_SLOTS[3], 3, "sol", fable),
+    rebuttal(PR_REVIEW_TASK_SLOTS[2], 2, "fable", sol),
+    rebuttal(PR_REVIEW_TASK_SLOTS[3], 3, "sol", fable),
     judge,
   ];
   return {
@@ -211,12 +211,12 @@ function capture(
       lineMap: [{ path: "src/a.ts", line: 7, side: "RIGHT", hunk: 1 }],
       nonreviewableEntries: [],
     },
-    results: outputs.map((output, index) => sealed(WF7_TASK_SLOTS[index]!, index, output)) as CompletedCapture["results"],
+    results: outputs.map((output, index) => sealed(PR_REVIEW_TASK_SLOTS[index]!, index, output)) as CompletedCapture["results"],
     completedAt: "2026-07-31T12:00:00.000Z",
   };
 }
 
-const roles: readonly RoleIntegrityObservation[] = WF7_ROLE_SPECS.map((role) => ({
+const roles: readonly RoleIntegrityObservation[] = PR_REVIEW_ROLE_SPECS.map((role) => ({
   agent: role.agent,
   livePath: `/roles/${role.agent}.md`,
   checkedRealpath: `/canonical/${role.agent}.md`,
@@ -243,22 +243,22 @@ function defaultManifestFixture(): LoadedRoleManifest {
   roots.push(root);
   const canonicalRoot = realpathSync.native(root);
   const schemaByAgent = {
-    "wf7-fable-reviewer": [
+    "pr-fable-reviewer": [
       { identity: "https://dotfiles.local/schemas/pr-review-initial-v1.schema.json", sha256: INITIAL_REVIEW_SCHEMA_SHA256 },
       { identity: "https://dotfiles.local/schemas/pr-review-rebuttal-v1.schema.json", sha256: REBUTTAL_SCHEMA_SHA256 },
     ],
-    "wf7-sol-reviewer": [
+    "pr-sol-reviewer": [
       { identity: "https://dotfiles.local/schemas/pr-review-initial-v1.schema.json", sha256: INITIAL_REVIEW_SCHEMA_SHA256 },
       { identity: "https://dotfiles.local/schemas/pr-review-rebuttal-v1.schema.json", sha256: REBUTTAL_SCHEMA_SHA256 },
     ],
-    "wf7-grok-judge": [
+    "pr-grok-judge": [
       { identity: "https://dotfiles.local/schemas/pr-review-judge-v1.schema.json", sha256: JUDGE_RESULT_SCHEMA_SHA256 },
     ],
   } as const;
   return {
     version: 1,
     digest: manifest.digest,
-    roles: WF7_ROLE_SPECS.map((role) => {
+    roles: PR_REVIEW_ROLE_SPECS.map((role) => {
       const canonicalPath = join(canonicalRoot, `${role.agent}.md`);
       const livePath = join(canonicalRoot, `${role.agent}-live.md`);
       const bytes = [
@@ -1030,21 +1030,21 @@ describe("pr_review_publish", () => {
     expect(stored.status).toBe("failed");
     expect(stored.roles).toHaveLength(3);
     expect(stored.roles[0]).toMatchObject({
-      agent: "wf7-fable-reviewer",
+      agent: "pr-fable-reviewer",
       preCallSha256: "1".repeat(64),
       preCallValid: true,
       prePublishSha256: roleManifest.roles[0]!.sha256,
       prePublishValid: true,
     });
     expect(stored.roles[1]).toMatchObject({
-      agent: "wf7-sol-reviewer",
+      agent: "pr-sol-reviewer",
       preCallSha256: "1".repeat(64),
       preCallValid: true,
       prePublishSha256: createHash("sha256").update(driftedBytes).digest("hex"),
       prePublishValid: false,
     });
     expect(stored.roles[2]).toMatchObject({
-      agent: "wf7-grok-judge",
+      agent: "pr-grok-judge",
       preCallSha256: "1".repeat(64),
       preCallValid: true,
     });

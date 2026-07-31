@@ -4,7 +4,7 @@ import { mkdtempSync, readFileSync, rmSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
-  WF7_TASK_SLOTS,
+  PR_REVIEW_TASK_SLOTS,
   type ImmutableSnapshot,
   type SealedTaskResult,
   type SnapshotChangedFile,
@@ -180,7 +180,7 @@ function sealedResults(
   snapshot: Readonly<ImmutableSnapshot>,
   callNonces: readonly string[],
 ): SealedTaskResult[] {
-  return WF7_TASK_SLOTS.map((slot, index) => ({
+  return PR_REVIEW_TASK_SLOTS.map((slot, index) => ({
     slot: slot.name,
     stage: slot.stage,
     name: slot.name,
@@ -221,7 +221,7 @@ describe("private file writes", () => {
 
 describe("private immutable PR review state", () => {
   test("mints opaque handles, copies state, stores private bytes, and enforces lifecycle", () => {
-    const rootDir = mkdtempSync(join(tmpdir(), "wf7-state-"));
+    const rootDir = mkdtempSync(join(tmpdir(), "pr-review-state-"));
     try {
       let allowRemoval = false;
       let removalAttempts = 0;
@@ -283,7 +283,7 @@ describe("private immutable PR review state", () => {
       store.transitionRun(run.runHandle, "initial");
       store.transitionRun(run.runHandle, "rebuttal");
       store.transitionRun(run.runHandle, "judge");
-      const callNonces = WF7_TASK_SLOTS.map((slot) =>
+      const callNonces = PR_REVIEW_TASK_SLOTS.map((slot) =>
         store.mintCallNonce(run.runHandle, slot.name)
       );
       expect(new Set(callNonces).size).toBe(5);
@@ -311,7 +311,7 @@ describe("private immutable PR review state", () => {
   });
 
   test("rejects capture records that do not contain the exact bound five slots", () => {
-    const rootDir = mkdtempSync(join(tmpdir(), "wf7-state-"));
+    const rootDir = mkdtempSync(join(tmpdir(), "pr-review-state-"));
     try {
       const store = new PrReviewStateStore({ rootDir });
       const run = store.startRun();
@@ -335,11 +335,11 @@ describe("private immutable PR review state", () => {
         sealedResults(snapshot, Array.from({ length: 5 }, (_, index) => `unminted-${index}`)),
       )).toThrow("unknown call nonce");
 
-      const callNonces = WF7_TASK_SLOTS.map((slot) =>
+      const callNonces = PR_REVIEW_TASK_SLOTS.map((slot) =>
         store.mintCallNonce(run.runHandle, slot.name)
       );
-      expect(() => store.mintCallNonce(run.runHandle, WF7_TASK_SLOTS[0]!.name)).toThrow("already minted");
-      expect(() => store.mintCallNonce(run.runHandle, "wf7-extra" as never)).toThrow("unknown task slot");
+      expect(() => store.mintCallNonce(run.runHandle, PR_REVIEW_TASK_SLOTS[0]!.name)).toThrow("already minted");
+      expect(() => store.mintCallNonce(run.runHandle, "pr-review-extra" as never)).toThrow("unknown task slot");
 
       const swapped = [...callNonces];
       [swapped[0], swapped[1]] = [swapped[1]!, swapped[0]!];

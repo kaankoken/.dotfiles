@@ -12,7 +12,13 @@ export type PhaseKind =
   | "implement"
   | "research"
   | "init"
-  | "pr";
+  | "pr"
+  /** /design PDR writer + reviewer chain */
+  | "design-pdr"
+  /** /design ADR writer chain (same family order as PDR) */
+  | "design-adr"
+  /** /design Arc42 writer + reviewer */
+  | "design-arc42";
 
 export type Effort = "low" | "medium" | "high" | "xhigh" | "max" | "ultra";
 
@@ -65,150 +71,199 @@ export type ResolveOptions = {
 
 type ChainStep = { family: ModelFamily; effort: Effort; queries: string[] };
 
-const BIG_GATE_CHAIN: ChainStep[] = [
-  {
-    family: "sol",
-    effort: "ultra",
-    queries: ["sol 5.6", "gpt-5.6-sol", "sol"],
-  },
-  {
-    family: "fable",
-    effort: "max",
-    queries: ["fable 5", "claude-fable-5", "fable"],
-  },
-  {
-    family: "opus",
-    effort: "max",
-    // Prefer Claude Opus 5 when catalog exposes it; keep generic fallbacks.
-    queries: ["claude-opus-5", "opus 5", "opus", "claude-opus"],
-  },
-];
+/**
+ * Until this instant (UTC), Sol is demoted to last resort on every chain that
+ * used to prefer it. Sol 5.x context windows were thrashing compact/load loops
+ * and burning OpenAI subscription quota on Spec/Plan gates.
+ * After 2026-08-06T00:00:00Z, Sol returns to primary on big gates / init /
+ * research soft fallback and to its prior implement position.
+ */
+export const SOL_DEPRIORITIZE_UNTIL_MS = Date.parse(
+  "2026-08-06T00:00:00.000Z",
+);
 
-/** Grok → Composer (Grok-unavailable only) → Sol high → Sonnet */
-const IMPLEMENT_CHAIN: ChainStep[] = [
-  {
-    family: "grok",
-    effort: "high",
-    queries: ["grok 4.5", "grok-4.5", "grok"],
-  },
-  {
-    family: "composer",
-    effort: "high",
-    queries: ["composer 2.5", "composer"],
-  },
-  {
-    family: "sol",
-    effort: "high",
-    queries: ["sol 5.6", "gpt-5.6-sol", "sol"],
-  },
-  {
-    family: "sonnet",
-    effort: "high",
-    // Prefer Claude Sonnet 5 when catalog exposes it; keep generic fallbacks.
-    queries: ["claude-sonnet-5", "sonnet 5", "sonnet", "claude-sonnet"],
-  },
-];
+/** Injectable clock for tests. */
+export function isSolDeprioritized(nowMs: number = Date.now()): boolean {
+  return nowMs < SOL_DEPRIORITIZE_UNTIL_MS;
+}
+
+const SOL_ULTRA: ChainStep = {
+  family: "sol",
+  effort: "ultra",
+  queries: ["sol 5.6", "gpt-5.6-sol", "sol"],
+};
+const SOL_HIGH: ChainStep = {
+  family: "sol",
+  effort: "high",
+  queries: ["sol 5.6", "gpt-5.6-sol", "sol"],
+};
+const SOL_MEDIUM: ChainStep = {
+  family: "sol",
+  effort: "medium",
+  queries: ["sol 5.6", "gpt-5.6-sol", "sol"],
+};
+const FABLE_MAX: ChainStep = {
+  family: "fable",
+  effort: "max",
+  queries: ["fable 5", "claude-fable-5", "fable"],
+};
+const FABLE_MEDIUM: ChainStep = {
+  family: "fable",
+  effort: "medium",
+  queries: ["fable 5", "claude-fable-5", "fable"],
+};
+const OPUS_MAX: ChainStep = {
+  family: "opus",
+  effort: "max",
+  // Prefer Claude Opus 5 when catalog exposes it; keep generic fallbacks.
+  queries: ["claude-opus-5", "opus 5", "opus", "claude-opus"],
+};
+const SONNET_HIGH: ChainStep = {
+  family: "sonnet",
+  effort: "high",
+  queries: ["claude-sonnet-5", "sonnet 5", "sonnet", "claude-sonnet"],
+};
+const SONNET_MEDIUM: ChainStep = {
+  family: "sonnet",
+  effort: "medium",
+  queries: ["claude-sonnet-5", "sonnet 5", "sonnet", "claude-sonnet"],
+};
+const GROK_HIGH: ChainStep = {
+  family: "grok",
+  effort: "high",
+  queries: ["grok 4.5", "grok-4.5", "grok"],
+};
+const COMPOSER_HIGH: ChainStep = {
+  family: "composer",
+  effort: "high",
+  queries: ["composer 2.5", "composer"],
+};
+const TERRA_XHIGH: ChainStep = {
+  family: "terra",
+  effort: "xhigh",
+  queries: [
+    "terra",
+    "gpt-5.6-terra",
+    "gpt-5.6-terra:xhigh",
+    "gpt-5.6-terra:max",
+    "5.6-terra",
+  ],
+};
+const TERRA_MAX: ChainStep = {
+  family: "terra",
+  effort: "max",
+  queries: [
+    "terra",
+    "gpt-5.6-terra",
+    "gpt-5.6-terra:max",
+    "gpt-5.6-terra:xhigh",
+    "5.6-terra",
+  ],
+};
+const SOL_XHIGH: ChainStep = {
+  family: "sol",
+  effort: "xhigh",
+  queries: ["sol 5.6", "gpt-5.6-sol", "gpt-5.6-sol:xhigh", "sol"],
+};
+const OPUS_XHIGH: ChainStep = {
+  family: "opus",
+  effort: "xhigh",
+  queries: ["claude-opus-5", "opus 5", "opus", "claude-opus"],
+};
 
 /**
- * Research / scouts: Grok high first (deep-research style multi-hop work).
- * Sol medium remains a soft fallback if Grok is offline.
+ * /design PDR + ADR: Opus 5 max/xhigh → Terra 5.6 max → Sol 5.6 xhigh → Grok.
+ * Reviewers use the same chain via resolveReviewerModel (skips producer id).
  */
-const RESEARCH_CHAIN: ChainStep[] = [
-  {
-    family: "grok",
-    effort: "high",
-    queries: ["grok 4.5", "grok-4.5", "grok"],
-  },
-  {
-    family: "sol",
-    effort: "medium",
-    queries: ["sol 5.6", "gpt-5.6-sol", "sol"],
-  },
-];
+function designPdrAdrChain(): ChainStep[] {
+  return [OPUS_MAX, OPUS_XHIGH, TERRA_MAX, TERRA_XHIGH, SOL_XHIGH, GROK_HIGH];
+}
 
-/** PR delivery: Grok → Codex Terra (xhigh) → Sonnet. */
-const PR_CHAIN: ChainStep[] = [
-  {
-    family: "grok",
-    effort: "high",
-    queries: ["grok 4.5", "grok-4.5", "grok"],
-  },
-  {
-    family: "terra",
-    effort: "xhigh",
-    queries: ["terra", "gpt-5.6-terra", "gpt-5.6-terra:xhigh", "5.6-terra"],
-  },
-  {
-    family: "sonnet",
-    effort: "high",
-    queries: ["claude-sonnet-5", "sonnet 5", "sonnet", "claude-sonnet"],
-  },
-];
+/** /design Arc42: Grok → Composer 2.5 */
+function designArc42Chain(): ChainStep[] {
+  return [GROK_HIGH, COMPOSER_HIGH];
+}
+
+/** Spec / Plan / BiteSize writers + big-gate reviewers. */
+function bigGateChain(nowMs?: number): ChainStep[] {
+  // Prefer Fable 5 → Opus 5 while Sol is demoted; Sol last as hard fallback.
+  if (isSolDeprioritized(nowMs)) {
+    return [FABLE_MAX, OPUS_MAX, SOL_ULTRA];
+  }
+  return [SOL_ULTRA, FABLE_MAX, OPUS_MAX];
+}
+
+/** Grok → Composer (Grok-unavailable only) → … → Sonnet; Sol last while demoted. */
+function implementChain(nowMs?: number): ChainStep[] {
+  if (isSolDeprioritized(nowMs)) {
+    return [GROK_HIGH, COMPOSER_HIGH, SONNET_HIGH, SOL_HIGH];
+  }
+  return [GROK_HIGH, COMPOSER_HIGH, SOL_HIGH, SONNET_HIGH];
+}
 
 /**
- * Milestone organizer: Terra (xhigh preferred; max is acceptable alias effort)
- * → Fable max → Sol ultra → Opus max.
+ * Research / scouts: Grok high first.
+ * While Sol demoted: Fable medium soft fallback before Sol.
  */
-const MILESTONE_CHAIN: ChainStep[] = [
-  {
-    family: "terra",
-    effort: "xhigh",
-    queries: [
-      "terra",
-      "gpt-5.6-terra",
-      "gpt-5.6-terra:xhigh",
-      "gpt-5.6-terra:max",
-      "5.6-terra",
-    ],
-  },
-  {
-    family: "fable",
-    effort: "max",
-    queries: ["fable 5", "claude-fable-5", "fable"],
-  },
-  {
-    family: "sol",
-    effort: "ultra",
-    queries: ["sol 5.6", "gpt-5.6-sol", "sol"],
-  },
-  {
-    family: "opus",
-    effort: "max",
-    queries: ["claude-opus-5", "opus 5", "opus", "claude-opus"],
-  },
-];
+function researchChain(nowMs?: number): ChainStep[] {
+  if (isSolDeprioritized(nowMs)) {
+    return [GROK_HIGH, FABLE_MEDIUM, SOL_MEDIUM];
+  }
+  return [GROK_HIGH, SOL_MEDIUM];
+}
 
-const INIT_CHAIN: ChainStep[] = [
-  {
-    family: "sol",
-    effort: "medium",
-    queries: ["sol 5.6", "gpt-5.6-sol", "sol"],
-  },
-  {
-    family: "sonnet",
-    effort: "medium",
-    queries: ["claude-sonnet-5", "sonnet 5", "sonnet", "claude-sonnet"],
-  },
-];
+/** PR delivery: Grok → Codex Terra (xhigh) → Sonnet (unchanged; no Sol). */
+const PR_CHAIN: ChainStep[] = [GROK_HIGH, TERRA_XHIGH, SONNET_HIGH];
 
-function chainForPhase(phase: PhaseKind): ChainStep[] {
+/** Milestone: Terra → Fable → Opus → Sol (Sol last while demoted or after). */
+function milestoneChain(nowMs?: number): ChainStep[] {
+  // Always Fable/Opus before Sol during demote window; after window keep Opus
+  // before Sol (safer context) rather than restoring Sol ahead of Opus.
+  if (isSolDeprioritized(nowMs)) {
+    return [TERRA_XHIGH, FABLE_MAX, OPUS_MAX, SOL_ULTRA];
+  }
+  return [TERRA_XHIGH, FABLE_MAX, SOL_ULTRA, OPUS_MAX];
+}
+
+function initChain(nowMs?: number): ChainStep[] {
+  if (isSolDeprioritized(nowMs)) {
+    return [FABLE_MEDIUM, SONNET_MEDIUM, SOL_MEDIUM];
+  }
+  return [SOL_MEDIUM, SONNET_MEDIUM];
+}
+
+/** @internal exported for diagnostics / tests */
+export function chainForPhase(
+  phase: PhaseKind,
+  nowMs?: number,
+): ChainStep[] {
   switch (phase) {
     case "spec":
     case "plan":
     case "bitesize":
-      return BIG_GATE_CHAIN;
+      return bigGateChain(nowMs);
     case "milestone":
-      return MILESTONE_CHAIN;
+      return milestoneChain(nowMs);
     case "implement":
-      return IMPLEMENT_CHAIN;
+      return implementChain(nowMs);
     case "research":
-      return RESEARCH_CHAIN;
+      return researchChain(nowMs);
     case "pr":
       return PR_CHAIN;
+    case "design-pdr":
+    case "design-adr":
+      return designPdrAdrChain();
+    case "design-arc42":
+      return designArc42Chain();
     case "init":
     default:
-      return INIT_CHAIN;
+      return initChain(nowMs);
   }
+}
+
+/** Alias kept for resolveReviewerModel / tests that import BIG_GATE semantics. */
+export function getBigGateChain(nowMs?: number): ChainStep[] {
+  return bigGateChain(nowMs);
 }
 
 function pickFromChain(
@@ -249,12 +304,17 @@ function makeInstanceKey(
  * invocationFailure advances past the failed model for this call only when
  * that model is no longer available or skip is forced.
  */
+export type ResolveModelRouteOptions = ResolveOptions & {
+  /** Override clock (tests / freeze demote window). */
+  nowMs?: number;
+};
+
 export function resolveModelRoute(
   adapter: ModelRouterAdapter,
   phase: PhaseKind,
-  opts: ResolveOptions = {},
+  opts: ResolveModelRouteOptions = {},
 ): ResolvedModel {
-  const chain = chainForPhase(phase);
+  const chain = chainForPhase(phase, opts.nowMs);
   const fallbackChain = chain.map((s) => ({
     family: s.family,
     effort: s.effort,
@@ -285,7 +345,7 @@ export function resolveModelRoute(
     return {
       providerModelId: any.id,
       provider: any.provider,
-      family: chain[0]?.family ?? "sol",
+      family: chain[0]?.family ?? "fable",
       effort: chain[0]?.effort ?? "medium",
       phase,
       instanceKey: makeInstanceKey(phase, any.id, false, "fallback"),
@@ -322,12 +382,13 @@ export function resolveModelRoute(
 export function resolveReviewerModel(
   adapter: ModelRouterAdapter,
   producer: ResolvedModel,
+  nowMs?: number,
 ): ResolvedModel {
   // Prefer big-gate for implement reviewers; otherwise same phase chain without producer id.
   const reviewChain =
     producer.phase === "implement"
-      ? BIG_GATE_CHAIN
-      : chainForPhase(producer.phase);
+      ? bigGateChain(nowMs)
+      : chainForPhase(producer.phase, nowMs);
 
   const skip = new Set([producer.providerModelId]);
   const picked = pickFromChain(adapter, reviewChain, skip, 0);

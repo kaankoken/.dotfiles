@@ -1,0 +1,78 @@
+{
+  "version": 1,
+  "name": "design-flow",
+  "agentCount": 5,
+  "phases": ["Intake", "Pdr", "Arc42", "Adr", "Handoff"],
+  "modelRoutes": {
+    "design-pdr": "opus max/xhigh → terra 5.6 max → sol 5.6 xhigh → grok",
+    "design-adr": "opus max/xhigh → terra 5.6 max → sol 5.6 xhigh → grok",
+    "design-arc42": "grok → composer 2.5"
+  },
+  "agents": [
+    {
+      "name": "pdr-writer",
+      "ompDestination": "omp/agents/pdr-writer.md",
+      "phase": "pdr",
+      "purpose": "Write PDR for /design. Design only.",
+      "allowedTools": ["bash", "read", "search", "web_search"],
+      "writeScope": "none",
+      "requiredSkills": ["brainstorming", "caveman", "ponytail"],
+      "outputSchema": "omp/schemas/pdr.output.schema.json",
+      "modelRoute": "opus→terra→sol→grok",
+      "modelPhase": "design-pdr",
+      "reasoningEffort": "max"
+    },
+    {
+      "name": "pdr-reviewer",
+      "ompDestination": "omp/agents/pdr-reviewer.md",
+      "phase": "pdr",
+      "purpose": "Gate PDR. REVIEW-POLICY default PASS.",
+      "allowedTools": ["bash", "read", "search"],
+      "writeScope": "none",
+      "requiredSkills": [],
+      "outputSchema": "omp/schemas/review-result.schema.json",
+      "modelRoute": "opus→terra→sol→grok (independent of writer)",
+      "modelPhase": "design-pdr",
+      "reasoningEffort": "xhigh|max"
+    },
+    {
+      "name": "arc42-writer",
+      "ompDestination": "omp/agents/arc42-writer.md",
+      "phase": "arc42",
+      "purpose": "Arc42 sections + mermaid/structurizr diagrams.",
+      "allowedTools": ["bash", "read", "search", "web_search"],
+      "writeScope": "none",
+      "requiredSkills": ["brainstorming", "caveman", "ponytail"],
+      "outputSchema": "omp/schemas/arc42.output.schema.json",
+      "modelRoute": "grok→composer-2.5",
+      "modelPhase": "design-arc42",
+      "reasoningEffort": "high"
+    },
+    {
+      "name": "arc42-reviewer",
+      "ompDestination": "omp/agents/arc42-reviewer.md",
+      "phase": "arc42",
+      "purpose": "Gate Arc42 vs PDR.",
+      "allowedTools": ["bash", "read", "search"],
+      "writeScope": "none",
+      "requiredSkills": [],
+      "outputSchema": "omp/schemas/review-result.schema.json",
+      "modelRoute": "grok→composer-2.5 (independent of writer)",
+      "modelPhase": "design-arc42",
+      "reasoningEffort": "high"
+    },
+    {
+      "name": "adr-writer",
+      "ompDestination": "omp/agents/adr-writer.md",
+      "phase": "adr",
+      "purpose": "Emit MADR-lite ADR JSON; controller writes docs/adr.",
+      "allowedTools": ["bash", "read", "search"],
+      "writeScope": "none",
+      "requiredSkills": ["ponytail", "caveman"],
+      "outputSchema": "omp/schemas/adr.output.schema.json",
+      "modelRoute": "opus→terra→sol→grok",
+      "modelPhase": "design-adr",
+      "reasoningEffort": "max"
+    }
+  ]
+}

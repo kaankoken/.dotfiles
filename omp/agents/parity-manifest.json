@@ -492,10 +492,13 @@
         "skip-bd"
       ],
       "requiredSuperpowers": [
-        "requesting-code-review"
+        "requesting-code-review",
+        "ponytail-review",
+        "ponytail-audit"
       ],
       "requiredStackSkills": [
-        "ponytail-review"
+        "ponytail-review",
+        "ponytail-audit"
       ],
       "outputSchema": "omp/schemas/code-reviewer.output.schema.json",
       "modelRoute": "sol→fable→opus",

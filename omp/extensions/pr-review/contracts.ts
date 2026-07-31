@@ -1,7 +1,7 @@
 export const PR_REVIEW_PROTOCOL_VERSION = 1 as const;
 export const PR_REVIEW_SCHEMA_VERSION = 1 as const;
 export const PR_REVIEW_ROLE_MANIFEST_VERSION = 1 as const;
-export const PR_REVIEW_MARKER_NAMESPACE = "dotfiles-wf7" as const;
+export const PR_REVIEW_MARKER_NAMESPACE = "dotfiles-pr-review" as const;
 
 export const PR_REVIEW_SUMMARY_BODIES = {
   COMMENT: "Automated review completed; findings are inline.",
@@ -10,52 +10,52 @@ export const PR_REVIEW_SUMMARY_BODIES = {
   APPROVE: "Automated review completed; no publishable findings.",
 } as const;
 
-export const WF7_ROLE_SPECS = [
+export const PR_REVIEW_ROLE_SPECS = [
   {
-    livePath: "~/.omp/agent/agents/wf7-fable-reviewer.md",
-    canonicalPath: "/Users/legolas/.dotfiles/omp/agents/wf7-fable-reviewer.md",
-    agent: "wf7-fable-reviewer",
+    livePath: "~/.omp/agent/agents/pr-fable-reviewer.md",
+    canonicalPath: "/Users/legolas/.dotfiles/omp/agents/pr-fable-reviewer.md",
+    agent: "pr-fable-reviewer",
     model: "anthropic/claude-fable-5:max",
   },
   {
-    livePath: "~/.omp/agent/agents/wf7-sol-reviewer.md",
-    canonicalPath: "/Users/legolas/.dotfiles/omp/agents/wf7-sol-reviewer.md",
-    agent: "wf7-sol-reviewer",
+    livePath: "~/.omp/agent/agents/pr-sol-reviewer.md",
+    canonicalPath: "/Users/legolas/.dotfiles/omp/agents/pr-sol-reviewer.md",
+    agent: "pr-sol-reviewer",
     model: "openai-codex/gpt-5.6-sol:xhigh",
   },
   {
-    livePath: "~/.omp/agent/agents/wf7-grok-judge.md",
-    canonicalPath: "/Users/legolas/.dotfiles/omp/agents/wf7-grok-judge.md",
-    agent: "wf7-grok-judge",
+    livePath: "~/.omp/agent/agents/pr-grok-judge.md",
+    canonicalPath: "/Users/legolas/.dotfiles/omp/agents/pr-grok-judge.md",
+    agent: "pr-grok-judge",
     model: "xai-oauth/grok-4.5:xhigh",
   },
 ] as const;
 
-export const WF7_TASK_SLOTS = [
+export const PR_REVIEW_TASK_SLOTS = [
   {
     stage: "initial",
-    name: "wf7-fable-initial",
-    agent: "wf7-fable-reviewer",
+    name: "pr-fable-initial",
+    agent: "pr-fable-reviewer",
   },
   {
     stage: "initial",
-    name: "wf7-sol-initial",
-    agent: "wf7-sol-reviewer",
+    name: "pr-sol-initial",
+    agent: "pr-sol-reviewer",
   },
   {
     stage: "rebuttal",
-    name: "wf7-fable-rebuttal",
-    agent: "wf7-fable-reviewer",
+    name: "pr-fable-rebuttal",
+    agent: "pr-fable-reviewer",
   },
   {
     stage: "rebuttal",
-    name: "wf7-sol-rebuttal",
-    agent: "wf7-sol-reviewer",
+    name: "pr-sol-rebuttal",
+    agent: "pr-sol-reviewer",
   },
   {
     stage: "judge",
-    name: "wf7-grok-judge",
-    agent: "wf7-grok-judge",
+    name: "pr-grok-judge",
+    agent: "pr-grok-judge",
   },
 ] as const;
 
@@ -90,12 +90,12 @@ export type PrReviewFailureCode =
   | "published_on_superseded_head"
   | "internal_error";
 
-export type Wf7RoleSpec = (typeof WF7_ROLE_SPECS)[number];
-export type Wf7AgentName = Wf7RoleSpec["agent"];
-export type Wf7Model = Wf7RoleSpec["model"];
-export type Wf7TaskSlot = (typeof WF7_TASK_SLOTS)[number];
-export type Wf7TaskName = Wf7TaskSlot["name"];
-export type PrReviewStage = Wf7TaskSlot["stage"];
+export type PrReviewRoleSpec = (typeof PR_REVIEW_ROLE_SPECS)[number];
+export type PrReviewAgentName = PrReviewRoleSpec["agent"];
+export type PrReviewModel = PrReviewRoleSpec["model"];
+export type PrReviewTaskSlot = (typeof PR_REVIEW_TASK_SLOTS)[number];
+export type PrReviewTaskName = PrReviewTaskSlot["name"];
+export type PrReviewStage = PrReviewTaskSlot["stage"];
 
 export interface PrReviewTaskBinding {
   schema_version: typeof PR_REVIEW_SCHEMA_VERSION;
@@ -110,8 +110,8 @@ export interface PrReviewTaskBinding {
 }
 
 export interface PrReviewTaskItem {
-  name: Wf7TaskName;
-  agent: Wf7AgentName;
+  name: PrReviewTaskName;
+  agent: PrReviewAgentName;
   task: string;
   outputSchema: unknown;
   schemaMode: "strict";
@@ -119,10 +119,10 @@ export interface PrReviewTaskItem {
 }
 
 export interface TaskSlotExpectation {
-  slot: Wf7TaskName;
+  slot: PrReviewTaskName;
   stage: PrReviewStage;
-  name: Wf7TaskName;
-  agent: Wf7AgentName;
+  name: PrReviewTaskName;
+  agent: PrReviewAgentName;
   schemaSha256: string;
   runNonce: string;
   snapshotNonce: string;
@@ -166,10 +166,10 @@ export interface NativeSingleResult {
 }
 
 export interface SingleResultEvidence {
-  task: Wf7TaskName;
-  agent: Wf7AgentName;
+  task: PrReviewTaskName;
+  agent: PrReviewAgentName;
   agentSource: "user";
-  resolvedModel: Wf7Model;
+  resolvedModel: PrReviewModel;
   resolvedModelIsFallback: false;
   exitCode: 0;
   aborted: false;
@@ -253,7 +253,7 @@ export type PrReviewReceiptStatus =
   | "indeterminate";
 
 export interface RoleIntegrityObservation {
-  agent: Wf7AgentName;
+  agent: PrReviewAgentName;
   livePath: string;
   checkedRealpath?: string;
   preCallSha256?: string;
@@ -264,14 +264,14 @@ export interface RoleIntegrityObservation {
 
 export interface ReceiptTaskEvidence {
   stage: PrReviewStage;
-  task: Wf7TaskName;
-  agent: Wf7AgentName;
+  task: PrReviewTaskName;
+  agent: PrReviewAgentName;
   nonceDigest: string;
   nativeToolCallId: string;
   nativeResultId: string;
   agentSource: "user";
-  requestedModel: Wf7Model;
-  resolvedModel: Wf7Model;
+  requestedModel: PrReviewModel;
+  resolvedModel: PrReviewModel;
   resolvedModelIsFallback: false;
   schemaSha256: string;
   structuredOutputSource: "caller";

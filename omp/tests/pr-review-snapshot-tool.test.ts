@@ -196,7 +196,7 @@ function toolFixture(
     loadManifest?: () => { version: 1; digest: string; roles: [] };
   } = {},
 ) {
-  const root = tempRoot("wf7-snapshot-tool-");
+  const root = tempRoot("pr-review-snapshot-tool-");
   const targetDir = join(root, "target");
   const receiptRootDir = join(root, "receipts");
   const state = new PrReviewStateStore({ rootDir: join(root, "state"), maxReadBytes: 64 });
@@ -265,7 +265,7 @@ describe("default PR review executor", () => {
   });
 
   test("forces an abort-resistant argv child closed without a survivor", async () => {
-    const root = tempRoot("wf7-exec-abort-");
+    const root = tempRoot("pr-review-exec-abort-");
     const pidPath = join(root, "pid");
     const termPath = join(root, "sigterm");
     const escapedPath = join(root, "escaped");
@@ -296,7 +296,7 @@ describe("default PR review executor", () => {
   });
 
   test("forces a timeout-resistant argv child closed without a survivor", async () => {
-    const root = tempRoot("wf7-exec-timeout-");
+    const root = tempRoot("pr-review-exec-timeout-");
     const pidPath = join(root, "pid");
     const termPath = join(root, "sigterm");
     const escapedPath = join(root, "escaped");

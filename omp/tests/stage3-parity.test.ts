@@ -128,7 +128,10 @@ describe("Stage 3: 19 roles + parity manifest", () => {
       const text = readFileSync(path, "utf8");
       expect(text).toMatch(new RegExp(`name:\\s*${name}`));
     }
-    const md = readdirSync(agentsDir).filter((f) => f.endsWith(".md"));
+    const md = readdirSync(agentsDir)
+      .filter((f) => f.endsWith(".md"))
+      .map((f) => f.replace(/\.md$/, ""))
+      .filter((name) => (EXPECTED_19 as readonly string[]).includes(name));
     expect(md.length).toBe(19);
   });
 
@@ -437,11 +440,17 @@ describe("Stage 3: eight worktrees + ninth queues; integration; routing; milesto
         );
       },
     };
-    const plan = resolveModelRoute(adapter, "plan");
+    const during = Date.parse("2026-07-31T00:00:00.000Z");
+    const plan = resolveModelRoute(adapter, "plan", { nowMs: during });
     expect(plan.phase).toBe("plan");
-    expect(plan.providerModelId).toBe("openai-codex/gpt-5.6-sol");
-    expect(plan.effort).toBe("ultra");
-    const research = resolveModelRoute(adapter, "research");
+    // Sol demoted until 2026-08-06 → Fable max first
+    expect(plan.providerModelId).toBe("anthropic/claude-fable-5");
+    expect(plan.effort).toBe("max");
+    const after = Date.parse("2026-08-07T00:00:00.000Z");
+    const planAfter = resolveModelRoute(adapter, "plan", { nowMs: after });
+    expect(planAfter.providerModelId).toBe("openai-codex/gpt-5.6-sol");
+    expect(planAfter.effort).toBe("ultra");
+    const research = resolveModelRoute(adapter, "research", { nowMs: during });
     expect(research.phase).toBe("research");
     expect(research.providerModelId).toBeTruthy();
   });

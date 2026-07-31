@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import {
   PR_REVIEW_MARKER_NAMESPACE,
   PR_REVIEW_PUBLISH_PARAMETERS_SCHEMA,
-  WF7_ROLE_SPECS,
+  PR_REVIEW_ROLE_SPECS,
   type CompletedCapture,
   type PrReviewFailureCode,
   type RoleIntegrityObservation,
@@ -277,7 +277,7 @@ class PublishTool implements PrReviewPublishTool {
       try {
         manifest = this.#loadManifest();
         if (manifest.digest !== currentReceipt.role_manifest_digest) {
-          throw new PrReviewPublishError("role_integrity_drift", "WF7 role manifest changed before publication");
+          throw new PrReviewPublishError("role_integrity_drift", "PR review role manifest changed before publication");
         }
         roleObservations = this.#checkRoles(manifest, journal, currentReceipt.roles);
       } catch (error) {
@@ -296,11 +296,11 @@ class PublishTool implements PrReviewPublishTool {
         throw normalized(error, "role_integrity_drift");
       }
       if (
-        roleObservations.length !== WF7_ROLE_SPECS.length
-        || WF7_ROLE_SPECS.some((role) => !roleObservations.some((observation) =>
+        roleObservations.length !== PR_REVIEW_ROLE_SPECS.length
+        || PR_REVIEW_ROLE_SPECS.some((role) => !roleObservations.some((observation) =>
           observation.agent === role.agent && observation.preCallValid && observation.prePublishValid
         ))
-      ) throw new PrReviewPublishError("role_integrity_drift", "WF7 role integrity recheck was incomplete");
+      ) throw new PrReviewPublishError("role_integrity_drift", "PR review role integrity recheck was incomplete");
 
       const github = new GitHubReadClient({
         exec: this.#exec,

@@ -512,9 +512,27 @@ describe("Stage 4: harness spawn allowlist + no pi-dynamic-workflows", () => {
   test("harness binding still exact; 19 agents present", () => {
     expect(HARNESS_COMMAND_NAME).toBe("harness");
     expect(bindGoal("")).toBe(DEFAULT_GOAL);
-    const agents = readdirSync(join(OMP, "agents")).filter((f) =>
-      f.endsWith(".md"),
+    const parityRaw = JSON.parse(
+      readFileSync(join(OMP, "agents/parity-manifest.json"), "utf8"),
     );
+    const parityNames: Record<string, true> = {};
+    if (
+      parityRaw &&
+      typeof parityRaw === "object" &&
+      "agents" in parityRaw &&
+      Array.isArray(parityRaw.agents)
+    ) {
+      for (const a of parityRaw.agents) {
+        if (a && typeof a === "object" && "name" in a && typeof a.name === "string") {
+          parityNames[a.name] = true;
+        }
+      }
+    }
+    const agents = readdirSync(join(OMP, "agents"))
+      .filter((f) => f.endsWith(".md"))
+      .map((f) => f.replace(/\.md$/, ""))
+      .filter((name) => parityNames[name]);
+    // Goal-harness parity pack stays 19; design-flow + pr-review are separate packs.
     expect(agents.length).toBe(19);
   });
 });

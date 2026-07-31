@@ -35,7 +35,7 @@ setup_fixture() {
   printf 'agents-local\n' >"$base/omp/AGENTS.md"
   printf 'mcp\n' >"$base/omp/mcp.json"
   printf 'a\n' >"$base/omp/agents/x.md"
-  cp "$ROOT"/agents/wf7-{fable-reviewer,sol-reviewer,grok-judge}.md \
+  cp "$ROOT"/agents/pr-{fable-reviewer,sol-reviewer,grok-judge}.md \
     "$base/omp/agents/"
   printf 'c\n' >"$base/omp/commands/x.md"
   printf 'e\n' >"$base/omp/extensions/x.ts"
@@ -123,7 +123,7 @@ case_backup_and_allowlist() {
       *) echo "FAIL target_in_omp_${name} ($resolved not under $omp_abs)"; FAIL=$((FAIL+1)) ;;
     esac
   done
-  for role in wf7-fable-reviewer wf7-sol-reviewer wf7-grok-judge; do
+  for role in pr-fable-reviewer pr-sol-reviewer pr-grok-judge; do
     assert "global_${role}_exists" test -f "$base/live/agents/$role.md"
     resolved="$(realp "$base/live/agents/$role.md")"
     assert "global_${role}_target" test "$resolved" = "$omp_abs/agents/$role.md"

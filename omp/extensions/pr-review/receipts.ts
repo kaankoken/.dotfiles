@@ -286,7 +286,7 @@ export class ReceiptJournal {
       now: options.now,
     }).fail(
       "task_envelope_invalid",
-      "Unattributed WF7 native task call was blocked",
+      "Unattributed PR review native task call was blocked",
     );
   }
 

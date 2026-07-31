@@ -13,6 +13,7 @@ here.
 - **Config:** `config.yml` in this tree → lean defaults (shake, no Autolearn, no built-in task list, memory off, hashline edits, **yolo** tool approval + **smart-approve** high-risk gate).
 - **MCP:** allowlist in `mcp.json` — **cold:** `tokensave` only. `headroom` / `context-mode` / `context7` defined with `enabled: false` → `/mcp enable <name>` or `/mcp-stack` when needed.
 - **Harness:** custom `/harness` (not native `/goal`); Superpowers skills loaded live by path — never vendored into prompts.
+- **Design flow:** custom `/design` (pre-`/harness`) — PDR + Arc42 in bd/session; ADRs only under `docs/adr/`. Never auto-starts `/harness`. Skill `design-flow`. Models (`model-router`): PDR/ADR = Opus 5 max/xhigh → Terra 5.6 max → Sol 5.6 xhigh → Grok; Arc42 = Grok → Composer 2.5.
 - **Skills cold start:** ultra-core Superpowers + harness + caveman/ponytail roots + thin `stack-*` routers. Domain packs and sub-skills load **on demand** (`/stack-*`, stack-scout, pack overlays).
 - **MCP cold start:** tokensave only; `disabledServers` blocks foreign discovery (codebase-memory, chrome-devtools, node_repl, …). `tools.xdevDocs: catalog` keeps xd:// inventory short.
 - **Link:** `./link.sh` wires allowlisted paths into `~/.omp/agent` without touching `auth.json` / sessions / cache.

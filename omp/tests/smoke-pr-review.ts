@@ -11,9 +11,9 @@ try {
     run.publishResult?.status !== "dry_run" ||
     targetFiles(run.targetDir).join(",") !== "sentinel.txt"
   ) {
-    throw new Error("review-pr dry-run smoke invariant failed");
+    throw new Error("pr-reviewer dry-run smoke invariant failed");
   }
-  console.log("PASS review-pr dry-run: 5 sealed, 0 GitHub writes, receipt=dry_run");
+  console.log("PASS pr-reviewer dry-run: 5 sealed, 0 GitHub writes, receipt=dry_run");
 } finally {
   rmSync(run.root, { recursive: true, force: true });
 }

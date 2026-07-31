@@ -49,24 +49,40 @@ const fullCatalog = catalog(
 );
 
 describe("deterministic model routing", () => {
-  test("Spec/Plan/BiteSize: Sol ultra → Fable max → Opus", () => {
+  test("Spec/Plan/BiteSize (Sol demoted until 2026-08-06): Fable max → Opus → Sol", () => {
+    const during = Date.parse("2026-07-31T00:00:00.000Z");
     for (const phase of ["spec", "plan", "bitesize"] as PhaseKind[]) {
-      const r = resolveModelRoute(fullCatalog, phase);
-      expect(r.providerModelId).toBe("openai-codex/gpt-5.6-sol");
-      expect(r.effort).toBe("ultra");
+      const r = resolveModelRoute(fullCatalog, phase, { nowMs: during });
+      expect(r.providerModelId).toBe("anthropic/claude-fable-5");
+      expect(r.effort).toBe("max");
       expect(r.degradedIndependence).toBe(false);
+      expect(r.fallbackChain.map((x) => x.family)).toEqual([
+        "fable",
+        "opus",
+        "sol",
+      ]);
     }
   });
 
-  test("Milestone: Terra xhigh → Fable max → Sol ultra → Opus max", () => {
-    const r = resolveModelRoute(fullCatalog, "milestone");
+  test("Spec/Plan/BiteSize after 2026-08-06: Sol ultra primary again", () => {
+    const after = Date.parse("2026-08-06T00:00:01.000Z");
+    for (const phase of ["spec", "plan", "bitesize"] as PhaseKind[]) {
+      const r = resolveModelRoute(fullCatalog, phase, { nowMs: after });
+      expect(r.providerModelId).toBe("openai-codex/gpt-5.6-sol");
+      expect(r.effort).toBe("ultra");
+    }
+  });
+
+  test("Milestone (Sol demoted): Terra xhigh → Fable max → Opus max → Sol ultra", () => {
+    const during = Date.parse("2026-07-31T00:00:00.000Z");
+    const r = resolveModelRoute(fullCatalog, "milestone", { nowMs: during });
     expect(r.providerModelId).toBe("openai-codex/gpt-5.6-terra");
     expect(r.effort).toBe("xhigh");
     expect(r.fallbackChain.map((x) => `${x.family}@${x.effort}`)).toEqual([
       "terra@xhigh",
       "fable@max",
-      "sol@ultra",
       "opus@max",
+      "sol@ultra",
     ]);
   });
 
@@ -82,16 +98,17 @@ describe("deterministic model routing", () => {
     expect(r.effort).toBe("max");
   });
 
-  test("Milestone: no Terra/Fable → Sol ultra", () => {
+  test("Milestone: no Terra/Fable → Opus max (Sol demoted) else Sol", () => {
     const c = catalog(
       entry("openai-codex/gpt-5.6-terra", ["terra"], "openai-codex", false),
       entry("anthropic/claude-fable-5", ["fable"], "anthropic", false),
       entry("openai-codex/gpt-5.6-sol", ["sol"], "openai-codex"),
       entry("anthropic/claude-opus-4", ["opus"], "anthropic"),
     );
-    const r = resolveModelRoute(c, "milestone");
-    expect(r.providerModelId).toBe("openai-codex/gpt-5.6-sol");
-    expect(r.effort).toBe("ultra");
+    const during = Date.parse("2026-07-31T00:00:00.000Z");
+    const r = resolveModelRoute(c, "milestone", { nowMs: during });
+    expect(r.providerModelId).toBe("anthropic/claude-opus-4");
+    expect(r.effort).toBe("max");
   });
 
   test("big-gate first available wins: no Sol → Fable max", () => {
@@ -134,16 +151,20 @@ describe("deterministic model routing", () => {
     expect(r.effort).toBe("high");
   });
 
-  test("Implement: Grok+Composer unavailable → Sol high", () => {
+  test("Implement: Grok+Composer unavailable → Sonnet (Sol demoted) else Sol", () => {
     const c = catalog(
       entry("xai/grok-4.5", ["grok"], "xai", false),
       entry("cursor/composer-2.5", ["composer"], "cursor", false),
       entry("openai-codex/gpt-5.6-sol", ["sol"], "openai-codex"),
       entry("anthropic/claude-sonnet-4", ["sonnet"], "anthropic"),
     );
-    const r = resolveModelRoute(c, "implement");
-    expect(r.providerModelId).toBe("openai-codex/gpt-5.6-sol");
+    const during = Date.parse("2026-07-31T00:00:00.000Z");
+    const r = resolveModelRoute(c, "implement", { nowMs: during });
+    expect(r.providerModelId).toBe("anthropic/claude-sonnet-4");
     expect(r.effort).toBe("high");
+    const after = Date.parse("2026-08-07T00:00:00.000Z");
+    const r2 = resolveModelRoute(c, "implement", { nowMs: after });
+    expect(r2.providerModelId).toBe("openai-codex/gpt-5.6-sol");
   });
 
   test("Implement: only Sonnet left", () => {
@@ -171,29 +192,41 @@ describe("deterministic model routing", () => {
   });
 
   test("Composer never inserted between Sol and Sonnet", () => {
-    // When Grok is available, chain must not put Composer after Sol
-    const chain = resolveModelRoute(fullCatalog, "implement");
-    expect(chain.fallbackChain.map((x) => x.family)).toEqual([
+    // During Sol demote window: Sonnet before Sol
+    const during = Date.parse("2026-07-31T00:00:00.000Z");
+    const chainDuring = resolveModelRoute(fullCatalog, "implement", {
+      nowMs: during,
+    });
+    expect(chainDuring.fallbackChain.map((x) => x.family)).toEqual([
+      "grok",
+      "composer",
+      "sonnet",
+      "sol",
+    ]);
+    const after = Date.parse("2026-08-07T00:00:00.000Z");
+    const chainAfter = resolveModelRoute(fullCatalog, "implement", {
+      nowMs: after,
+    });
+    expect(chainAfter.fallbackChain.map((x) => x.family)).toEqual([
       "grok",
       "composer",
       "sol",
       "sonnet",
     ]);
-    // When only Sol+Composer+Sonnet (no Grok), Composer first then Sol then Sonnet
+    // When only Sol+Composer+Sonnet (no Grok), Composer first; Sonnet before Sol while demoted
     const noGrok = catalog(
       entry("cursor/composer-2.5", ["composer"], "cursor"),
       entry("openai-codex/gpt-5.6-sol", ["sol"], "openai-codex"),
       entry("anthropic/claude-sonnet-4", ["sonnet"], "anthropic"),
     );
-    const r = resolveModelRoute(noGrok, "implement");
+    const r = resolveModelRoute(noGrok, "implement", { nowMs: during });
     expect(r.providerModelId).toBe("cursor/composer-2.5");
-    // Sol is still before Sonnet in remaining chain
     const families = r.fallbackChain.map((x) => x.family);
     const solI = families.indexOf("sol");
     const sonI = families.indexOf("sonnet");
     const compI = families.indexOf("composer");
-    expect(compI).toBeLessThan(solI);
-    expect(solI).toBeLessThan(sonI);
+    expect(compI).toBeLessThan(sonI);
+    expect(sonI).toBeLessThan(solI);
   });
 
   test("every Grok route resolves to high effort", () => {
@@ -214,11 +247,13 @@ describe("deterministic model routing", () => {
   });
 
   test("reviewer excludes producer resolved provider/model ID", () => {
-    const producer = resolveModelRoute(fullCatalog, "spec");
-    const reviewer = resolveReviewerModel(fullCatalog, producer);
+    const during = Date.parse("2026-07-31T00:00:00.000Z");
+    const producer = resolveModelRoute(fullCatalog, "spec", { nowMs: during });
+    expect(producer.providerModelId).toBe("anthropic/claude-fable-5");
+    const reviewer = resolveReviewerModel(fullCatalog, producer, during);
     expect(reviewer.providerModelId).not.toBe(producer.providerModelId);
-    // Prefer next in big-gate chain
-    expect(reviewer.providerModelId).toBe("anthropic/claude-fable-5");
+    // Prefer next in big-gate chain (Opus)
+    expect(reviewer.providerModelId).toBe("anthropic/claude-opus-4");
   });
 
   test("single available model uses fresh isolated instance + degradedIndependence", () => {
@@ -345,20 +380,30 @@ describe("deterministic model routing", () => {
     );
   });
 
-  test("Research: Grok high (deep-research) first, then Sol medium", () => {
-    const r = resolveModelRoute(fullCatalog, "research");
+  test("Research: Grok high first; Sol demoted → Fable then Sol", () => {
+    const during = Date.parse("2026-07-31T00:00:00.000Z");
+    const r = resolveModelRoute(fullCatalog, "research", { nowMs: during });
     expect(r.providerModelId).toBe("xai/grok-4.5");
     expect(r.effort).toBe("high");
-    expect(r.fallbackChain.map((x) => x.family)).toEqual(["grok", "sol"]);
+    expect(r.fallbackChain.map((x) => x.family)).toEqual([
+      "grok",
+      "fable",
+      "sol",
+    ]);
+    const after = Date.parse("2026-08-07T00:00:00.000Z");
+    const rAfter = resolveModelRoute(fullCatalog, "research", { nowMs: after });
+    expect(rAfter.fallbackChain.map((x) => x.family)).toEqual(["grok", "sol"]);
   });
 
-  test("Research: no Grok → Sol medium", () => {
+  test("Research: no Grok → Fable medium (Sol demoted) else Sol", () => {
     const noGrok = catalog(
       entry("xai/grok-4.5", ["grok"], "xai", false),
+      entry("anthropic/claude-fable-5", ["fable", "fable 5"], "anthropic"),
       entry("openai-codex/gpt-5.6-sol", ["sol", "gpt-5.6-sol"], "openai-codex"),
     );
-    const r = resolveModelRoute(noGrok, "research");
-    expect(r.providerModelId).toBe("openai-codex/gpt-5.6-sol");
+    const during = Date.parse("2026-07-31T00:00:00.000Z");
+    const r = resolveModelRoute(noGrok, "research", { nowMs: during });
+    expect(r.providerModelId).toBe("anthropic/claude-fable-5");
     expect(r.effort).toBe("medium");
   });
 
@@ -408,6 +453,93 @@ describe("deterministic model routing", () => {
     );
     const r = resolveModelRoute(c, "pr");
     expect(r.providerModelId).toBe("anthropic/claude-sonnet-4");
+  });
+
+  test("design-pdr/adr: Opus max → xhigh → Terra max → xhigh → Sol xhigh → Grok", () => {
+    const withOpus5 = catalog(
+      entry("anthropic/claude-opus-5", ["opus", "opus 5", "claude-opus-5"], "anthropic"),
+      entry("openai-codex/gpt-5.6-terra", ["terra", "gpt-5.6-terra", "5.6-terra"], "openai-codex"),
+      entry("openai-codex/gpt-5.6-sol", ["sol", "sol 5.6", "gpt-5.6-sol"], "openai-codex"),
+      entry("xai/grok-4.5", ["grok", "grok 4.5", "grok-4.5"], "xai"),
+    );
+    for (const phase of ["design-pdr", "design-adr"] as PhaseKind[]) {
+      const r = resolveModelRoute(withOpus5, phase);
+      expect(r.providerModelId).toBe("anthropic/claude-opus-5");
+      expect(r.effort).toBe("max");
+      expect(r.fallbackChain.map((x) => `${x.family}@${x.effort}`)).toEqual([
+        "opus@max",
+        "opus@xhigh",
+        "terra@max",
+        "terra@xhigh",
+        "sol@xhigh",
+        "grok@high",
+      ]);
+    }
+    const noOpus = catalog(
+      entry("anthropic/claude-opus-5", ["opus"], "anthropic", false),
+      entry("openai-codex/gpt-5.6-terra", ["terra", "gpt-5.6-terra"], "openai-codex"),
+      entry("openai-codex/gpt-5.6-sol", ["sol"], "openai-codex"),
+      entry("xai/grok-4.5", ["grok"], "xai"),
+    );
+    expect(resolveModelRoute(noOpus, "design-pdr").providerModelId).toBe(
+      "openai-codex/gpt-5.6-terra",
+    );
+    expect(resolveModelRoute(noOpus, "design-pdr").effort).toBe("max");
+    const onlyGrok = catalog(
+      entry("xai/grok-4.5", ["grok", "grok 4.5"], "xai"),
+    );
+    const g = resolveModelRoute(onlyGrok, "design-adr");
+    expect(g.providerModelId).toBe("xai/grok-4.5");
+    expect(g.effort).toBe("high");
+  });
+
+  test("design-arc42: Grok → Composer 2.5", () => {
+    const r = resolveModelRoute(fullCatalog, "design-arc42");
+    expect(r.providerModelId).toBe("xai/grok-4.5");
+    expect(r.effort).toBe("high");
+    expect(r.fallbackChain.map((x) => x.family)).toEqual(["grok", "composer"]);
+    const noGrok = catalog(
+      entry("xai/grok-4.5", ["grok"], "xai", false),
+      entry("cursor/composer-2.5", ["composer", "composer 2.5"], "cursor"),
+    );
+    const c = resolveModelRoute(noGrok, "design-arc42");
+    expect(c.providerModelId).toBe("cursor/composer-2.5");
+    expect(c.family).toBe("composer");
+  });
+
+  test("design reviewer skips producer id on same chain", () => {
+    const withOpus5 = catalog(
+      entry("anthropic/claude-opus-5", ["opus", "opus 5", "claude-opus-5"], "anthropic"),
+      entry("openai-codex/gpt-5.6-terra", ["terra", "gpt-5.6-terra", "5.6-terra"], "openai-codex"),
+      entry("openai-codex/gpt-5.6-sol", ["sol", "sol 5.6", "gpt-5.6-sol"], "openai-codex"),
+      entry("xai/grok-4.5", ["grok", "grok 4.5"], "xai"),
+    );
+    const producer = resolveModelRoute(withOpus5, "design-pdr");
+    expect(producer.providerModelId).toBe("anthropic/claude-opus-5");
+    const reviewer = resolveReviewerModel(withOpus5, producer);
+    expect(reviewer.providerModelId).not.toBe(producer.providerModelId);
+    // Same model id skipped; next family is Terra (Opus xhigh still same id)
+    expect(reviewer.providerModelId).toBe("openai-codex/gpt-5.6-terra");
+    expect(reviewer.degradedIndependence).toBe(false);
+
+    const arcProducer = resolveModelRoute(fullCatalog, "design-arc42");
+    const arcReviewer = resolveReviewerModel(fullCatalog, arcProducer);
+    expect(arcReviewer.providerModelId).toBe("cursor/composer-2.5");
+    expect(arcReviewer.providerModelId).not.toBe(arcProducer.providerModelId);
+  });
+
+  test("non-design phases still route (smoke)", () => {
+    const during = Date.parse("2026-07-31T00:00:00.000Z");
+    expect(resolveModelRoute(fullCatalog, "spec", { nowMs: during }).family).toBe(
+      "fable",
+    );
+    expect(resolveModelRoute(fullCatalog, "plan", { nowMs: during }).family).toBe(
+      "fable",
+    );
+    expect(resolveModelRoute(fullCatalog, "implement", { nowMs: during }).family).toBe(
+      "grok",
+    );
+    expect(resolveModelRoute(fullCatalog, "pr").family).toBe("grok");
   });
 });
 
