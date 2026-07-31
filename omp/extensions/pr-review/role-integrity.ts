@@ -578,20 +578,31 @@ const UNRESOLVED_SHELL_PATH =
 function shellStructure(command: string): {
   compound: boolean;
   outputRedirect: boolean;
+  noncanonicalPath: boolean;
 } {
   let quote: "'" | '"' | undefined;
   let compound = false;
   let outputRedirect = false;
+  let noncanonicalPath = false;
   for (let i = 0; i < command.length; i += 1) {
     const char = command[i]!;
     if (quote === "'") {
-      if (char === "'") quote = undefined;
+      if (char === "'") {
+        if (command[i + 1] !== undefined && !/[\s;&|<>]/.test(command[i + 1]!)) {
+          noncanonicalPath = true;
+        }
+        quote = undefined;
+      }
       continue;
     }
     if (quote === '"') {
       if (char === "\\") {
+        noncanonicalPath = true;
         i += 1;
       } else if (char === '"') {
+        if (command[i + 1] !== undefined && !/[\s;&|<>]/.test(command[i + 1]!)) {
+          noncanonicalPath = true;
+        }
         quote = undefined;
       } else if (char === "`" || command.startsWith("$(", i)) {
         compound = true;
@@ -599,8 +610,10 @@ function shellStructure(command: string): {
       continue;
     }
     if (char === "\\") {
+      noncanonicalPath = true;
       i += 1;
     } else if (char === "'" || char === '"') {
+      if (i > 0 && !/[\s;&|<>]/.test(command[i - 1]!)) noncanonicalPath = true;
       quote = char;
     } else if (
       char === "`" ||
@@ -609,13 +622,19 @@ function shellStructure(command: string): {
       command.startsWith(">(", i)
     ) {
       compound = true;
+    } else if (char === "{") {
+      const close = command.indexOf("}", i + 1);
+      const expansion = close < 0 ? "" : command.slice(i + 1, close);
+      if (expansion && !/[\s;&|<>]/.test(expansion) && /,|\.\./.test(expansion)) {
+        noncanonicalPath = true;
+      }
     } else if (char === ";" || char === "&" || char === "|" || char === "\n" || char === "\r") {
       compound = true;
     } else if (char === ">") {
       outputRedirect = true;
     }
   }
-  return { compound, outputRedirect };
+  return { compound, outputRedirect, noncanonicalPath };
 }
 
 function toolKind(toolName: string): string {
@@ -679,20 +698,30 @@ export function createRoleMutationGuard(
           : undefined;
         const tokens = command ? shellTokens(command) : argv ?? [];
         const nestedTokens = tokens.flatMap((token) => shellTokens(token));
+        const allTokens = [...tokens, ...nestedTokens];
         const text = command ?? argv?.join(" ") ?? "";
         const executable = basename(tokens[0] ?? "").toLowerCase();
-        const structure = command ? shellStructure(command) : undefined;
+        const structure = text ? shellStructure(text) : undefined;
         const mutationCapable = structure
           ? structure.compound ||
             structure.outputRedirect ||
             READ_ONLY_COMMANDS[executable] !== true
           : READ_ONLY_COMMANDS[executable] !== true;
         const protectedTarget =
-          targetsProtected([...tokens, ...nestedTokens], cwd) ||
+          targetsProtected(allTokens, cwd) ||
           [...protectedPaths].some((path) => text.includes(path));
+        const compoundCwd =
+          structure?.compound === true &&
+          allTokens.some((token) => {
+            const command = basename(token).toLowerCase();
+            return command === "cd" || command === "pushd";
+          });
         denied =
           mutationCapable &&
-          (protectedTarget || UNRESOLVED_SHELL_PATH.test(text));
+          (protectedTarget ||
+            compoundCwd ||
+            UNRESOLVED_SHELL_PATH.test(text) ||
+            structure?.noncanonicalPath === true);
       }
 
       if (!denied) return undefined;

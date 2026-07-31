@@ -70,6 +70,16 @@ const GH_REVIEW_OR_COMMENT_ENDPOINT =
   /^repos\/[^/]+\/[^/]+\/(?:issues\/(?:[^/]+\/comments|comments\/[^/]+)|pulls\/(?:[^/]+\/(?:comments|reviews)|comments\/[^/]+))(?:\/[^/]+)*$/;
 const GH_GROUPED_REVIEW_ENDPOINT =
   /^repos\/[^/]+\/[^/]+\/pulls\/[^/]+\/reviews$/;
+const GH_READ_ONLY_ACTIONS: Record<string, Record<string, true>> = {
+  issue: { list: true, view: true },
+  pr: { checks: true, diff: true, list: true, status: true, view: true },
+  release: { list: true, view: true },
+  repo: { list: true, view: true },
+  run: { list: true, view: true, watch: true },
+  search: { code: true, commits: true, issues: true, prs: true, repos: true },
+  workflow: { list: true, view: true },
+};
+
 
 /**
  * Resolve path component-by-component with lstat; return canonical path
@@ -615,21 +625,22 @@ function classifyGh(
   }
 
   const command = args[commandIndex];
-  let prActionIndex = commandIndex + 1;
-  while (command === "pr" && prActionIndex < args.length) {
-    const arg = args[prActionIndex]!;
+  let actionIndex = commandIndex + 1;
+  while (actionIndex < args.length) {
+    const arg = args[actionIndex]!;
     if (arg === "-R" || arg === "--repo") {
-      prActionIndex += 2;
+      actionIndex += 2;
     } else if (
       arg.startsWith("--repo=") ||
       (arg.startsWith("-R") && arg.length > 2)
     ) {
-      prActionIndex += 1;
+      actionIndex += 1;
     } else {
       break;
     }
   }
-  const prAction = command === "pr" ? args[prActionIndex] : undefined;
+  const action = args[actionIndex];
+  const prAction = command === "pr" ? action : undefined;
   if (prAction === "create" || prAction === "merge") {
     if (!manifest.operations.includes("gh.pr")) {
       return {
@@ -836,10 +847,38 @@ function classifyGh(
     };
   }
 
+  const readOnlyCli =
+    command !== undefined &&
+    action !== undefined &&
+    GH_READ_ONLY_ACTIONS[command]?.[action] === true;
+  if (readOnlyCli) {
+    if (publisher) {
+      return {
+        allow: true,
+        reason: "publisher gh read allowed",
+        operation: "gh.pr.inline-review",
+      };
+    }
+    if (manifest.operations.includes("cli.execute")) {
+      return {
+        allow: true,
+        reason: "gh read-only command allowed",
+        operation: "cli.execute",
+      };
+    }
+    return { allow: false, reason: "gh read not allowed in phase" };
+  }
+  if (command !== "api") {
+    return {
+      allow: false,
+      reason: "gh command denied: not in read-only allowlist",
+    };
+  }
+
   if (!manifest.operations.includes("cli.execute")) {
     return { allow: false, reason: "gh not allowed" };
   }
-  return { allow: true, reason: "gh read-ish", operation: "cli.execute" };
+  return { allow: true, reason: "gh API operation allowed", operation: "cli.execute" };
 }
 
 /** Caches must resolve only under runTemp. */

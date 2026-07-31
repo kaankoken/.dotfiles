@@ -472,6 +472,7 @@ describe("run-scoped OMP role mutation guard", () => {
     const relativeLivePath = role.livePath.slice(root.length + 1);
     const roleFile = role.livePath.split("/").at(-1)!;
     const liveDir = role.livePath.slice(0, -(roleFile.length + 1));
+    const escapedRoleFile = roleFile.replace("-", "\\-");
     const originalHome = process.env.HOME;
     const protectedRolePaths = manifest.roles.flatMap((entry) => [
       entry.livePath,
@@ -514,6 +515,34 @@ describe("run-scoped OMP role mutation guard", () => {
           command: `printf tampered | python -c 'import pathlib,sys; pathlib.Path(sys.argv[1]).write_text(sys.stdin.read())' "$HOME/${relativeLivePath}"`,
         },
       },
+      {
+        toolName: "bash",
+        input: { command: `printf tampered > '${liveDir}/'"${roleFile}"` },
+      },
+      {
+        toolName: "bash",
+        input: { command: `printf tampered > ${liveDir}/${escapedRoleFile}` },
+      },
+      {
+        toolName: "bash",
+        input: { command: `printf tampered | tee ${liveDir}/wf7-{fable,sol}-reviewer.md` },
+      },
+      {
+        toolName: "bash",
+        input: { command: `cd '${liveDir}' && rm '${roleFile}'` },
+      },
+      {
+        toolName: "bash",
+        input: { command: `pushd '${liveDir}' >/dev/null && rm '${roleFile}'` },
+      },
+      {
+        toolName: "bash",
+        input: { command: `cd '${liveDir}/..' && rm 'live/${roleFile}'` },
+      },
+      {
+        toolName: "bash",
+        input: { command: `cd '${join(root, "unrelated")}' && rm 'other.txt'` },
+      },
       { toolName: "exec", input: { argv: ["rm", `$HOME/${relativeLivePath}`] } },
     ];
 
@@ -525,6 +554,12 @@ describe("run-scoped OMP role mutation guard", () => {
         expect(guard.handleToolCall({
           toolName: "bash",
           input: { command: `cat "$HOME/${relativeLivePath}"` },
+        })).toBeUndefined();
+        expect(guard.handleToolCall({
+          toolName: "bash",
+          input: {
+            command: `cat '${liveDir}/'"${roleFile}" ${liveDir}/${escapedRoleFile} ${liveDir}/wf7-{fable,sol}-reviewer.md`,
+          },
         })).toBeUndefined();
         expect(guard.handleToolCall({
           toolName: "bash",

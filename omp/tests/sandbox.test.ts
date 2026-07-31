@@ -344,6 +344,43 @@ describe("path and command policy", () => {
     expect(classifyCommand(m, ["gh", "pr", "create"]).allow).toBe(false);
   });
 
+  test("allows explicit gh views and denies aliases, extensions, mutations, and unknown commands", () => {
+    const ordinary = implManifest(tmp());
+    const publisher = publisherManifest(tmp());
+    for (const command of [
+      ["gh", "-R", "acme/widgets", "issue", "view", "7"],
+      ["gh", "issue", "--repo", "acme/widgets", "view", "7"],
+      ["/opt/homebrew/bin/gh", "pr", "--repo=acme/widgets", "view", "11"],
+      ["gh", "repo", "view", "acme/widgets"],
+    ]) {
+      expect(classifyCommand(ordinary, command)).toMatchObject({
+        allow: true,
+        operation: "cli.execute",
+      });
+      expect(classifyCommand(publisher, command)).toMatchObject({
+        allow: true,
+        operation: "gh.pr.inline-review",
+      });
+    }
+
+    for (const command of [
+      ["gh", "-R", "acme/widgets", "issue", "comment", "7", "--body", "pwn"],
+      ["gh", "alias", "set", "pwn", "api --method POST repos/acme/widgets/issues/7/comments"],
+      ["gh", "alias", "pwn"],
+      ["gh", "extension", "exec", "pwn"],
+      ["gh", "auth", "status", "--show-token"],
+      ["gh", "auth", "status", "--show-token=true"],
+      ["gh", "unknown-command", "pwn"],
+    ]) {
+      for (const manifest of [ordinary, publisher]) {
+        expect(classifyCommand(manifest, command)).toMatchObject({
+          allow: false,
+          reason: expect.stringMatching(/allowlist|denied/i),
+        });
+      }
+    }
+  });
+
   test("gates every inline review mutation outside its publisher context", () => {
     const ordinary = implManifest(tmp());
     const endpoints = [
