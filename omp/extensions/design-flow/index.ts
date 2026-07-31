@@ -26,4 +26,8 @@ export {
   type DesignModels,
   type RunDesignFlowResult,
 } from "./workflow";
+export {
+  persistDesignArtifactsBestEffort,
+  type BdRunner,
+} from "./persist";
 export { buildDesignStartMessage, type DesignStartMessage } from "../../workflows/design-flow";

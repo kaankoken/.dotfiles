@@ -30,6 +30,13 @@ import {
   DESIGN_GATE_BUDGETS,
   type DesignSnapshot,
 } from "./phase-machine";
+import {
+  persistDesignArtifactsBestEffort,
+  type BdRunner,
+} from "./persist";
+
+export type { BdRunner };
+export { persistDesignArtifactsBestEffort };
 
 const schemaDir = fileURLToPath(new URL("../../schemas/", import.meta.url));
 const pdrOutputSchema = JSON.parse(
@@ -61,6 +68,7 @@ export type RunDesignFlowResult = {
   snapshot: DesignSnapshot;
   handoff: DesignHandoff | null;
   error?: string;
+  warnings?: string[];
 };
 
 function asReview(raw: unknown): DesignReview {
@@ -230,6 +238,8 @@ export async function runDesignFlow(
     boundGoal: string;
     repoRoot: string;
     runId?: string;
+    beadsIssue?: string;
+    bdRunner?: BdRunner;
     modelRouter?: ModelRouterAdapter;
     models?: {
       pdr?: string;
@@ -390,6 +400,24 @@ export async function runDesignFlow(
   };
   snap = applyDesignTransition(snap, { type: "complete", phase: "Handoff" });
 
-  return { snapshot: snap, handoff };
+  const warnings: string[] = [];
+  const persist = persistDesignArtifactsBestEffort({
+    cwd: opts.repoRoot,
+    issueId: opts.beadsIssue,
+    boundGoal,
+    pdr: pdrGate.candidate,
+    arc42: arcGate.candidate,
+    adrPaths,
+    bdRunner: opts.bdRunner,
+  });
+  if (!persist.ok && persist.warning && opts.beadsIssue) {
+    warnings.push(persist.warning);
+  }
+
+  return {
+    snapshot: snap,
+    handoff,
+    ...(warnings.length ? { warnings } : {}),
+  };
 }
 

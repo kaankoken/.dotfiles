@@ -276,4 +276,77 @@ describe("runDesignFlow", () => {
     expect(existsSync(join(root, "docs/superpowers"))).toBe(false);
     expect(readFileSync(adrPath, "utf8")).toContain("## Decision");
   });
+
+  test("persists PDR/Arc42 to bd when beadsIssue + runner provided", async () => {
+    const updates: string[][] = [];
+    const root = mkdtempSync(join(tmpdir(), "design-flow-"));
+    const result = await runDesignFlow(mockWz(passHandlers), {
+      boundGoal: "persist me",
+      repoRoot: root,
+      runId: "persist-1",
+      beadsIssue: "dotfiles-design-test",
+      bdRunner: (args) => {
+        updates.push(args);
+        return { status: 0, stdout: "", stderr: "" };
+      },
+      adrPayload: sampleAdrPayload,
+    });
+    expect(result.error).toBeUndefined();
+    expect(result.handoff).toBeTruthy();
+    expect(result.snapshot.status).toBe("done");
+    expect(
+      updates.some(
+        (a) => a[0] === "update" && a.includes("dotfiles-design-test"),
+      ),
+    ).toBe(true);
+    const designArg = updates
+      .flat()
+      .find((a) => typeof a === "string" && a.startsWith("--design="));
+    expect(designArg).toBeDefined();
+    const payload = JSON.parse(designArg!.slice("--design=".length));
+    expect(payload.kind).toBe("design-flow-artifacts");
+    expect(payload.boundGoal).toBe("persist me");
+    expect(payload.pdr).toEqual(samplePdr);
+    expect(payload.arc42).toEqual(sampleArc);
+    expect(Array.isArray(payload.adrPaths)).toBe(true);
+    expect(payload.adrPaths.length).toBe(1);
+  });
+
+  test("bd failure warns but still returns handoff when ADRs written", async () => {
+    const root = mkdtempSync(join(tmpdir(), "design-flow-"));
+    const result = await runDesignFlow(mockWz(passHandlers), {
+      boundGoal: "bd down",
+      repoRoot: root,
+      runId: "persist-fail",
+      beadsIssue: "x",
+      bdRunner: () => {
+        throw new Error("bd missing");
+      },
+      adrPayload: sampleAdrPayload,
+    });
+    expect(result.handoff).toBeTruthy();
+    expect(result.snapshot.status).toBe("done");
+    expect(result.error).toBeUndefined();
+    expect(result.handoff?.note).toMatch(/Do not auto-start/);
+    expect(result.warnings?.some((w) => /bd/i.test(w))).toBe(true);
+    expect(existsSync(result.handoff!.adrPaths[0]!)).toBe(true);
+  });
+
+  test("skips bd when beadsIssue absent", async () => {
+    const updates: string[][] = [];
+    const root = mkdtempSync(join(tmpdir(), "design-flow-"));
+    const result = await runDesignFlow(mockWz(passHandlers), {
+      boundGoal: "no issue",
+      repoRoot: root,
+      runId: "persist-skip",
+      bdRunner: (args) => {
+        updates.push(args);
+        return { status: 0, stdout: "", stderr: "" };
+      },
+      adrPayload: sampleAdrPayload,
+    });
+    expect(result.error).toBeUndefined();
+    expect(result.handoff).toBeTruthy();
+    expect(updates.length).toBe(0);
+  });
 });
