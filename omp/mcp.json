@@ -5,12 +5,12 @@
       "args": ["serve"]
     },
     "headroom": {
-      "enabled": false,
+      "enabled": true,
       "command": "headroom",
       "args": ["mcp", "serve"]
     },
     "context-mode": {
-      "enabled": false,
+      "enabled": true,
       "command": "context-mode"
     },
     "context7": {

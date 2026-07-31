@@ -51,7 +51,6 @@ skills:
     - ~/.agents/skills/superpowers
     - ~/.agents/skills
     - ~/.omp/agent/skills
-    - ~/.claude/plugins/marketplaces/caveman/skills
     - ~/.claude/plugins/marketplaces/rust-skills/skills
     - ~/.claude/plugins/marketplaces/axiom-marketplace/axiom-codex/skills
   # Cold-start catalog only (name+description in system prompt).
@@ -59,30 +58,11 @@ skills:
   # are NOT listed here — activate via /stack-rust|/stack-ios|/stack-android,
   # stack-scout / implementer, harness stack detection, or:
   #   omp --config ~/.dotfiles/omp/configs/pack-<name>.yml
-  # Ultra-cold: workflow core + one router each for packs / prose / code shrink.
-  # Sub-skills (caveman-*, ponytail-*, stack loaders) load via /skill or path.
+  # Ultra-cold: freeform intent-router + beads only. Superpowers / goal-harness /
+  # ponytail / stack routers load on demand via flows or pack overlays.
   includeSkills:
-    - using-superpowers
-    - brainstorming
-    - writing-plans
-    - requesting-code-review
-    - receiving-code-review
-    - systematic-debugging
-    - test-driven-development
-    - subagent-driven-development
-    - using-git-worktrees
-    - verification-before-completion
-    - finishing-a-development-branch
-    - dispatching-parallel-agents
-    - executing-plans
-    - goal-harness
-    - design-flow
+    - intent-router
     - beads
-    - caveman
-    - ponytail
-    - stack-rust
-    - stack-ios
-    - stack-android
   ignoredSkills:
     []
 # Optional built-ins off at cold start (re-enable per session if needed).
