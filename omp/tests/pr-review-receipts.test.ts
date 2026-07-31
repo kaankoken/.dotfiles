@@ -74,7 +74,7 @@ describe("early private receipt journal", () => {
         repositoryNodeId: "R_node",
       });
 
-      expect(headPath).toBe(join(rootDir, "octo", "repo", "7", "abc123.json"));
+      expect(headPath).toBe(join(rootDir, "octo", "repo", "7", "abc123-attempt-1.json"));
       expect(journal.receiptPath).toBe(headPath);
       expect(existsSync(provisionalPath)).toBe(false);
       expect(readReceipt(headPath)).toMatchObject({
@@ -256,23 +256,33 @@ describe("early private receipt journal", () => {
     }
   });
 
-  test("permits one promotion, fixes the head, and rejects receipt collisions", () => {
+  test("versions same-head attempts without clobbering prior evidence", () => {
     const rootDir = mkdtempSync(join(tmpdir(), "wf7-receipts-"));
     try {
       expect(() => startJournal(rootDir, "../escape")).toThrow("invalid provisional id");
       const first = startJournal(rootDir, "first");
-      first.promoteToHead({ head_sha: "same-head", repositoryNodeId: "R_node" });
+      const firstPath = first.promoteToHead({ head_sha: "same-head", repositoryNodeId: "R_node" });
+      first.publish({ github_review_id: 91 });
+      const firstReceipt = readReceipt(firstPath);
       expect(() => first.promoteToHead({
         head_sha: "other-head",
         repositoryNodeId: "R_node",
-      })).toThrow("already promoted");
-      expect(() => first.prepare({ head_sha: "other-head" })).toThrow("head sha is immutable");
+      })).toThrow("terminal receipt");
 
       const second = startJournal(rootDir, "second");
-      expect(() => second.promoteToHead({
+      const secondPath = second.promoteToHead({
         head_sha: "same-head",
         repositoryNodeId: "R_node",
-      })).toThrow("receipt already exists");
+      });
+
+      expect(firstPath).toBe(join(rootDir, "octo", "repo", "7", "same-head-attempt-1.json"));
+      expect(secondPath).toBe(join(rootDir, "octo", "repo", "7", "same-head-attempt-2.json"));
+      expect(readReceipt(firstPath)).toEqual(firstReceipt);
+      expect(readReceipt(secondPath)).toMatchObject({
+        status: "prepared",
+        run_key: firstReceipt.run_key,
+      });
+      expect(() => second.prepare({ head_sha: "other-head" })).toThrow("head sha is immutable");
     } finally {
       rmSync(rootDir, { recursive: true, force: true });
     }

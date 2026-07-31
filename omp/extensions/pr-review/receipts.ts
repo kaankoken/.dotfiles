@@ -5,9 +5,11 @@ import {
   existsSync,
   fsyncSync,
   mkdirSync,
+  linkSync,
   openSync,
   renameSync,
   rmSync,
+  unlinkSync,
   writeSync,
 } from "node:fs";
 import { homedir } from "node:os";
@@ -283,8 +285,7 @@ export class ReceiptJournal {
     this.#assertOpen();
     if (this.#promoted) throw new Error("receipt already promoted");
     assertSafeSegment(update.head_sha, "head sha");
-    const target = join(this.#directory, `${update.head_sha}.json`);
-    if (existsSync(target)) throw new Error("receipt already exists for head");
+    let target: string | undefined;
     if (!update.repositoryNodeId || /[\u0000-\u001f\u007f]/.test(update.repositoryNodeId)) {
       throw new Error("invalid repository node id");
     }
@@ -301,7 +302,18 @@ export class ReceiptJournal {
         .digest("hex"),
     };
     writeAtomic(this.#path, receipt);
-    renameSync(this.#path, target);
+    for (let attempt = 1; target === undefined; attempt += 1) {
+      const candidate = join(this.#directory, `${update.head_sha}-attempt-${attempt}.json`);
+      try {
+        linkSync(this.#path, candidate);
+        target = candidate;
+      } catch (error) {
+        if (!error || typeof error !== "object" || !("code" in error) || error.code !== "EEXIST") {
+          throw error;
+        }
+      }
+    }
+    unlinkSync(this.#path);
     chmodSync(target, 0o600);
     fsyncDirectory(this.#directory);
     this.#receipt = receipt;

@@ -124,7 +124,10 @@ function sealed(slot: Wf7TaskSlot, index: number, data: unknown): SealedTaskResu
   };
 }
 
-function capture(event: "COMMENT" | "REQUEST_CHANGES" | "APPROVE" = "REQUEST_CHANGES"): CompletedCapture {
+function capture(
+  event: "COMMENT" | "REQUEST_CHANGES" | "APPROVE" = "REQUEST_CHANGES",
+  captureHandle = CAPTURE_HANDLE,
+): CompletedCapture {
   const candidate = {
     id: "one",
     path: "src/a.ts",
@@ -186,7 +189,7 @@ function capture(event: "COMMENT" | "REQUEST_CHANGES" | "APPROVE" = "REQUEST_CHA
     judge,
   ];
   return {
-    captureHandle: CAPTURE_HANDLE,
+    captureHandle,
     snapshot: {
       runHandle: "run-" + "q".repeat(32),
       snapshotHandle: SNAPSHOT_HANDLE,
@@ -322,6 +325,7 @@ type FakeOptions = {
   postResult?: PrReviewExecResult;
   postStarted?: () => void;
   postWait?: Promise<void>;
+  postPullResult?: PrReviewExecResult;
 };
 
 interface FakeGitHub {
@@ -395,8 +399,10 @@ function fakeGitHub(options: FakeOptions = {}): FakeGitHub {
       };
     }
     if (endpoint === "repos/acme/widgets/pulls/42") {
+      const call = pullCall++;
+      if (call === 1 && options.postPullResult) return options.postPullResult;
       const heads = options.pullHeads ?? [HEAD, HEAD];
-      const head = heads[Math.min(pullCall++, heads.length - 1)]!;
+      const head = heads[Math.min(call, heads.length - 1)]!;
       return {
         exitCode: 0,
         stdout: JSON.stringify({
@@ -428,17 +434,30 @@ function fakeGitHub(options: FakeOptions = {}): FakeGitHub {
   return { calls, exec, inputPaths, payloads };
 }
 
-function toolFor(source: CompletedCapture, journal: ReceiptJournal, fake: FakeGitHub, checkRoles = () => roles) {
+function toolForCaptures(
+  captures: ReadonlyMap<string, { source: CompletedCapture; journal: ReceiptJournal }>,
+  fake: FakeGitHub,
+  checkRoles = () => roles,
+) {
   return createPrReviewPublishTool({
     state: { lookupCapture: (handle: string) => {
-      if (handle !== CAPTURE_HANDLE) throw new Error("unknown capture handle");
-      return source;
+      const entry = captures.get(handle);
+      if (!entry) throw new Error("unknown capture handle");
+      return entry.source;
     } },
-    journalForCapture: () => journal,
+    journalForCapture: (handle) => {
+      const entry = captures.get(handle);
+      if (!entry) throw new Error("unknown capture handle");
+      return entry.journal;
+    },
     exec: fake.exec,
     loadManifest: () => manifest,
     checkRoles,
   });
+}
+
+function toolFor(source: CompletedCapture, journal: ReceiptJournal, fake: FakeGitHub, checkRoles = () => roles) {
+  return toolForCaptures(new Map([[source.captureHandle, { source, journal }]]), fake, checkRoles);
 }
 
 function remoteFor(plan: ReviewPlan, reviewId = 700, actor = "bot"): RemoteFixture {
@@ -560,6 +579,210 @@ describe("pr_review_publish", () => {
     await expect(invalid.execute({ capture_handle: "z".repeat(32), dry_run: false }))
       .rejects.toMatchObject({ code: "invalid_arguments" });
     expect(second.calls).toHaveLength(0);
+  });
+
+  test("deduplicates sequential fresh same-head captures and rejects a fresh conflicting event", async () => {
+    const firstSource = capture("REQUEST_CHANGES");
+    const secondHandle = `${CAPTURE_HANDLE}-fresh`;
+    const conflictHandle = `${CAPTURE_HANDLE}-conflict`;
+    const secondSource = capture("REQUEST_CHANGES", secondHandle);
+    const conflictSource = capture("APPROVE", conflictHandle);
+    const plan = buildReviewPlanFromCapture(firstSource);
+    const firstJournal = journalFor(firstSource);
+    const secondJournal = journalFor(secondSource);
+    const conflictJournal = journalFor(conflictSource);
+    let published: RemoteFixture | undefined;
+    const fake = fakeGitHub({
+      reviewPages: () => published ? [published.review] : [],
+      commentPages: () => published?.comments ?? [],
+    });
+    const original = fake.exec;
+    fake.exec = async (argv, options) => {
+      const result = await original(argv, options);
+      if (argv.includes("POST")) published = remoteFor(plan, 900);
+      return result;
+    };
+    const tool = toolForCaptures(new Map([
+      [firstSource.captureHandle, { source: firstSource, journal: firstJournal }],
+      [secondSource.captureHandle, { source: secondSource, journal: secondJournal }],
+      [conflictSource.captureHandle, { source: conflictSource, journal: conflictJournal }],
+    ]), fake);
+
+    const first = await tool.execute({ capture_handle: firstSource.captureHandle, dry_run: false });
+    const second = await tool.execute({ capture_handle: secondSource.captureHandle, dry_run: false });
+    await expect(tool.execute({ capture_handle: conflictSource.captureHandle, dry_run: false }))
+      .rejects.toMatchObject({ code: "same_head_conflict" });
+
+    expect(first).toMatchObject({ status: "published", github_review_id: 900 });
+    expect(second).toMatchObject({ status: "existing", github_review_id: 900 });
+    expect(fake.calls.filter((argv) => argv.includes("POST"))).toHaveLength(1);
+    expect(receipt(firstJournal)).toMatchObject({ status: "published", github_review_id: 900 });
+    expect(receipt(secondJournal)).toMatchObject({ status: "published", github_review_id: 900 });
+    expect(receipt(conflictJournal)).toMatchObject({
+      status: "failed",
+      failure_code: "same_head_conflict",
+    });
+  });
+
+  test("serializes concurrent fresh same-head captures by run key", async () => {
+    const firstSource = capture("REQUEST_CHANGES");
+    const secondSource = capture("REQUEST_CHANGES", `${CAPTURE_HANDLE}-concurrent`);
+    const plan = buildReviewPlanFromCapture(firstSource);
+    const firstJournal = journalFor(firstSource);
+    const secondJournal = journalFor(secondSource);
+    let published: RemoteFixture | undefined;
+    let releasePost!: () => void;
+    let signalPostStarted!: () => void;
+    const postWait = new Promise<void>((resolve) => {
+      releasePost = resolve;
+    });
+    const postStarted = new Promise<void>((resolve) => {
+      signalPostStarted = resolve;
+    });
+    const fake = fakeGitHub({
+      postStarted: signalPostStarted,
+      postWait,
+      reviewPages: () => published ? [published.review] : [],
+      commentPages: () => published?.comments ?? [],
+    });
+    const original = fake.exec;
+    fake.exec = async (argv, options) => {
+      const result = await original(argv, options);
+      if (argv.includes("POST")) published = remoteFor(plan, 900);
+      return result;
+    };
+    const tool = toolForCaptures(new Map([
+      [firstSource.captureHandle, { source: firstSource, journal: firstJournal }],
+      [secondSource.captureHandle, { source: secondSource, journal: secondJournal }],
+    ]), fake);
+
+    const firstPending = tool.execute({ capture_handle: firstSource.captureHandle, dry_run: false });
+    await postStarted;
+    const secondPending = tool.execute({ capture_handle: secondSource.captureHandle, dry_run: false });
+    for (let turn = 0; turn < 10; turn += 1) await Promise.resolve();
+    expect(fake.calls.filter((argv) => argv.includes("user"))).toHaveLength(1);
+    releasePost();
+    const results = await Promise.all([firstPending, secondPending]);
+
+    expect(results.map((result) => result.status).sort()).toEqual(["existing", "published"]);
+    expect(results.map((result) => result.github_review_id)).toEqual([900, 900]);
+    expect(fake.calls.filter((argv) => argv.includes("POST"))).toHaveLength(1);
+    expect([receipt(firstJournal), receipt(secondJournal)]).toEqual([
+      expect.objectContaining({ status: "published", github_review_id: 900 }),
+      expect.objectContaining({ status: "published", github_review_id: 900 }),
+    ]);
+  });
+
+  test("records known IDs as indeterminate when post-publication head read fails, then recovers without POST", async () => {
+    const firstSource = capture("REQUEST_CHANGES");
+    const secondSource = capture("REQUEST_CHANGES", `${CAPTURE_HANDLE}-recovery`);
+    const plan = buildReviewPlanFromCapture(firstSource);
+    const firstJournal = journalFor(firstSource);
+    const secondJournal = journalFor(secondSource);
+    let published: RemoteFixture | undefined;
+    const fake = fakeGitHub({
+      postPullResult: {
+        exitCode: 1,
+        stdout: "",
+        stderr: "gh: API rate limit exceeded (HTTP 429)",
+      },
+      reviewPages: () => published ? [published.review] : [],
+      commentPages: () => published?.comments ?? [],
+    });
+    const original = fake.exec;
+    fake.exec = async (argv, options) => {
+      const result = await original(argv, options);
+      if (argv.includes("POST")) published = remoteFor(plan, 900);
+      return result;
+    };
+    const tool = toolForCaptures(new Map([
+      [firstSource.captureHandle, { source: firstSource, journal: firstJournal }],
+      [secondSource.captureHandle, { source: secondSource, journal: secondJournal }],
+    ]), fake);
+
+    await expect(tool.execute({ capture_handle: firstSource.captureHandle, dry_run: false }))
+      .rejects.toMatchObject({ code: "publication_indeterminate" });
+    expect(receipt(firstJournal)).toMatchObject({
+      status: "indeterminate",
+      failure_code: "publication_indeterminate",
+      event: plan.event,
+      payload_digest: plan.payloadDigest,
+      github_review_id: 900,
+      github_inline_comment_ids: [901],
+      github_inline_comment_markers: plan.findings.map((finding) => finding.marker),
+    });
+
+    const recovered = await tool.execute({ capture_handle: secondSource.captureHandle, dry_run: false });
+    expect(recovered).toMatchObject({
+      status: "existing",
+      github_review_id: 900,
+      github_inline_comment_ids: [901],
+    });
+    expect(fake.calls.filter((argv) => argv.includes("POST"))).toHaveLength(1);
+    expect(receipt(firstJournal)).toMatchObject({
+      status: "indeterminate",
+      github_review_id: 900,
+    });
+    expect(receipt(secondJournal)).toMatchObject({
+      status: "published",
+      github_review_id: 900,
+      github_inline_comment_ids: [901],
+    });
+  });
+
+  test("retains ambiguous run-key evidence until an exact marker appears", async () => {
+    const firstSource = capture("REQUEST_CHANGES");
+    const secondSource = capture("REQUEST_CHANGES", `${CAPTURE_HANDLE}-ambiguous-second`);
+    const thirdSource = capture("REQUEST_CHANGES", `${CAPTURE_HANDLE}-ambiguous-recovery`);
+    const plan = buildReviewPlanFromCapture(firstSource);
+    const remote = remoteFor(plan, 900);
+    const firstJournal = journalFor(firstSource);
+    const secondJournal = journalFor(secondSource);
+    const thirdJournal = journalFor(thirdSource);
+    let markerVisible = false;
+    const fake = fakeGitHub({
+      postResult: { exitCode: 1, stdout: "", stderr: "request timed out" },
+      reviewPages: () => markerVisible ? [remote.review] : [],
+      commentPages: () => markerVisible ? remote.comments : [],
+    });
+    const tool = toolForCaptures(new Map([
+      [firstSource.captureHandle, { source: firstSource, journal: firstJournal }],
+      [secondSource.captureHandle, { source: secondSource, journal: secondJournal }],
+      [thirdSource.captureHandle, { source: thirdSource, journal: thirdJournal }],
+    ]), fake);
+
+    await expect(tool.execute({ capture_handle: firstSource.captureHandle, dry_run: false }))
+      .rejects.toMatchObject({ code: "publication_indeterminate" });
+    await expect(tool.execute({ capture_handle: secondSource.captureHandle, dry_run: false }))
+      .rejects.toMatchObject({ code: "publication_indeterminate" });
+
+    expect(fake.calls.filter((argv) => argv.includes("POST"))).toHaveLength(1);
+    for (const journal of [firstJournal, secondJournal]) {
+      expect(receipt(journal)).toMatchObject({
+        status: "indeterminate",
+        failure_code: "publication_indeterminate",
+        event: plan.event,
+        payload_digest: plan.payloadDigest,
+        github_inline_comment_markers: plan.findings.map((finding) => finding.marker),
+      });
+    }
+
+    markerVisible = true;
+    const recovered = await tool.execute({
+      capture_handle: thirdSource.captureHandle,
+      dry_run: false,
+    });
+    expect(recovered).toMatchObject({
+      status: "existing",
+      github_review_id: 900,
+      github_inline_comment_ids: [901],
+    });
+    expect(fake.calls.filter((argv) => argv.includes("POST"))).toHaveLength(1);
+    expect(receipt(thirdJournal)).toMatchObject({
+      status: "published",
+      github_review_id: 900,
+      github_inline_comment_ids: [901],
+    });
   });
 
   test("recovers one ambiguous POST by one exact marker lookup without retry", async () => {

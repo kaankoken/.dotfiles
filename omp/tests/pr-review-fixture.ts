@@ -162,6 +162,7 @@ export type FakeRunOptions = {
   staleAtPublish?: boolean;
   probeDirectWrite?: boolean;
   probeGuardLifetime?: boolean;
+  runCount?: number;
 };
 
 export type FakeRunResult = {
@@ -180,6 +181,8 @@ export type FakeRunResult = {
   prePublishBlock?: unknown;
   postPublishBlock?: unknown;
   prePublishGuardActive?: boolean;
+  receipts?: readonly PrReviewReceiptV1[];
+  publishResults?: readonly (Record<string, unknown> | undefined)[];
 };
 
 
@@ -240,6 +243,8 @@ function fakeGithub(options: FakeRunOptions) {
   const calls: string[][] = [];
   const posts: Record<string, unknown>[] = [];
   let pullReads = 0;
+  let publishedReview: Record<string, unknown> | undefined;
+  let publishedComments: Record<string, unknown>[] = [];
   const exec: PrReviewExec = async (argv) => {
     const call = [...argv];
     calls.push(call);
@@ -276,17 +281,37 @@ function fakeGithub(options: FakeRunOptions) {
         },
       });
     }
-    if (
-      endpoint === "repos/owner/repo/pulls/7/reviews?per_page=100&page=1" ||
-      endpoint === "repos/owner/repo/pulls/7/comments?per_page=100&page=1"
-    ) return ok([]);
+    if (endpoint === "repos/owner/repo/pulls/7/reviews?per_page=100&page=1") {
+      return ok(publishedReview ? [publishedReview] : []);
+    }
+    if (endpoint === "repos/owner/repo/pulls/7/comments?per_page=100&page=1") {
+      return ok(publishedComments);
+    }
     if (call.includes("POST") && endpoint === "repos/owner/repo/pulls/7/reviews") {
       const input = call[call.indexOf("--input") + 1];
       if (!input) throw new Error("missing private payload path");
       const payload = JSON.parse(readFileSync(input, "utf8")) as Record<string, unknown>;
       posts.push(payload);
-      const comments = (payload.comments as unknown[]).map((_comment, index) => ({ id: 100 + index }));
-      return ok({ id: 77, comments });
+      const event = payload.event;
+      const state = event === "REQUEST_CHANGES"
+        ? "CHANGES_REQUESTED"
+        : event === "COMMENT"
+        ? "COMMENTED"
+        : "APPROVED";
+      publishedReview = {
+        id: 77,
+        user: { login: "reviewer" },
+        state,
+        commit_id: payload.commit_id,
+        body: payload.body,
+      };
+      publishedComments = (payload.comments as Record<string, unknown>[]).map((comment, index) => ({
+        ...comment,
+        id: 100 + index,
+        pull_request_review_id: 77,
+        user: { login: "reviewer" },
+      }));
+      return ok({ id: 77, comments: publishedComments });
     }
     throw new Error(`unexpected fake GitHub argv: ${JSON.stringify(call)}`);
   };
@@ -404,7 +429,8 @@ function findReceipt(root: string): PrReviewReceiptV1 {
   };
   visit(root);
   const receipts = paths.map((path) => JSON.parse(readFileSync(path, "utf8")) as PrReviewReceiptV1);
-  return receipts.find((receipt) => receipt.head_sha === HEAD) ?? receipts.at(-1)!;
+  const matching = receipts.filter((receipt) => receipt.head_sha === HEAD);
+  return matching.at(-1) ?? receipts.at(-1)!;
 }
 
 export async function runFakeReview(options: FakeRunOptions = {}): Promise<FakeRunResult> {
@@ -437,135 +463,152 @@ export async function runFakeReview(options: FakeRunOptions = {}): Promise<FakeR
   await extension(api);
 
   const command = api.commands.get("review-pr")!;
-  await command.handler(`owner/repo#7${dryRun ? " --dry-run" : ""}`);
-  const controller = api.messages[0];
-  if (!controller) throw new Error("controller message was not queued");
-  const target = /^TARGET: (.+)$/m.exec(controller.payload)?.[1];
-  const controllerDryRun = /^DRY_RUN: (true|false)$/m.exec(controller.payload)?.[1] === "true";
-  if (!target) throw new Error("controller target is unavailable");
-  const created = await api.executeTool<PublicSnapshotCreateResult>("pr_review_snapshot", {
-    action: "create",
-    target,
-    dry_run: controllerDryRun,
-  });
-  if (!created.next_task) throw new Error("snapshot create did not expose next_task");
-
-  const boundaryResults = options.probeDirectWrite
-    ? await Promise.all([
-      "gh api --method POST repos/owner/repo/issues/7/comments --input payload.json",
-      "gh pr comment 7 --body leak",
-      "gh pr review 7 --comment --body leak",
-      "gh pr merge 7",
-      "gh api --method DELETE repos/owner/repo/git/refs/heads/topic",
-      "gh api graphql -f query='mutation { deleteRef(input: {}) { clientMutationId } }'",
-      "gh unknown-command",
-      "bash -lc 'gh api --method GET repos/owner/repo/pulls/7'",
-      "/opt/homebrew/bin/gh api --method DELETE repos/owner/repo/git/refs/heads/qualified",
-      "./gh pr comment 7 --body qualified-leak",
-      "gh api --method GET repos/owner/repo/pulls/7",
-      "gh pr view 7",
-      "/opt/homebrew/bin/gh api --method GET repos/owner/repo/pulls/7",
-      "printf harmless",
-    ].map((command, index) =>
-      api.emitCall({
-        type: "tool_call",
-        toolName: "bash",
-        toolCallId: `github-boundary-${index}`,
-        input: { command },
-        cwd: targetDir,
-      })
-    ))
-    : undefined;
-  const directWriteBlock = boundaryResults?.[0];
-  let nextTask = created.next_task;
+  const receipts: PrReviewReceiptV1[] = [];
+  const publishResults: Array<Record<string, unknown> | undefined> = [];
   let captureHandle: string | undefined;
-  for (let index = 1; index <= 3; index += 1) {
-    const call: NativeTaskCallEvent = {
-      type: "tool_call",
-      toolName: "task",
-      toolCallId: `task-${index}`,
-      input: structuredClone(nextTask),
+  let publishResult: PrReviewPublishResult | undefined;
+  let boundaryResults: readonly unknown[] | undefined;
+  let directWriteBlock: unknown;
+  let prePublishBlock: unknown;
+  let postPublishBlock: unknown;
+  let prePublishGuardActive: boolean | undefined;
+
+  for (let run = 0; run < (options.runCount ?? 1); run += 1) {
+    await command.handler(`owner/repo#7${dryRun ? " --dry-run" : ""}`);
+    const controller = api.messages.at(-1);
+    if (!controller) throw new Error("controller message was not queued");
+    const target = /^TARGET: (.+)$/m.exec(controller.payload)?.[1];
+    const controllerDryRun = /^DRY_RUN: (true|false)$/m.exec(controller.payload)?.[1] === "true";
+    if (!target) throw new Error("controller target is unavailable");
+    const created = await api.executeTool<PublicSnapshotCreateResult>("pr_review_snapshot", {
+      action: "create",
+      target,
+      dry_run: controllerDryRun,
+    });
+    if (!created.next_task) throw new Error("snapshot create did not expose next_task");
+
+    boundaryResults = options.probeDirectWrite
+      ? await Promise.all([
+        "gh api --method POST repos/owner/repo/issues/7/comments --input payload.json",
+        "gh pr comment 7 --body leak",
+        "gh pr review 7 --comment --body leak",
+        "gh pr merge 7",
+        "gh api --method DELETE repos/owner/repo/git/refs/heads/topic",
+        "gh api graphql -f query='mutation { deleteRef(input: {}) { clientMutationId } }'",
+        "gh unknown-command",
+        "bash -lc 'gh api --method GET repos/owner/repo/pulls/7'",
+        "/opt/homebrew/bin/gh api --method DELETE repos/owner/repo/git/refs/heads/qualified",
+        "./gh pr comment 7 --body qualified-leak",
+        "gh api --method GET repos/owner/repo/pulls/7",
+        "gh pr view 7",
+        "/opt/homebrew/bin/gh api --method GET repos/owner/repo/pulls/7",
+        "printf harmless",
+      ].map((commandText, index) =>
+        api.emitCall({
+          type: "tool_call",
+          toolName: "bash",
+          toolCallId: `github-boundary-${run}-${index}`,
+          input: { command: commandText },
+          cwd: targetDir,
+        })
+      ))
+      : undefined;
+    directWriteBlock = boundaryResults?.[0];
+    let nextTask = created.next_task;
+    captureHandle = undefined;
+    for (let index = 1; index <= 3; index += 1) {
+      const call: NativeTaskCallEvent = {
+        type: "tool_call",
+        toolName: "task",
+        toolCallId: run === 0 ? `task-${index}` : `task-${run}-${index}`,
+        input: structuredClone(nextTask),
+        cwd: targetDir,
+      };
+      const blocked = await api.emitCall(call);
+      if (blocked) {
+        return {
+          api,
+          root,
+          targetDir,
+          receiptRoot,
+          receipt: findReceipt(receiptRoot),
+          githubCalls: github.calls,
+          posts: github.posts,
+          blocked,
+          boundaryResults,
+          directWriteBlock,
+        };
+      }
+      await api.emitResult(resultEvent(call, decision, agentSource));
+      if (agentSource !== "user") {
+        return {
+          api,
+          root,
+          targetDir,
+          receiptRoot,
+          receipt: findReceipt(receiptRoot),
+          githubCalls: github.calls,
+          boundaryResults,
+          posts: github.posts,
+          directWriteBlock,
+        };
+      }
+      const status = await api.executeTool<PublicSnapshotStatusResult>(
+        "pr_review_snapshot",
+        { action: "status", run_handle: created.run_handle },
+      );
+      if (status.status === "completed") {
+        captureHandle = status.capture_handle;
+        break;
+      }
+      nextTask = status.next_task;
+    }
+    if (!captureHandle) throw new Error("capture did not complete through public status");
+    const lifetimeCommand = {
+      type: "tool_call" as const,
+      toolName: "bash",
+      input: { command: "gh pr merge 7" },
       cwd: targetDir,
     };
-    const blocked = await api.emitCall(call);
-    if (blocked) {
-      return {
-        api,
-        root,
-        targetDir,
-        receiptRoot,
-        receipt: findReceipt(receiptRoot),
-        githubCalls: github.calls,
-        posts: github.posts,
-        blocked,
-        boundaryResults,
-        directWriteBlock,
-      };
+    prePublishBlock = options.probeGuardLifetime
+      ? await api.emitCall({
+        ...lifetimeCommand,
+        toolCallId: `guard-lifetime-before-publish-${run}`,
+      })
+      : undefined;
+    prePublishGuardActive = options.probeGuardLifetime
+      ? findReceipt(receiptRoot).mutation_guard_active
+      : undefined;
+    publishResult = undefined;
+    try {
+      publishResult = await api.executeTool<PrReviewPublishResult>("pr_review_publish", {
+        capture_handle: captureHandle,
+        dry_run: dryRun,
+      });
+    } catch {
+      // Typed receipt is asserted by the caller for fail-closed branches.
     }
-    await api.emitResult(resultEvent(call, decision, agentSource));
-    if (agentSource !== "user") {
-      return {
-        api,
-        root,
-        targetDir,
-        receiptRoot,
-        receipt: findReceipt(receiptRoot),
-        githubCalls: github.calls,
-        boundaryResults,
-        posts: github.posts,
-        directWriteBlock,
-      };
-    }
-    const status = await api.executeTool<PublicSnapshotStatusResult>(
-      "pr_review_snapshot",
-      { action: "status", run_handle: created.run_handle },
-    );
-    if (status.status === "completed") {
-      captureHandle = status.capture_handle;
-      break;
-    }
-    nextTask = status.next_task;
+    postPublishBlock = options.probeGuardLifetime
+      ? await api.emitCall({
+        ...lifetimeCommand,
+        toolCallId: `guard-lifetime-after-publish-${run}`,
+      })
+      : undefined;
+    receipts.push(findReceipt(receiptRoot));
+    publishResults.push(publishResult ? { ...publishResult } : undefined);
   }
-  if (!captureHandle) throw new Error("capture did not complete through public status");
-  const lifetimeCommand = {
-    type: "tool_call" as const,
-    toolName: "bash",
-    input: { command: "gh pr merge 7" },
-    cwd: targetDir,
-  };
-  const prePublishBlock = options.probeGuardLifetime
-    ? await api.emitCall({
-      ...lifetimeCommand,
-      toolCallId: "guard-lifetime-before-publish",
-    })
-    : undefined;
-  const prePublishGuardActive = options.probeGuardLifetime
-    ? findReceipt(receiptRoot).mutation_guard_active
-    : undefined;
-  let publishResult: PrReviewPublishResult | undefined;
-  try {
-    publishResult = await api.executeTool<PrReviewPublishResult>("pr_review_publish", {
-      capture_handle: captureHandle,
-      dry_run: dryRun,
-    });
-  } catch {
-    // Typed receipt is asserted by the caller for fail-closed branches.
-  }
-  const postPublishBlock = options.probeGuardLifetime
-    ? await api.emitCall({
-      ...lifetimeCommand,
-      toolCallId: "guard-lifetime-after-publish",
-    })
-    : undefined;
+
   return {
     api,
     root,
     targetDir,
     receiptRoot,
-    receipt: findReceipt(receiptRoot),
+    receipt: receipts.at(-1)!,
+    receipts,
     githubCalls: github.calls,
     posts: github.posts,
     publishResult,
+    publishResults,
     captureHandle,
     boundaryResults,
     directWriteBlock,

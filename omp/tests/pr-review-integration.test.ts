@@ -240,6 +240,35 @@ describe("production PR-review extension", () => {
     expect(run.receipt.diff_digest).toHaveLength(64);
   });
 
+  test("fresh sequential same-head review commands preserve attempts and reuse remote publication", async () => {
+    const run = await runFakeReview({
+      dryRun: false,
+      decision: "request_changes",
+      runCount: 2,
+    });
+    roots.push(run.root);
+
+    expect(run.api.messages).toHaveLength(2);
+    expect(run.posts).toHaveLength(1);
+    expect(run.publishResults).toEqual([
+      expect.objectContaining({
+        status: "published",
+        github_review_id: 77,
+        github_inline_comment_ids: [100, 101],
+      }),
+      expect.objectContaining({
+        status: "existing",
+        github_review_id: 77,
+        github_inline_comment_ids: [100, 101],
+      }),
+    ]);
+    expect(run.receipts).toEqual([
+      expect.objectContaining({ status: "published", github_review_id: 77 }),
+      expect.objectContaining({ status: "published", github_review_id: 77 }),
+    ]);
+    expect(run.receipts![0]).not.toBe(run.receipts![1]);
+  });
+
   test("stale publish head fails before mutation", async () => {
     const run = await runFakeReview({
       dryRun: false,

@@ -70,6 +70,14 @@ interface ExistingReview {
   inlineCommentIds: readonly number[];
 }
 
+interface UncertainPublication {
+  event: ReviewEvent;
+  payloadDigest: string;
+  inlineCommentMarkers: readonly string[];
+  reviewId?: number;
+  inlineCommentIds?: readonly number[];
+}
+
 export class PrReviewPublishError extends Error {
   readonly code: PrReviewFailureCode;
 
@@ -175,6 +183,7 @@ class PublishTool implements PrReviewPublishTool {
   readonly #loadManifest: () => LoadedRoleManifest;
   readonly #checkRoles: NonNullable<PrReviewPublishToolOptions["checkRoles"]>;
   readonly #locks = new Map<string, Promise<void>>();
+  readonly #uncertain = new Map<string, UncertainPublication>();
 
   constructor(options: PrReviewPublishToolOptions) {
     this.#state = options.state;
@@ -200,26 +209,6 @@ class PublishTool implements PrReviewPublishTool {
       || typeof input.dry_run !== "boolean"
     ) throw new PrReviewPublishError("invalid_arguments", "publish input is invalid");
 
-    const prior = this.#locks.get(input.capture_handle) ?? Promise.resolve();
-    let release!: () => void;
-    const gate = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    const tail = prior.then(() => gate);
-    this.#locks.set(input.capture_handle, tail);
-    await prior;
-    try {
-      return await this.#executeLocked(input);
-    } finally {
-      release();
-      if (this.#locks.get(input.capture_handle) === tail) {
-        this.#locks.delete(input.capture_handle);
-      }
-    }
-  }
-
-  async #executeLocked(input: PrReviewPublishInput): Promise<PrReviewPublishResult> {
-
     let capture: Readonly<CompletedCapture>;
     try {
       capture = this.#state.lookupCapture(input.capture_handle);
@@ -235,6 +224,30 @@ class PublishTool implements PrReviewPublishTool {
       throw normalized(error, "internal_error");
     }
 
+    const lockKey = journal.currentReceipt.run_key ?? input.capture_handle;
+    const prior = this.#locks.get(lockKey) ?? Promise.resolve();
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const tail = prior.then(() => gate);
+    this.#locks.set(lockKey, tail);
+    await prior;
+    try {
+      return await this.#executeLocked(input, capture, journal);
+    } finally {
+      release();
+      if (this.#locks.get(lockKey) === tail) {
+        this.#locks.delete(lockKey);
+      }
+    }
+  }
+
+  async #executeLocked(
+    input: PrReviewPublishInput,
+    capture: Readonly<CompletedCapture>,
+    journal: ReceiptJournal,
+  ): Promise<PrReviewPublishResult> {
     try {
       const plan = buildReviewPlanFromCapture(capture);
       const currentReceipt = journal.currentReceipt;
@@ -342,6 +355,38 @@ class PublishTool implements PrReviewPublishTool {
         payload_digest: plan.payloadDigest,
       } as const;
       if (journal.currentReceipt.status === "prepared") journal.prepare(update);
+      if (existing) {
+        this.#uncertain.delete(plan.runKey);
+      } else if (!input.dry_run) {
+        const uncertain = this.#uncertain.get(plan.runKey);
+        if (
+          uncertain
+          && (uncertain.event !== plan.event || uncertain.payloadDigest !== plan.payloadDigest)
+        ) {
+          throw new PrReviewPublishError(
+            "same_head_conflict",
+            "same-head uncertain publication has a different payload or event",
+          );
+        }
+        if (uncertain) {
+          const failure = new PrReviewPublishError(
+            "publication_indeterminate",
+            "prior same-head publication remains indeterminate after exact marker lookup",
+          );
+          journal.indeterminate(failure.code, failure.message, {
+            ...update,
+            mutation_guard_active: false,
+            github_inline_comment_markers: uncertain.inlineCommentMarkers,
+            ...(uncertain.reviewId === undefined ? {} : {
+              github_review_id: uncertain.reviewId,
+            }),
+            ...(uncertain.inlineCommentIds === undefined ? {} : {
+              github_inline_comment_ids: uncertain.inlineCommentIds,
+            }),
+          });
+          throw failure;
+        }
+      }
 
       if (input.dry_run) {
         if (journal.currentReceipt.status === "prepared") {
@@ -423,27 +468,63 @@ class PublishTool implements PrReviewPublishTool {
           throw new PrReviewPublishError("same_head_conflict", "same-head review marker conflicts after publish attempt");
         }
         if (!recovered) {
-          throw publishFailure ?? new PrReviewPublishError(
+          const failure = publishFailure ?? new PrReviewPublishError(
             "publication_indeterminate",
             "published review IDs could not be recovered",
           );
+          if (failure.code === "publication_indeterminate") {
+            const inlineCommentMarkers = plan.findings.map((finding) => finding.marker);
+            this.#uncertain.set(plan.runKey, {
+              event: plan.event,
+              payloadDigest: plan.payloadDigest,
+              inlineCommentMarkers,
+            });
+            journal.indeterminate(failure.code, failure.message, {
+              ...update,
+              mutation_guard_active: false,
+              github_inline_comment_markers: inlineCommentMarkers,
+            });
+          }
+          throw failure;
         }
         published = recovered;
       }
 
-      const post = await github.readPull(
-        capture.snapshot.owner,
-        capture.snapshot.repo,
-        capture.snapshot.pullNumber,
-      );
-      const superseded = post.headSha !== capture.snapshot.headSha;
-      journal.publish({
+      const knownPublication = {
         ...update,
         mutation_guard_active: false,
         github_review_id: published.reviewId,
         github_inline_comment_ids: published.inlineCommentIds,
         github_inline_comment_markers: plan.findings.map((finding) => finding.marker),
-        post_publish_head_sha: post.headSha,
+      } as const;
+      let postHeadSha: string;
+      try {
+        postHeadSha = (await github.readPull(
+          capture.snapshot.owner,
+          capture.snapshot.repo,
+          capture.snapshot.pullNumber,
+        )).headSha;
+      } catch (error) {
+        const postCheckFailure = normalized(error, "publication_indeterminate");
+        const failure = new PrReviewPublishError(
+          "publication_indeterminate",
+          `publication IDs are known but post-publication head check failed: ${postCheckFailure.message}`,
+        );
+        this.#uncertain.set(plan.runKey, {
+          event: plan.event,
+          payloadDigest: plan.payloadDigest,
+          inlineCommentMarkers: knownPublication.github_inline_comment_markers,
+          reviewId: published.reviewId,
+          inlineCommentIds: published.inlineCommentIds,
+        });
+        journal.indeterminate(failure.code, failure.message, knownPublication);
+        throw failure;
+      }
+      const superseded = postHeadSha !== capture.snapshot.headSha;
+      this.#uncertain.delete(plan.runKey);
+      journal.publish({
+        ...knownPublication,
+        post_publish_head_sha: postHeadSha,
         published_on_superseded_head: superseded,
       });
       return Object.freeze({
