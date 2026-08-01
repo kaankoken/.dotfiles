@@ -75,11 +75,12 @@ export function createWorkflowzFromPi(opts: OmpWorkflowzOpts): Workflowz {
         requireYieldTool: true,
         enableLsp: false,
         systemPrompt,
-        settings: {
-          memory: false,
-          todo: false,
-          autolearn: false,
-        },
+        // Do NOT pass a plain object as `settings`. OMP's createAgentSession
+        // calls initializeWithSettings(settings) which requires Settings.get().
+        // A bare `{ memory, todo, autolearn }` crashes:
+        //   "_K6.get is not a function ... disabledProviders"
+        // Child sessions inherit Settings.init({ cwd }) → agent config.yml
+        // (memory.backend off, todo/autolearn disabled in our profile).
       });
 
       await session.prompt(prompt);

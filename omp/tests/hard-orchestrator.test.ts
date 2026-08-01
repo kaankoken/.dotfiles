@@ -78,6 +78,9 @@ describe("hard orchestrator", () => {
     expect(capture.sessions[0]!.model).toBe("anthropic/claude-fable-5");
     expect(capture.sessions[0]!.thinkingLevel).toBe("max");
     expect(capture.sessions[0]!.outputSchemaMode).toBe("strict");
+    // Regression: plain settings object crashed OMP initializeWithSettings
+    // (_K6.get("disabledProviders") is not a function).
+    expect(capture.sessions[0]!.settings).toBeUndefined();
   });
 
   test("soft register path: no pi → mode soft + triggerTurn true", async () => {

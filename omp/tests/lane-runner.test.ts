@@ -107,9 +107,8 @@ describe("SDK session", () => {
     expect(sessionOpts.outputSchemaMode).toBe("strict");
     expect(sessionOpts.requireYieldTool).toBe(true);
     expect(sessionOpts.enableLsp).toBe(true);
-    expect(sessionOpts.settings?.memory).toBe(false);
-    expect(sessionOpts.settings?.todo).toBe(false);
-    expect(sessionOpts.settings?.autolearn).toBe(false);
+    // settings must be omitted or a real Settings instance — never a plain object
+    expect(sessionOpts.settings).toBeUndefined();
     expect(rolePrompt).toMatch(/implementer/i);
     expect(rolePrompt).toMatch(/Cannot.*worktree|assigned worktree/i);
     expect(capture.opts?.cwd).toBe(assignment.worktreePath);

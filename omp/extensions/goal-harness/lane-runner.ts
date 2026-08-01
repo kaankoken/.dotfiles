@@ -59,8 +59,12 @@ export type SessionCreateOpts = {
   requireYieldTool: boolean;
   enableLsp: boolean;
   systemPrompt?: string;
-  /** Isolated settings — memory/TODO/Autolearn off. */
-  settings?: Record<string, unknown>;
+  /**
+   * Optional OMP Settings instance (must expose `.get` / `.set`).
+   * NEVER pass a plain config object — createAgentSession treats this as
+   * Settings and calls `.get("disabledProviders")`.
+   */
+  settings?: { get: (path: string) => unknown; set?: (path: string, value: unknown) => void };
 };
 
 export type AgentSession = {
@@ -227,11 +231,9 @@ export async function createLaneSession(
     requireYieldTool: true,
     enableLsp: true,
     systemPrompt: rolePrompt,
-    settings: {
-      memory: false,
-      todo: false,
-      autolearn: false,
-    },
+    // Omit settings: host Settings.init({ cwd }) loads agent config.yml.
+    // Plain `{ memory:false, ... }` is not a Settings instance and crashes
+    // initializeWithSettings via disabledProviders (.get is not a function).
   };
 
   const session = await api.pi.createAgentSession(sessionOpts);
