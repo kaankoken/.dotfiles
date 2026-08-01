@@ -1,0 +1,3 @@
+# OMP agent config allowlist — stowed to ~/.omp/agent
+# Runtime state (agent.db, sessions, auth) stays outside git on the live dir.
+# Apply: cd ~/.dotfiles && stow .

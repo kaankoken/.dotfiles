@@ -97,7 +97,7 @@ install_omp_shared() {
         echo "ok  $agent_dir/AGENTS.md (home-manager; see AGENTS.shared.md + RTK.md)"
         ;;
       *)
-        # Leave omp/link.sh-managed AGENTS.md (dotfiles omp tree) alone if already correct.
+        # Leave stow-managed AGENTS.md (dotfiles .omp/agent → omp tree) alone if already correct.
         echo "ok  $agent_dir/AGENTS.md (existing link)"
         ;;
     esac
@@ -107,10 +107,15 @@ install_omp_shared() {
     echo "keep $agent_dir/AGENTS.md (existing file)"
   fi
 
-  # RTK extension for OMP (rewrite via rtk rewrite).
+  # RTK extension lives in omp/extensions/rtk.ts (stow package). Only inject when
+  # extensions is a real directory (legacy) and the file is missing.
   if [ -f "$STACK/hooks/rtk-omp-extension.ts" ]; then
-    mkdir -p "$agent_dir/extensions"
-    link_one "$agent_dir/extensions/rtk.ts" "$STACK/hooks/rtk-omp-extension.ts"
+    if [ -L "$agent_dir/extensions" ]; then
+      echo "ok  $agent_dir/extensions (stow package; rtk.ts from omp/extensions)"
+    else
+      mkdir -p "$agent_dir/extensions"
+      link_one "$agent_dir/extensions/rtk.ts" "$STACK/hooks/rtk-omp-extension.ts"
+    fi
   fi
 }
 

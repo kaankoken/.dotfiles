@@ -1,31 +1,30 @@
 # OMP configuration (dotfiles-owned)
 
 Nix installs only the `omp` binary. All OMP configuration, agents, commands,
-extensions, and skills for this machine live here under `~/.dotfiles/omp` and
-are linked into `~/.omp/agent` by `link.sh`.
+extensions, and skills live under `~/.dotfiles/omp` and reach the runtime via
+**GNU stow** (not `omp/link.sh`).
 
-## Link
+## Link (stow)
 
 ```bash
-~/.dotfiles/omp/link.sh
-# or, for tests:
-OMP_AGENT_DIR=/tmp/fake-agent ./link.sh
+cd ~/.dotfiles && stow .
+# ~/.omp/agent/<allowlist> comes from the package at .omp/agent/
 ```
 
-### Allowlist (live paths under `~/.omp/agent`)
+### Allowlist (package: `.dotfiles/.omp/agent/` → `~/.omp/agent/`)
 
-| Path | Source |
+| Path | Source (relative from package) |
 |------|--------|
-| `config.yml`, `AGENTS.md`, `mcp.json`, `agents/`, `commands/`, `extensions/`, `skills/` | this directory (`omp/`) |
-| `AGENTS.shared.md`, `RTK.md` | `../agent-stack/` |
+| `config.yml`, `AGENTS.md`, `mcp.json`, `agents/`, `commands/`, `extensions/`, `skills/` | `../../omp/…` |
+| `AGENTS.shared.md`, `RTK.md` | `../../agent-stack/…` |
+| `extensions/rtk.ts` | tracked under `omp/extensions/rtk.ts` → agent-stack hook |
 
 ### Safety
 
-- Never replaces `~/.omp` or `~/.omp/agent` itself
-- Regular file conflicts → one-time backup `*.bak-omp-dotfiles`; second conflict with backup present → refuse
-- Leaves `agent.db`, `auth.json`, `sessions/`, `cache/`, and unknown files untouched
-- Missing tracked source → non-zero exit (no dangling link)
-- Idempotent when links already point at the correct sources
+- Stow only places the allowlist; it never owns `agent.db`, `auth.json`, `sessions/`, caches
+- Runtime state stays as real files beside the stowed links under `~/.omp/agent`
+- Idempotent: re-run `stow .` after pull
+
 
 ## Contract
 
@@ -41,9 +40,9 @@ Run `bun test` in this directory after installing `omp`.
 Sibling of `/harness`, not a harness phase. Runs PDR → Arc42 → ADR handoff.
 ADRs land in `docs/adr/`; PDR/Arc42 stay in bd/session. Superpowers plans/specs
 are never written into the repo by this flow. See `skills/design-flow/SKILL.md`.
-Writers path-load `~/.agents/skills/architect/SKILL.md` when installed (Nix
-agents activation; fail-open if missing). Skill tree:
-`nix-setup/modules/agents/skills/architect` (upstream pin in `UPSTREAM.md`).
+PDR/Arc42 writers path-load `~/.omp/agent/skills/architect/SKILL.md`
+(required; vendored at `omp/skills/architect/`, shipped by the stow `skills`
+symlink; upstream pin in the SKILL.md provenance footer).
 
 ## Stage 3 parity (Pi goal-harness)
 
@@ -75,7 +74,7 @@ cd ~/.dotfiles/omp   # or this tree
 bun test tests/stage4-native.test.ts
 bash tests/smoke-omp-harness.sh
 bun test              # full suite
-bash tests/link.test.sh
+bash tests/stow-package.test.sh
 bash tests/shared-stack.test.sh
 bunx tsc -p tsconfig.json --noEmit
 # optional live (omp + providers authenticated):

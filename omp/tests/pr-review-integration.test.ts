@@ -1015,19 +1015,24 @@ describe("production PR-review extension", () => {
     expect(run.posts).toHaveLength(0);
   });
 
-  test("link/config discovery is user-scoped from an arbitrary repository", () => {
-    const root = mkdtempSync(join(tmpdir(), "pr-review-link-integration-"));
+  test("stow package discovers user-scoped omp agent config", () => {
+    const root = mkdtempSync(join(tmpdir(), "pr-review-stow-integration-"));
     roots.push(root);
-    const agentDir = join(root, "home", ".omp", "agent");
+    const home = join(root, "home");
+    const agentDir = join(home, ".omp", "agent");
     const arbitraryRepo = join(root, "other-repo");
     mkdirSync(arbitraryRepo, { recursive: true });
+    mkdirSync(agentDir, { recursive: true });
     const ompRoot = dirname(dirname(fileURLToPath(import.meta.url)));
-    const result = Bun.spawnSync(["sh", join(ompRoot, "link.sh")], {
-      cwd: arbitraryRepo,
-      env: { ...process.env, OMP_AGENT_DIR: agentDir },
-      stdout: "pipe",
-      stderr: "pipe",
-    });
+    const dotfilesRoot = dirname(ompRoot);
+    const result = Bun.spawnSync(
+      ["stow", "-t", home, "-d", dotfilesRoot, "."],
+      {
+        cwd: arbitraryRepo,
+        stdout: "pipe",
+        stderr: "pipe",
+      },
+    );
     expect(result.exitCode).toBe(0);
     expect(existsSync(join(agentDir, "config.yml"))).toBe(true);
     expect(existsSync(join(agentDir, "extensions", "pr-review", "index.ts"))).toBe(true);
@@ -1037,7 +1042,10 @@ describe("production PR-review extension", () => {
       expect(realpathSync(live)).toBe(join(ompRoot, "agents", `${role}.md`));
     }
     expect(lstatSync(join(agentDir, "extensions")).isSymbolicLink()).toBe(true);
-    expect(readlinkSync(join(agentDir, "extensions"))).toBe(join(ompRoot, "extensions"));
+    // package link is relative; resolve to omp/extensions
+    expect(realpathSync(join(agentDir, "extensions"))).toBe(
+      realpathSync(join(ompRoot, "extensions")),
+    );
     expect(existsSync(join(arbitraryRepo, ".omp"))).toBe(false);
   });
 });

@@ -3,7 +3,7 @@ name: design-flow
 description: >
   Orchestrate the OMP pre-harness design flow via /design. Produces PDR + Arc42
   (bd/session) and ADRs (docs/adr only). Design only — never build or auto-start
-  /harness. Loads architect skill by path when installed.
+  /harness. Architect skill loads here.
 ---
 
 # OMP Design flow
@@ -39,9 +39,7 @@ Cold catalog is intent-router+beads only.
 
 - `~/.agents/skills/superpowers/brainstorming/SKILL.md` (required on PDR/Arc42)
 - `~/.agents/skills/ponytail/SKILL.md` on writers
-- `~/.agents/skills/architect/SKILL.md` on **writers** when present (PDR, Arc42, ADR)
-  - Missing: warn once; continue with brainstorming/ponytail only (**fail-open**)
-  - Never cold-list `architect`; never vendor skill bodies into agent prompts
+- `~/.omp/agent/skills/architect/SKILL.md` (`architect`) — required on PDR/Arc42 writers; never cold-listed; never vendor its body into prompts
 - Never vendor Superpowers bodies into prompts
 
 ## Models (`model-router` phases)

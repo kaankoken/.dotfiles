@@ -1,8 +1,8 @@
 # OMP agent (dotfiles)
 
 Shared cross-agent policy lives in **`../agent-stack/`** (`AGENTS.shared.md`,
-`RTK.md`) and is linked into this agent dir by `link.sh`. Do not duplicate it
-here.
+`RTK.md`) and is stowed into this agent dir via `.omp/agent/` (see root `stow .`).
+Do not duplicate it here.
 
 ## OMP-only deltas
 
@@ -14,7 +14,7 @@ here.
 - **Agent model pins:** every `agents/*.md` role MUST set frontmatter `model: provider/id:effort` (big gates Fable/Opus, implement/scouts Grok, design PDR/ADR Opus, Arc42 Grok/Composer). Soft `task` spawns inherit these — never leave model unset (inherits parent session).
 - **Gate token budget:** Spec/Plan/BiteSize/Milestone ceilings **2**. Producer effort **max**, reviewer **high**.
 - **Config:** `config.yml` → lean defaults (shake, no Autolearn, no built-in task list, memory off, hashline, **yolo** + **smart-approve**).
-- **Link:** `./link.sh` → `~/.omp/agent` without touching `auth.json` / sessions / cache.
+- **Link:** `cd ~/.dotfiles && stow .` — package `.omp/agent/` → `~/.omp/agent` (no `omp/link.sh`; never touches auth/sessions/cache).
 
 ## Cold session
 
@@ -22,7 +22,7 @@ here.
 - **customDirectories:** Superpowers + agents + omp skills + pack roots (rust/axiom/google-skills cloud) for **resolve only** — not cold-catalogued.
 - **MCP cold:** `tokensave`, `headroom`, `context-mode` enabled. `context7` opt-in via `/mcp enable context7`.
 - **Shell toolkit:** rtk + modern CLIs (see `RTK.md`). RTK is not an MCP server.
-- **Not cold-loaded:** Superpowers workflow skills, `goal-harness`, `design-flow`, `ponytail`(+review/audit), `stack-*` routers, domain pack globs. Flows load them live when invoked.
+- **Not cold-loaded:** Superpowers workflow skills, `goal-harness`, `design-flow`, `architect`, `ponytail`(+review/audit), `stack-*` routers, domain pack globs. Flows load them live when invoked.
 
 ## Freeform intent routing
 
@@ -50,6 +50,7 @@ per thread. Mid-flow freeform is steering, not a new route.
 |-------|----------------|
 | `/harness` | extension-registered only — `using-superpowers` → `goal-harness` → phase roles via `REQUIRED_SKILLS_BY_ROLE` (hard path: `runHardHarness` when `pi` available) |
 | `/design` | empty shell → `using-superpowers`, `design-flow`, `brainstorming` — ADRs under `docs/adr/` only; never auto-starts `/harness` |
+| `/architect` | empty shell → `using-superpowers`, `architect`, `brainstorming` (by path) — in-session consult; ADRs optional under `docs/adr/`; never auto-starts `/design` or `/harness` |
 | `/init` | empty shell → `runProjectInit` / `project-init` |
 | `/pr-reviewer` | PR dual-review controller (extension; agents `pr-*`) |
 | `/code-review` | empty shell → `code-reviewer` + `requesting-code-review`, `ponytail-review`(+audit) |
@@ -58,4 +59,4 @@ per thread. Mid-flow freeform is steering, not a new route.
 
 Do **not** shadow native `/goal` or `/guided-goal`. Do **not** add `commands/harness.md`.
 
-See `compatibility.json` for the pinned runtime contract and `README.md` for link safety rules.
+See `compatibility.json` for the pinned runtime contract and `README.md` for stow package rules.

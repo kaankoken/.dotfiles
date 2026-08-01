@@ -94,7 +94,7 @@ done
 # no package installer invocation in link.sh
 assert_not_match "no_omp_package_install" "$STACK/link.sh" 'omp install|bun add.*omp|brew install.*omp'
 
-# --- dynamic: temp HOME idempotence ---
+# --- dynamic: temp HOME — stow omp package first, then agent-stack host links ---
 TMP_HOME="$(mktemp -d "${TMPDIR:-/tmp}/shared-stack-home.XXXXXX")"
 export HOME="$TMP_HOME"
 mkdir -p "$HOME/.omp/agent" "$HOME/.agents" "$HOME/.claude" "$HOME/.codex" "$HOME/.grok" "$HOME/.cursor/rules"
@@ -102,35 +102,43 @@ mkdir -p "$HOME/.omp/agent" "$HOME/.agents" "$HOME/.claude" "$HOME/.codex" "$HOM
 printf 'db\n' >"$HOME/.omp/agent/agent.db"
 
 set +e
+# Stow first so .omp/agent allowlist is package-owned (no conflict with stack injects)
+stow_out="$(stow -t "$HOME" -d "$DOTFILES_ROOT" . 2>&1)"
+rc3=$?
+stow_out2="$(stow -t "$HOME" -d "$DOTFILES_ROOT" . 2>&1)"
+rc4=$?
 out1="$(bash "$STACK/link.sh" --no-rtk-init 2>&1)"
 rc1=$?
 out2="$(bash "$STACK/link.sh" --no-rtk-init 2>&1)"
 rc2=$?
-out3="$(bash "$OMP_DIR/link.sh" 2>&1)"
-rc3=$?
-out4="$(bash "$OMP_DIR/link.sh" 2>&1)"
-rc4=$?
 set -e
 
+assert "stow_exit0" test "$rc3" -eq 0
+assert "stow_idempotent" test "$rc4" -eq 0
+if [[ "$rc3" -ne 0 ]]; then
+  printf '%s\n' "$stow_out" | tail -20
+fi
 assert "stack_link_exit0" test "$rc1" -eq 0
 assert "stack_link_idempotent" test "$rc2" -eq 0
-assert "omp_link_exit0" test "$rc3" -eq 0
-assert "omp_link_idempotent" test "$rc4" -eq 0
 
 # never created ~/.pi
 assert "no_pi_dir_created" test ! -e "$HOME/.pi"
 
-# OMP links present
+# OMP package via stow
+assert "omp_config_linked" test -L "$HOME/.omp/agent/config.yml"
+assert "omp_skills_linked" test -L "$HOME/.omp/agent/skills"
 assert "omp_agents_shared_linked" test -L "$HOME/.omp/agent/AGENTS.shared.md"
 assert "omp_rtk_linked" test -L "$HOME/.omp/agent/RTK.md"
-assert "omp_rtk_ext_linked" test -L "$HOME/.omp/agent/extensions/rtk.ts"
+assert "omp_rtk_ext_linked" test -e "$HOME/.omp/agent/extensions/rtk.ts"
 assert "agent_db_survives" test -f "$HOME/.omp/agent/agent.db"
 
 # extension target is omp rename
-ext_target="$(readlink "$HOME/.omp/agent/extensions/rtk.ts" || true)"
-case "$ext_target" in
+ext_target="$(readlink "$HOME/.omp/agent/extensions/rtk.ts" 2>/dev/null || readlink -f "$HOME/.omp/agent/extensions/rtk.ts" 2>/dev/null || true)"
+# may be relative through package; resolve
+ext_real="$(python3 -c "import os; print(os.path.realpath('$HOME/.omp/agent/extensions/rtk.ts'))")"
+case "$ext_real" in
   *rtk-omp-extension.ts) assert "ext_points_omp" true ;;
-  *) echo "FAIL ext_points_omp ($ext_target)"; FAIL=$((FAIL + 1)) ;;
+  *) echo "FAIL ext_points_omp ($ext_real)"; FAIL=$((FAIL + 1)) ;;
 esac
 
 # preserve markers for "user edits" — worktree RTK/codex must still contain key phrases

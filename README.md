@@ -323,8 +323,8 @@ brew install pnpm
 ## OMP daily harness
 
 ```bash
-./agent-stack/link.sh
-./omp/link.sh
+./agent-stack/link.sh   # cross-host AGENTS/RTK only
+stow .                  # includes .omp/agent allowlist → ~/.omp/agent
 # then: omp ; /harness
 cd omp && bun test && bash tests/smoke-omp-harness.sh
 ```
