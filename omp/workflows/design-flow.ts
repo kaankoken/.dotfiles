@@ -25,11 +25,11 @@ export function buildDesignStartMessage(args: string): DesignStartMessage {
     boundGoal,
     controllerPolicy: [
       "boundGoal is the only design task text. Do not invent a second goal.",
-      "Parent skills: skill://using-superpowers then skill://design-flow then skill://brainstorming.",
+      "Parent skills: path-load using-superpowers, design-flow, brainstorming (cold skill:// only intent-router+beads).",
       "Phases: Intake → PDR (pdr-writer→pdr-reviewer) → Arc42 (arc42-writer→arc42-reviewer) → ADR (adr-writer JSON-only; controller writes docs/adr) → Handoff.",
       "Models via resolveModelRoute/resolveReviewerModel. PDR/Arc42: bd best-effort when issue available; session handoff always.",
       "Never write docs/superpowers or docs/plans. Never auto-start /harness. Design only — no code/worktrees/implementer.",
-      "Future architect skill: load when present; until then brainstorming only.",
+      "Writers path-load ~/.agents/skills/architect/SKILL.md when present (fail-open if missing); do not vendor skill bodies.",
     ].join(" "),
   };
 }

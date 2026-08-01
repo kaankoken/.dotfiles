@@ -15,7 +15,8 @@ Produce **Arc42** structured output from the accepted PDR. Design only.
 > Cold catalog is intent-router+beads only. Load Superpowers/pack skills via **absolute path** `read`, not `skill://`.
 
 - `~/.agents/skills/superpowers/brainstorming/SKILL.md` (`brainstorming`)
-- `ponytail`
+- `~/.agents/skills/ponytail/SKILL.md` (`ponytail`)
+- `~/.agents/skills/architect/SKILL.md` (`architect`) when present — fail-open if missing
 - `~/.agents/skills/superpowers/receiving-code-review/SKILL.md` (`receiving-code-review`) only when applying failed review blocking feedback
 
 ## Diagrams

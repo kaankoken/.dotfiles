@@ -295,7 +295,8 @@ export async function runDesignFlow(
     writerSchema: pdrOutputSchema,
     writerPrompt: [
       "Write a PDR for this design goal (design only, no code).",
-      "Load skill://brainstorming then produce strict PDR JSON.",
+      "Path-load ~/.agents/skills/superpowers/brainstorming/SKILL.md and, when present, ~/.agents/skills/architect/SKILL.md (fail-open if architect missing). Never skill:// for these under cold catalog.",
+      "Produce strict PDR JSON.",
       `Goal:\n${boundGoal}`,
     ].join("\n"),
     reviewerPrompt: (c) =>
@@ -329,6 +330,7 @@ export async function runDesignFlow(
     writerPrompt: [
       "Write Arc42 architecture JSON + at least one mermaid/structurizr diagram.",
       "Design only. Align with accepted PDR.",
+      "Path-load brainstorming + ~/.agents/skills/architect/SKILL.md when present (fail-open if missing).",
       `Goal:\n${boundGoal}`,
       `PDR:\n${JSON.stringify(pdrGate.candidate)}`,
     ].join("\n"),
@@ -364,7 +366,7 @@ export async function runDesignFlow(
       wz,
       [
         "Emit ADRs as JSON { adrs: [...] } for decisive architecture choices.",
-        "Controller will write docs/adr/NNNN-slug.md only.",
+        "Path-load ~/.agents/skills/architect/SKILL.md when present (fail-open if missing). Controller writes docs/adr/NNNN-slug.md only.",
         `Goal:\n${boundGoal}`,
         `PDR:\n${JSON.stringify(pdrGate.candidate)}`,
         `Arc42:\n${JSON.stringify(arcGate.candidate)}`,
