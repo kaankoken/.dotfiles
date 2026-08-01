@@ -1,0 +1,33 @@
+# Stow package ignores (repo root is the package for `stow .`)
+# Runtime / VCS / agent state — not home links
+\.git
+\.gitignore
+\.gitattributes
+\.gitmodules
+\.DS_Store
+\.beads
+\.serena
+\.tokensave
+\.codex
+\.claude
+\.superpowers
+\.worktrees
+\.radicle
+\.ssh
+\.local
+\.config/nushell/history.*
+\.config/history\..*
+\.config/configstore
+firebase-debug\.log
+node_modules
+bun\.lock
+package-lock\.json
+
+# Docs / plans are optional at home (already may be linked); keep ignore light
+# Tests and build artifacts inside omp
+omp/node_modules
+omp/bun\.lock
+
+# Editor / OS junk
+\.DS_Store
+.*\.bak-.*

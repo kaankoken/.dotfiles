@@ -1,8 +1,8 @@
 # OMP agent (dotfiles)
 
 Shared cross-agent policy lives in **`../agent-stack/`** (`AGENTS.shared.md`,
-`RTK.md`) and is linked into this agent dir by `link.sh`. Do not duplicate it
-here.
+`RTK.md`) and is stowed into this agent dir via `.omp/agent/` (see root `stow .`).
+Do not duplicate it here.
 
 ## OMP-only deltas
 
@@ -14,7 +14,7 @@ here.
 - **Agent model pins:** every `agents/*.md` role MUST set frontmatter `model: provider/id:effort` (big gates Fable/Opus, implement/scouts Grok, design PDR/ADR Opus, Arc42 Grok/Composer). Soft `task` spawns inherit these — never leave model unset (inherits parent session).
 - **Gate token budget:** Spec/Plan/BiteSize/Milestone ceilings **2**. Producer effort **max**, reviewer **high**.
 - **Config:** `config.yml` → lean defaults (shake, no Autolearn, no built-in task list, memory off, hashline, **yolo** + **smart-approve**).
-- **Link:** `./link.sh` → `~/.omp/agent` without touching `auth.json` / sessions / cache.
+- **Link:** `cd ~/.dotfiles && stow .` — package `.omp/agent/` → `~/.omp/agent` (no `omp/link.sh`; never touches auth/sessions/cache).
 
 ## Cold session
 
@@ -59,4 +59,4 @@ per thread. Mid-flow freeform is steering, not a new route.
 
 Do **not** shadow native `/goal` or `/guided-goal`. Do **not** add `commands/harness.md`.
 
-See `compatibility.json` for the pinned runtime contract and `README.md` for link safety rules.
+See `compatibility.json` for the pinned runtime contract and `README.md` for stow package rules.

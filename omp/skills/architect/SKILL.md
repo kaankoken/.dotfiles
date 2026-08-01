@@ -31,7 +31,7 @@ implementation detail (stack packs cover that), not code review
 | **Standalone** | `/architect <question>` runs the workflow below in-session |
 | **Embedded** | `/design`: **required** on `pdr-writer` + `arc42-writer`; `adr-writer` stays architect-free |
 | **References** | Read on demand under this directory; never paste bodies into agent prompts |
-| **Ships via** | `omp/link.sh` `skills` symlink → `~/.omp/agent/skills/architect/` |
+| **Ships via** | `stow .` package `.omp/agent/skills` → `~/.omp/agent/skills/architect/` |
 
 ## OMP flow map
 
