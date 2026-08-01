@@ -1,21 +1,23 @@
 ---
 name: stack-ios
-description: On-demand iOS/Axiom domain pack router. Load when working in Swift/Xcode/iOS projects or when the user invokes /stack-ios. Not needed for non-iOS work.
+description: On-demand iOS/Axiom domain pack router. Load when working in Swift/Xcode/iOS projects or stack route / harness marker / explicit ask. Not needed for non-iOS work.
 ---
 
 # stack-ios (on-demand pack)
+
+Load this file by path `~/.omp/agent/skills/stack-ios/SKILL.md` — not `skill://stack-ios` (not cold-listed).
 
 Cold start does **not** catalog every Axiom skill. Activate this pack only when the repo or task needs iOS/Swift.
 
 ## When to use
 
 - `Package.swift`, `.xcodeproj`, `.xcworkspace`, or iOS app sources
-- User ran `/stack-ios` or harness stack marker is `ios`
+- Stack route / harness marker is `ios`
 - SwiftUI / concurrency / shipping / Xcode tooling work
 
 ## Load order (live paths — never vendor bodies)
 
-1. Prefer `read skill://axiom-swiftui` (or related `axiom-*`) only if present in the session catalog (e.g. after `omp --config …/configs/pack-ios.yml`).
+1. Prefer path load if catalogued; else `read axiom-swiftui` (or related `axiom-*`) only if present in the session catalog (e.g. after `omp --config …/configs/pack-ios.yml`).
 2. Otherwise read entry skills by absolute path under:
 
 ```text

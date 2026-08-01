@@ -182,7 +182,7 @@ describe("OMP compatibility contract", () => {
 
   test("pins the verified v17.2 task capture surface", () => {
     const doc = loadContract();
-    expect(doc.ompVersion).toBe("omp/17.2.1");
+    expect(doc.ompVersion).toBe("omp/17.2.2");
     expect(doc.upstreamCommit).toBe(
       "4df68d60438423b384b2b47fb3d6835641624757",
     );

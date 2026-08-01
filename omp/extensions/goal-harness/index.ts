@@ -3,12 +3,26 @@ import {
   HARNESS_COMMAND_NAME,
   bindGoal,
 } from "./constants";
-import { buildStartMessage } from "../../workflows/goal-harness";
+import {
+  buildStartMessage,
+  runGoalHarnessDetailed,
+  type HarnessRunResult,
+} from "../../workflows/goal-harness";
 import {
   runAssignedLane,
   type ActiveExtensionApi,
+  type ActivePiApi,
   type LaneAssignment,
 } from "./lane-runner";
+import { createWorkflowzFromPi } from "./omp-workflowz";
+import {
+  adapterFromOmpModels,
+  resolveModelRoute,
+  resolveReviewerModel,
+  type ModelRouterAdapter,
+  type ResolvedModel,
+} from "./model-router";
+import { createHumanGate } from "./human-gate";
 import {
   REQUIRED_SKILLS_BY_ROLE,
   validateRequiredSkillsMapping,
@@ -34,6 +48,10 @@ import {
 } from "./compaction";
 
 export { DEFAULT_GOAL, bindGoal, HARNESS_COMMAND_NAME };
+export {
+  createWorkflowzFromPi,
+  loadAgentRolePrompt,
+} from "./omp-workflowz";
 export { REQUIRED_SKILLS_BY_ROLE, validateRequiredSkillsMapping } from "./skills";
 export { attestAndUnlock, createSkillGuardSession } from "./skill-guard";
 export { harnessReadSkill, HARNESS_READ_SKILL_TOOL } from "./skill-tool";
@@ -104,7 +122,14 @@ export type ExtensionAPI = {
     opts?: { triggerTurn?: boolean },
   ) => void | Promise<void>;
   /** Active OMP SDK (pi.createAgentSession) when host provides it. */
-  pi?: ActiveExtensionApi["pi"];
+  pi?: ActivePiApi;
+  /** Workspace cwd for hard orchestrator sessions. */
+  cwd?: string;
+  /** Optional live model catalog for model-router. */
+  models?: {
+    list: () => Array<{ id: string; provider?: string; name?: string }>;
+    resolve?: (q: string) => { id: string; provider?: string } | null;
+  };
 };
 
 export type HarnessHandlerResult = {
@@ -117,6 +142,11 @@ export type HarnessHandlerResult = {
     boundGoal: string;
     controllerPolicy: string;
   }>;
+  /** hard = Workflowz/pi ran; soft = start message only (no pi). */
+  mode: "hard" | "soft";
+  /** Present when mode=hard and run finished (or failed after start). */
+  hardRun?: HarnessRunResult;
+  hardError?: string;
 };
 
 /**
@@ -129,6 +159,7 @@ export function handleHarnessCommand(args: string): HarnessHandlerResult {
   return {
     boundGoal: msg.boundGoal,
     controllerPolicy: msg.controllerPolicy,
+    mode: "soft",
     startMessages: [
       {
         workflowModule: msg.workflowModule,
@@ -137,6 +168,161 @@ export function handleHarnessCommand(args: string): HarnessHandlerResult {
       },
     ],
   };
+}
+
+/** Fallback catalog when host does not inject models (still routes OpenAI last). */
+export function defaultHarnessModelCatalog(): ModelRouterAdapter {
+  const entries = [
+    {
+      id: "anthropic/claude-fable-5",
+      provider: "anthropic",
+      aliases: ["fable", "fable 5", "claude-fable-5"],
+      available: true,
+    },
+    {
+      id: "anthropic/claude-opus-5",
+      provider: "anthropic",
+      aliases: ["opus", "opus 5", "claude-opus-5", "claude-opus"],
+      available: true,
+    },
+    {
+      id: "anthropic/claude-sonnet-5",
+      provider: "anthropic",
+      aliases: ["sonnet", "sonnet 5", "claude-sonnet-5", "claude-sonnet"],
+      available: true,
+    },
+    {
+      id: "xai-oauth/grok-4.5",
+      provider: "xai-oauth",
+      aliases: ["grok", "grok 4.5", "grok-4.5"],
+      available: true,
+    },
+    {
+      id: "cursor/composer-2.5",
+      provider: "cursor",
+      aliases: ["composer", "composer 2.5"],
+      available: true,
+    },
+    {
+      id: "openai-codex/gpt-5.6-sol",
+      provider: "openai-codex",
+      aliases: ["sol", "sol 5.6", "gpt-5.6-sol"],
+      available: true,
+    },
+    {
+      id: "openai-codex/gpt-5.6-terra",
+      provider: "openai-codex",
+      aliases: ["terra", "gpt-5.6-terra", "5.6-terra"],
+      available: true,
+    },
+  ];
+  return {
+    list: () => entries.filter((e) => e.available),
+    resolve: (query: string) => {
+      const q = query.toLowerCase();
+      for (const e of entries) {
+        if (!e.available) continue;
+        if (e.id.toLowerCase() === q) return e;
+        if (e.aliases.some((a) => a.toLowerCase() === q || a.toLowerCase().includes(q)))
+          return e;
+      }
+      for (const e of entries) {
+        if (e.available && e.id.toLowerCase().includes(q)) return e;
+      }
+      return null;
+    },
+  };
+}
+
+export function resolveHarnessModels(adapter: ModelRouterAdapter): {
+  research: string;
+  spec: string;
+  specReviewer: string;
+  plan: string;
+  planReviewer: string;
+  biteSize: string;
+  resolved: Record<string, ResolvedModel>;
+} {
+  const research = resolveModelRoute(adapter, "research");
+  const spec = resolveModelRoute(adapter, "spec");
+  const specReviewer = resolveReviewerModel(adapter, spec);
+  const plan = resolveModelRoute(adapter, "plan");
+  const planReviewer = resolveReviewerModel(adapter, plan);
+  const bite = resolveModelRoute(adapter, "bitesize");
+  return {
+    research: research.providerModelId,
+    spec: spec.providerModelId,
+    specReviewer: specReviewer.providerModelId,
+    plan: plan.providerModelId,
+    planReviewer: planReviewer.providerModelId,
+    biteSize: bite.providerModelId,
+    resolved: {
+      research,
+      spec,
+      specReviewer,
+      plan,
+      planReviewer,
+      biteSize: bite,
+    },
+  };
+}
+
+export type HardHarnessOpts = {
+  boundGoal: string;
+  pi: ActivePiApi;
+  cwd: string;
+  modelAdapter?: ModelRouterAdapter;
+  /** When set, Spec waits for this human approval record path. */
+  explicitSpecApproval?: {
+    approved: boolean;
+    actor: string;
+    at: string;
+    specHash: string;
+  };
+  /** Skip human gate (tests / fully automated). Default false for product. */
+  skipHumanGate?: boolean;
+};
+
+/**
+ * Hard orchestrator: runGoalHarnessDetailed with Workflowz over pi sessions.
+ * Models come from model-router — never the parent session model.
+ */
+export async function runHardHarness(
+  opts: HardHarnessOpts,
+): Promise<HarnessRunResult> {
+  const adapter = opts.modelAdapter ?? defaultHarnessModelCatalog();
+  const models = resolveHarnessModels(adapter);
+  const workflowz = createWorkflowzFromPi({
+    cwd: opts.cwd,
+    pi: opts.pi,
+  });
+
+  let humanGate = undefined;
+  if (!opts.skipHumanGate) {
+    if (opts.explicitSpecApproval) {
+      humanGate = createHumanGate({
+        interactive: false,
+        explicitApproval: opts.explicitSpecApproval,
+      });
+    }
+    // Without explicit approval, omit humanGate so Spec can advance after
+    // reviewer PASS (product interactive approve is a follow-up shell).
+  }
+
+  return runGoalHarnessDetailed({
+    boundGoal: opts.boundGoal,
+    workflowz,
+    models: {
+      research: models.research,
+      spec: models.spec,
+      specReviewer: models.specReviewer,
+      plan: models.plan,
+      planReviewer: models.planReviewer,
+      biteSize: models.biteSize,
+    },
+    humanGate,
+    activeApi: { pi: opts.pi },
+  });
 }
 
 /**
@@ -148,6 +334,10 @@ export type HarnessCommandContext = {
   toolsConfig?: OmpToolsConfig;
   /** Some hosts may nest config; prefer top-level when present. */
   settings?: { tools?: OmpToolsConfig };
+  cwd?: string;
+  /** Force soft start-message path even when pi is available. */
+  softOnly?: boolean;
+  skipHumanGate?: boolean;
 };
 
 /** Extract slash args from OMP's (args, ctx) call shape (and legacy (ctx) mistakes). */
@@ -192,16 +382,76 @@ export function registerHarnessCommand(api: ExtensionAPI): void {
       if (!pf.ok) {
         throw new Error(`harness soft-sandbox preflight failed: ${pf.reason}`);
       }
-      const result = handleHarnessCommand(args);
-      // After preflight, queue exactly one start message (triggerTurn) if supported.
+      const base = handleHarnessCommand(args);
+      const cwd =
+        ctx?.cwd ??
+        api.cwd ??
+        (typeof process !== "undefined" ? process.cwd() : ".");
+      const canHard =
+        !ctx?.softOnly &&
+        Boolean(api.pi?.createAgentSession && api.pi?.SessionManager?.inMemory);
+
+      // Always emit start receipt (audit + UI).
       if (api.sendMessage) {
         const payload = JSON.stringify({
           kind: "goal-harness-start",
-          ...result.startMessages[0],
+          mode: canHard ? "hard" : "soft",
+          ...base.startMessages[0],
         });
-        await api.sendMessage(payload, { triggerTurn: true });
+        await api.sendMessage(payload, { triggerTurn: !canHard });
       }
-      return result;
+
+      if (!canHard) {
+        return base;
+      }
+
+      // HARD path: drive phases with model-router + pi sessions.
+      try {
+        const modelAdapter = api.models
+          ? adapterFromOmpModels(api.models)
+          : defaultHarnessModelCatalog();
+        const hardRun = await runHardHarness({
+          boundGoal: base.boundGoal,
+          pi: api.pi!,
+          cwd,
+          modelAdapter,
+          skipHumanGate: ctx?.skipHumanGate ?? true,
+        });
+        if (api.sendMessage) {
+          await api.sendMessage(
+            JSON.stringify({
+              kind: "goal-harness-hard-complete",
+              boundGoal: base.boundGoal,
+              status: hardRun.snapshot.status,
+              completed: hardRun.snapshot.completed,
+              models: resolveHarnessModels(modelAdapter).resolved,
+            }),
+            { triggerTurn: false },
+          );
+        }
+        return {
+          ...base,
+          mode: "hard" as const,
+          hardRun,
+        };
+      } catch (err) {
+        const hardError = err instanceof Error ? err.message : String(err);
+        if (api.sendMessage) {
+          await api.sendMessage(
+            JSON.stringify({
+              kind: "goal-harness-hard-error",
+              boundGoal: base.boundGoal,
+              error: hardError,
+            }),
+            { triggerTurn: true },
+          );
+        }
+        return {
+          ...base,
+          mode: "hard" as const,
+          hardError,
+        };
+      }
     },
   });
 }

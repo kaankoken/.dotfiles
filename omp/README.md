@@ -101,19 +101,21 @@ Most residual cold cost is **not** skill bodies — it is OMP system prompt +
 | Lever | Config |
 |-------|--------|
 | Skill catalog | `skills.includeSkills`: **intent-router**, **beads** only |
+| Skill slash | `skills.enableSkillCommands: false` (no `/skill:*` flood) |
 | Intent | freeform → `skill://intent-router` → one dispatch into existing flows |
-| Domain packs | On demand: `/stack-*`, stack-scout, `configs/pack-*.yml` |
-| Cold MCP | tokensave + headroom + context-mode; context7 opt-in via `/mcp enable` or `/mcp-stack` |
+| Domain packs | On demand: path `stack-*` routers, stack-scout, `configs/pack-*.yml` |
+| Cold MCP | tokensave + headroom + context-mode; context7 via `/mcp enable context7` |
 | Foreign MCP | `mcp.json` `disabledServers` (codebase-memory, chrome-devtools, node_repl, …) |
 | xd:// docs | `tools.xdev: true`, `tools.xdevDocs: catalog` (names only, not long summaries) |
 | Optional tools | `generate_image.enabled: false`, `browser.enabled: false`, `inspect_image.mode: off` |
-| GCP pack | deferred (see `extensions/goal-harness/domain-packs.ts` comment) |
+| GCP pack | `skill://stack-gcp` + `configs/pack-gcp.yml`; clone google/skills → marketplaces/google-skills (cloud root) |
 
 | Surface | When |
 |---------|------|
 | Cold catalog | `intent-router`, `beads` |
-| `/stack-rust` `/stack-ios` `/stack-android` | Activate pack for current turn via path loads |
-| `/mcp-stack` / `/mcp enable <name>` | Connect context7 (headroom + context-mode already cold) |
+| Slash shells | `/harness` `/init` `/design` `/code-review` `/pr-reviewer` only |
+| path `…/skills/stack-*/SKILL.md` | Activate pack for current turn (no `/stack-*` command; not cold `skill://`) |
+| `/mcp enable context7` | Connect docs MCP (headroom + context-mode already cold) |
 | `stack-scout` / implementer / harness markers | Detect stack → entry skills by absolute path |
 | `omp --config configs/pack-rust.yml` (etc.) | Optional **new session** with full pack skill catalog |
 

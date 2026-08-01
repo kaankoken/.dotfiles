@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
+  ANDROID_EXPLICIT_ONLY_SKILLS,
   DOMAIN_PACKS,
   DOMAIN_COLD_START_FORBIDDEN_GLOBS,
   entrySkillNamesForMarker,
@@ -14,7 +15,7 @@ import {
 const OMP_ROOT = join(import.meta.dir, "..");
 
 describe("domain packs (on-demand)", () => {
-  test("stack markers map to pack ids", () => {
+  test("stack markers map to pack ids (gcp never marker-derived)", () => {
     expect(packsForStackMarker("rust")).toEqual(["rust"]);
     expect(packsForStackMarker("ios")).toEqual(["ios"]);
     expect(packsForStackMarker("android")).toEqual(["android"]);
@@ -29,6 +30,8 @@ describe("domain packs (on-demand)", () => {
     expect(entrySkillNamesForMarker("ios")).not.toContain("axiom");
     expect(entrySkillNamesForMarker("android")).toContain("android-cli");
     expect(entrySkillNamesForMarker("android")).not.toContain("android");
+    expect(DOMAIN_PACKS.gcp.entrySkills).toContain("gcloud");
+    expect(DOMAIN_PACKS.gcp.entrySkills).not.toContain("gcp");
   });
 
   test("glob match for pack overlays", () => {
@@ -39,6 +42,7 @@ describe("domain packs (on-demand)", () => {
     expect(skillMatchesAnyGlob("unsafe-checker", DOMAIN_PACKS.rust.includeGlobs)).toBe(
       true,
     );
+    expect(matchSkillGlob("gke-*", "gke-basics")).toBe(true);
   });
 
   test("cold-start forbidden globs cover all domain packs", () => {
@@ -53,30 +57,32 @@ describe("domain packs (on-demand)", () => {
     expect(packOverlayIncludeGlobs("rust")).toEqual(DOMAIN_PACKS.rust.includeGlobs);
     expect(packOverlayIncludeGlobs("ios")).toContain("axiom-*");
     expect(packOverlayIncludeGlobs("android")).toContain("android-cli");
+    expect(packOverlayIncludeGlobs("gcp")).toContain("gcloud");
   });
 
   test("stack labels remain for AGENTS.md / STACK_SKILL_SETS compatibility", () => {
     expect(DOMAIN_PACKS.rust.stackLabels).toEqual(["rust-skills"]);
     expect(DOMAIN_PACKS.ios.stackLabels).toEqual(["axiom"]);
     expect(DOMAIN_PACKS.android.stackLabels).toContain("android");
+    expect(DOMAIN_PACKS.gcp.stackLabels).toEqual(["gcp", "google-cloud"]);
   });
 
-  test("domain-packs documents deferred GCP without implementing pack", () => {
-    const src = readFileSync(
-      join(OMP_ROOT, "extensions/goal-harness/domain-packs.ts"),
-      "utf8",
+  test("DOMAIN_PACKS.gcp is live with cloud root fragments", () => {
+    expect(DOMAIN_PACKS.gcp.id).toBe("gcp");
+    expect(DOMAIN_PACKS.gcp.stackLabels).toContain("gcp");
+    expect(DOMAIN_PACKS.gcp.rootFragments.some((f) => f.includes("google-skills"))).toBe(
+      true,
     );
-    expect(src).toMatch(/DomainPackId = "rust" \| "ios" \| "android"/);
-    expect(src).toMatch(/Future|GCP|gcp/);
-    // Live assignment forbidden; deferred comment may mention DOMAIN_PACKS.gcp =
-    const withoutComments = src
-      .replace(/\/\*[\s\S]*?\*\//g, "")
-      .replace(/\/\/.*$/gm, "");
-    expect(withoutComments).not.toMatch(/DOMAIN_PACKS\.gcp\s*=/);
-    // cold header must not claim stack routers are cold-listed
-    expect(src).not.toMatch(
-      /Cold catalog only lists core \+ thin stack-\* routers/,
-    );
+    expect(DOMAIN_PACKS.gcp.entrySkills).toContain("gcloud");
+    // packsForStackMarker mixed still excludes gcp
+    expect(packsForStackMarker("mixed")).not.toContain("gcp");
+  });
+
+  test("android default pack excludes Play/Google-services bleed", () => {
+    for (const name of ANDROID_EXPLICIT_ONLY_SKILLS) {
+      expect(DOMAIN_PACKS.android.includeGlobs).not.toContain(name);
+    }
+    expect(DOMAIN_PACKS.android.includeGlobs).toContain("android-cli");
   });
 
   test("README cold catalog matches lean allowlist", () => {
@@ -86,5 +92,6 @@ describe("domain packs (on-demand)", () => {
     expect(text.toLowerCase()).not.toMatch(/\bcaveman\b/);
     expect(text).toMatch(/headroom/);
     expect(text).toMatch(/context-mode/);
+    expect(text).toMatch(/stack-gcp|google\/skills|google-skills/);
   });
 });

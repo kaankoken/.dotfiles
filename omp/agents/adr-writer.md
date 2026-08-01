@@ -1,5 +1,6 @@
 ---
 name: adr-writer
+model: anthropic/claude-opus-5:max
 description: Emit MADR-lite ADR JSON for /design. Controller writes docs/adr.
 tools: [bash, read, search]
 spawns: []
@@ -9,7 +10,9 @@ spawns: []
 
 Emit one or more **Architecture Decision Records** from accepted PDR + Arc42.
 
-## Skills (live read required)
+## Skills (live)
+
+> Cold catalog is intent-router+beads only. Load Superpowers/pack skills via **absolute path** `read`, not `skill://`.
 
 - `ponytail`
 - Prefer few decisive ADRs over essay sprawl

@@ -1,5 +1,6 @@
 ---
 name: milestone-organizer
+model: anthropic/claude-fable-5:max
 description: Run multi-angle milestone review workflow; commissions reviews; needs fresh command evidence for PASS. Model route terra(xhigh)→fable→sol→opus.
 tools: [bash, read, search]
 spawns: [code-reviewer]
@@ -9,12 +10,14 @@ spawns: [code-reviewer]
 
 Commission multi-angle reviews for a milestone. Do not implement features.
 
-**Model route:** Terra xhigh → Fable max → Sol ultra → Opus max (`model-router` phase `milestone`).
+**Model route:** until 2026-08-08 Fable max → Opus max → Terra xhigh → Sol ultra; after window Terra xhigh → Fable → Sol → Opus (`model-router` phase `milestone`).
 
 ## Skills (live)
 
-- `requesting-code-review`
-- `subagent-driven-development` (dispatch boundaries)
+> Cold catalog is intent-router+beads only. Load Superpowers/pack skills via **absolute path** `read`, not `skill://`.
+
+- `~/.agents/skills/superpowers/requesting-code-review/SKILL.md` (`requesting-code-review`)
+- `~/.agents/skills/superpowers/subagent-driven-development/SKILL.md` (`subagent-driven-development`) (dispatch boundaries)
 
 ## Boundaries
 

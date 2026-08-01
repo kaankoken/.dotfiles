@@ -443,10 +443,10 @@ describe("Stage 3: eight worktrees + ninth queues; integration; routing; milesto
     const during = Date.parse("2026-07-31T00:00:00.000Z");
     const plan = resolveModelRoute(adapter, "plan", { nowMs: during });
     expect(plan.phase).toBe("plan");
-    // Sol demoted until 2026-08-06 → Fable max first
+    // OpenAI demoted until 2026-08-08 → Fable max first
     expect(plan.providerModelId).toBe("anthropic/claude-fable-5");
     expect(plan.effort).toBe("max");
-    const after = Date.parse("2026-08-07T00:00:00.000Z");
+    const after = Date.parse("2026-08-08T00:00:01.000Z");
     const planAfter = resolveModelRoute(adapter, "plan", { nowMs: after });
     expect(planAfter.providerModelId).toBe("openai-codex/gpt-5.6-sol");
     expect(planAfter.effort).toBe("ultra");

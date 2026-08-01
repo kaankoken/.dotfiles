@@ -3,13 +3,12 @@
  *
  * Pack roots stay in config.yml customDirectories so harness resolveSkill and
  * filesystem reads work. Cold includeSkills is only intent-router + beads;
- * stack-* routers and pack entry skills load via /stack-* or stack-scout.
+ * stack-* routers and pack entry skills load via skill://stack-* or stack-scout.
  *
- * Future — not implemented this phase:
- *   export type DomainPackId = "rust" | "ios" | "android" | "gcp";
- *   // DOMAIN_PACKS.gcp = { id: "gcp", stackLabels: ["gcp","google-cloud"], ... }
- *   // Research: https://github.com/google/skills
- *   // When added: audit android includeGlobs for GCP bleed (follow-up).
+ * GCP pack roots: google/skills cloud category (non-recursive discovery).
+ * Install: git clone https://github.com/google/skills
+ *   → ~/.claude/plugins/marketplaces/google-skills (pin SHA in README).
+ * Android pack excludes Play/Google-services bleed (explicit path load only).
  */
 
 import { existsSync, readdirSync } from "node:fs";
@@ -17,7 +16,7 @@ import { join, resolve } from "node:path";
 import { homedir } from "node:os";
 import type { StackMarker } from "./stack-skills";
 
-export type DomainPackId = "rust" | "ios" | "android";
+export type DomainPackId = "rust" | "ios" | "android" | "gcp";
 
 export type DomainPack = {
   id: DomainPackId;
@@ -78,6 +77,8 @@ export const DOMAIN_PACKS: Record<DomainPackId, DomainPack> = {
       "migrate-xml-views-to-jetpack-compose",
       "navigation-3",
     ],
+    // Play/Google-services skills are NOT default android — explicit path only
+    // (Play ≠ GCP; see skills/stack-android/SKILL.md).
     includeGlobs: [
       "android-cli",
       "adaptive",
@@ -86,24 +87,59 @@ export const DOMAIN_PACKS: Record<DomainPackId, DomainPack> = {
       "camera1-to-camerax",
       "display-*",
       "edge-to-edge",
-      "engage-sdk-integration",
       "migrate-xml-views-to-jetpack-compose",
       "navigation-3",
       "perfetto-*",
-      "play-billing-library-version-upgrade",
       "r8-analyzer",
       "styles",
       "testing-setup",
-      "verified-email",
+    ],
+  },
+  gcp: {
+    id: "gcp",
+    stackLabels: ["gcp", "google-cloud"],
+    rootFragments: [
+      "marketplaces/google-skills/skills/cloud",
+      ".claude/plugins/marketplaces/google-skills/skills/cloud",
+    ],
+    entrySkills: [
+      "gcloud",
+      "google-cloud-recipe-auth",
+      "google-cloud-recipe-onboarding",
+    ],
+    includeGlobs: [
+      "gcloud",
+      "gke-*",
+      "bigquery-*",
+      "bigtable-*",
+      "cloud-*",
+      "google-cloud-*",
+      "google-agents-cli-onboarding",
+      "alloydb-*",
+      "spanner-*",
+      "gemini-*",
+      "agent-platform-*",
+      "firebase-basics",
+      "datalineage-*",
+      "workload-manager-*",
+      "detection-engineering-*",
     ],
   },
 };
+
+/** Skills distilled out of default android (explicit path / ask only). */
+export const ANDROID_EXPLICIT_ONLY_SKILLS = [
+  "engage-sdk-integration",
+  "play-billing-library-version-upgrade",
+  "verified-email",
+] as const;
 
 /** Cold-start includeSkills must never list these domain globs. */
 export const DOMAIN_COLD_START_FORBIDDEN_GLOBS: string[] = [
   ...DOMAIN_PACKS.rust.includeGlobs,
   ...DOMAIN_PACKS.ios.includeGlobs,
   ...DOMAIN_PACKS.android.includeGlobs,
+  ...DOMAIN_PACKS.gcp.includeGlobs,
 ];
 
 export function expandHome(path: string, home = homedir()): string {
@@ -146,12 +182,11 @@ export function resolvePackRoots(
 /** Glob-ish match for skill names (Bun.Glob-compatible * only). */
 export function matchSkillGlob(pattern: string, name: string): boolean {
   if (pattern === name) return true;
-  if (!pattern.includes("*")) return false;
-  // Escape regex specials except *
+  if (!pattern.includes("*")) return pattern === name;
   const re = new RegExp(
     `^${pattern
       .split("*")
-      .map((p) => p.replace(/[.+?^${}()|[\]\\]/g, "\\$&"))
+      .map((p) => p.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
       .join(".*")}$`,
   );
   return re.test(name);
@@ -178,9 +213,10 @@ export function listPackSkillNames(
     } catch {
       continue;
     }
-    for (const child of entries) {
-      if (!existsSync(join(root, child, "SKILL.md"))) continue;
-      if (skillMatchesAnyGlob(child, pack.includeGlobs)) names.add(child);
+    for (const ent of entries) {
+      if (skillMatchesAnyGlob(ent, pack.includeGlobs)) {
+        if (existsSync(join(root, ent, "SKILL.md"))) names.add(ent);
+      }
     }
   }
   return [...names].sort();
@@ -208,7 +244,7 @@ export function resolveEntrySkillPaths(
   return out;
 }
 
-/** Map stack marker → domain pack ids (mixed unions). */
+/** Map stack marker → domain pack ids (mixed unions). GCP is never marker-derived. */
 export function packsForStackMarker(marker: StackMarker): DomainPackId[] {
   switch (marker) {
     case "rust":
@@ -233,7 +269,7 @@ export function entrySkillNamesForMarker(marker: StackMarker): string[] {
   for (const id of packsForStackMarker(marker)) {
     names.push(...DOMAIN_PACKS[id].entrySkills);
   }
-  return [...new Set(names)];
+  return names;
 }
 
 /** Overlay includeSkills = cold core + pack globs (for configs/pack-*.yml). */

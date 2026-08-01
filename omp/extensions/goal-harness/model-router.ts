@@ -72,19 +72,17 @@ export type ResolveOptions = {
 type ChainStep = { family: ModelFamily; effort: Effort; queries: string[] };
 
 /**
- * Until this instant (UTC), Sol is demoted to last resort on every chain that
- * used to prefer it. Sol 5.x context windows were thrashing compact/load loops
- * and burning OpenAI subscription quota on Spec/Plan gates.
- * After 2026-08-06T00:00:00Z, Sol returns to primary on big gates / init /
- * research soft fallback and to its prior implement position.
+ * Until this instant (UTC), OpenAI Codex models (Sol + Terra) are last-resort
+ * on every chain. Quota/context thrash on Spec/Plan/Milestone/PR/design.
+ * After 2026-08-08T00:00:00Z, prior primary positions restore.
  */
-export const SOL_DEPRIORITIZE_UNTIL_MS = Date.parse(
-  "2026-08-06T00:00:00.000Z",
+export const OPENAI_DEPRIORITIZE_UNTIL_MS = Date.parse(
+  "2026-08-08T00:00:00.000Z",
 );
 
-/** Injectable clock for tests. */
-export function isSolDeprioritized(nowMs: number = Date.now()): boolean {
-  return nowMs < SOL_DEPRIORITIZE_UNTIL_MS;
+/** Injectable clock for tests. True while OpenAI (Sol/Terra) is last-resort. */
+export function isOpenAiDeprioritized(nowMs: number = Date.now()): boolean {
+  return nowMs < OPENAI_DEPRIORITIZE_UNTIL_MS;
 }
 
 const SOL_ULTRA: ChainStep = {
@@ -172,10 +170,13 @@ const OPUS_XHIGH: ChainStep = {
 };
 
 /**
- * /design PDR + ADR: Opus 5 max/xhigh → Terra 5.6 max → Sol 5.6 xhigh → Grok.
- * Reviewers use the same chain via resolveReviewerModel (skips producer id).
+ * /design PDR + ADR. OpenAI window: Opus → Grok → Terra/Sol tail.
+ * After window: Opus → Terra → Sol → Grok.
  */
-function designPdrAdrChain(): ChainStep[] {
+function designPdrAdrChain(nowMs?: number): ChainStep[] {
+  if (isOpenAiDeprioritized(nowMs)) {
+    return [OPUS_MAX, OPUS_XHIGH, GROK_HIGH, TERRA_MAX, TERRA_XHIGH, SOL_XHIGH];
+  }
   return [OPUS_MAX, OPUS_XHIGH, TERRA_MAX, TERRA_XHIGH, SOL_XHIGH, GROK_HIGH];
 }
 
@@ -186,16 +187,15 @@ function designArc42Chain(): ChainStep[] {
 
 /** Spec / Plan / BiteSize writers + big-gate reviewers. */
 function bigGateChain(nowMs?: number): ChainStep[] {
-  // Prefer Fable 5 → Opus 5 while Sol is demoted; Sol last as hard fallback.
-  if (isSolDeprioritized(nowMs)) {
+  if (isOpenAiDeprioritized(nowMs)) {
     return [FABLE_MAX, OPUS_MAX, SOL_ULTRA];
   }
   return [SOL_ULTRA, FABLE_MAX, OPUS_MAX];
 }
 
-/** Grok → Composer (Grok-unavailable only) → … → Sonnet; Sol last while demoted. */
+/** Grok → Composer → …; Sol last while OpenAI demoted. */
 function implementChain(nowMs?: number): ChainStep[] {
-  if (isSolDeprioritized(nowMs)) {
+  if (isOpenAiDeprioritized(nowMs)) {
     return [GROK_HIGH, COMPOSER_HIGH, SONNET_HIGH, SOL_HIGH];
   }
   return [GROK_HIGH, COMPOSER_HIGH, SOL_HIGH, SONNET_HIGH];
@@ -203,30 +203,33 @@ function implementChain(nowMs?: number): ChainStep[] {
 
 /**
  * Research / scouts: Grok high first.
- * While Sol demoted: Fable medium soft fallback before Sol.
+ * OpenAI window: Fable medium before Sol.
  */
 function researchChain(nowMs?: number): ChainStep[] {
-  if (isSolDeprioritized(nowMs)) {
+  if (isOpenAiDeprioritized(nowMs)) {
     return [GROK_HIGH, FABLE_MEDIUM, SOL_MEDIUM];
   }
   return [GROK_HIGH, SOL_MEDIUM];
 }
 
-/** PR delivery: Grok → Codex Terra (xhigh) → Sonnet (unchanged; no Sol). */
-const PR_CHAIN: ChainStep[] = [GROK_HIGH, TERRA_XHIGH, SONNET_HIGH];
+/** PR: OpenAI window puts Terra after non-OpenAI; after window Terra mid-chain. */
+function prChain(nowMs?: number): ChainStep[] {
+  if (isOpenAiDeprioritized(nowMs)) {
+    return [GROK_HIGH, SONNET_HIGH, TERRA_XHIGH];
+  }
+  return [GROK_HIGH, TERRA_XHIGH, SONNET_HIGH];
+}
 
-/** Milestone: Terra → Fable → Opus → Sol (Sol last while demoted or after). */
+/** Milestone: OpenAI (Terra/Sol) last during window. */
 function milestoneChain(nowMs?: number): ChainStep[] {
-  // Always Fable/Opus before Sol during demote window; after window keep Opus
-  // before Sol (safer context) rather than restoring Sol ahead of Opus.
-  if (isSolDeprioritized(nowMs)) {
-    return [TERRA_XHIGH, FABLE_MAX, OPUS_MAX, SOL_ULTRA];
+  if (isOpenAiDeprioritized(nowMs)) {
+    return [FABLE_MAX, OPUS_MAX, TERRA_XHIGH, SOL_ULTRA];
   }
   return [TERRA_XHIGH, FABLE_MAX, SOL_ULTRA, OPUS_MAX];
 }
 
 function initChain(nowMs?: number): ChainStep[] {
-  if (isSolDeprioritized(nowMs)) {
+  if (isOpenAiDeprioritized(nowMs)) {
     return [FABLE_MEDIUM, SONNET_MEDIUM, SOL_MEDIUM];
   }
   return [SOL_MEDIUM, SONNET_MEDIUM];
@@ -249,10 +252,10 @@ export function chainForPhase(
     case "research":
       return researchChain(nowMs);
     case "pr":
-      return PR_CHAIN;
+      return prChain(nowMs);
     case "design-pdr":
     case "design-adr":
-      return designPdrAdrChain();
+      return designPdrAdrChain(nowMs);
     case "design-arc42":
       return designArc42Chain();
     case "init":

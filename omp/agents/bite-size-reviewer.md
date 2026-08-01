@@ -1,5 +1,6 @@
 ---
 name: bite-size-reviewer
+model: anthropic/claude-opus-5:high
 description: Size gate for bite-sized tasks. JSON only. Max 2 attempts (rewrite only on FAIL).
 tools: [bash, read, search]
 spawns: []

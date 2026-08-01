@@ -203,7 +203,8 @@ describe("runDesignFlow", () => {
 
     expect(byAgent["pdr-writer"]?.model).toBe("anthropic/claude-opus-5");
     expect(byAgent["pdr-writer"]?.effort).toBe("max");
-    expect(byAgent["pdr-reviewer"]?.model).toBe("openai-codex/gpt-5.6-terra");
+    // OpenAI demoted: reviewer next on design-pdr chain is Grok (not Terra)
+    expect(byAgent["pdr-reviewer"]?.model).toBe("xai/grok-4.5");
     expect(byAgent["pdr-reviewer"]?.model).not.toBe(
       byAgent["pdr-writer"]?.model,
     );

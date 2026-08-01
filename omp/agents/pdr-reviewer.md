@@ -1,5 +1,6 @@
 ---
 name: pdr-reviewer
+model: xai-oauth/grok-4.5:high
 description: Gate PDR for /design. REVIEW-POLICY default PASS. JSON review result.
 tools: [bash, read, search]
 spawns: []

@@ -1,5 +1,6 @@
 ---
 name: arc42-writer
+model: xai-oauth/grok-4.5:high
 description: Produce Arc42 architecture sections + diagram sources for /design.
 tools: [bash, read, search, web_search]
 spawns: []
@@ -9,11 +10,13 @@ spawns: []
 
 Produce **Arc42** structured output from the accepted PDR. Design only.
 
-## Skills (live read required)
+## Skills (live)
 
-- `brainstorming`
+> Cold catalog is intent-router+beads only. Load Superpowers/pack skills via **absolute path** `read`, not `skill://`.
+
+- `~/.agents/skills/superpowers/brainstorming/SKILL.md` (`brainstorming`)
 - `ponytail`
-- `receiving-code-review` only when applying failed review blocking feedback
+- `~/.agents/skills/superpowers/receiving-code-review/SKILL.md` (`receiving-code-review`) only when applying failed review blocking feedback
 
 ## Diagrams
 

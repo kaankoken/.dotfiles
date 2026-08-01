@@ -33,11 +33,13 @@ Bound text is the only design goal (same role as `/harness` args).
 First reviewer `ok: true` ends a gate. Rewrite only on `ok: false` + blocking.
 Reviewers follow `agents/REVIEW-POLICY.md` (default PASS).
 
-## Skills (live load by name)
+## Skills (live load by path — not cold `skill://`)
 
-- `brainstorming` (required)
-- `ponytail` on writers
-- When skill `architect` exists later, load it; until then brainstorming only
+Cold catalog is intent-router+beads only.
+
+- `~/.agents/skills/superpowers/brainstorming/SKILL.md` (required)
+- `~/.agents/skills/ponytail/SKILL.md` on writers
+- When skill `architect` exists later, load by path; until then brainstorming only
 - Never vendor Superpowers bodies into prompts
 
 ## Models (`model-router` phases)

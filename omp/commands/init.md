@@ -1,32 +1,14 @@
 ---
 name: init
-description: Scaffold project AGENTS tree, CLAUDE.md symlinks, bd init. No Spec/Plan/Implement.
+description: Empty shell — project scaffold only. Loads project-init on invoke.
 ---
 
 # /init
 
-Scaffold-only entry. Expand `$ARGUMENTS` as optional project description/scope.
+**Empty shell.** Expand `$ARGUMENTS` as optional scope.
 
-## Deterministic layer
+## On invoke only
 
-Call `runProjectInit` from `extensions/goal-harness/project-init.ts` (or the
-`project-init` agent wrapping it) against the active repository root.
-
-- Infer description from README / `$ARGUMENTS`; otherwise **ask for scope**.
-- Write/merge root + nested `AGENTS.md`, `CLAUDE.md` symlinks.
-- Exclude `.git`, worktrees, vendor/deps, build/cache.
-- Beads only when `.beads` missing — **never bare `bd init`**:
-  `bd init --prefix <repo-basename> --init-if-missing --non-interactive --skip-agents`
-  (or `runSafeBdInit` / `buildSafeBdInitArgs`). After init, `bd where` prefix must
-  match the repo; refuse foreign bootstrap (`Bootstrapped from remote` / prefix
-  mismatch). Never `--remote` from another project.
-- Record stack skill requirements + worktree convention + ponytail (nixup toolchain).
-
-## Stop
-
-After scaffold completes, **stop**. Do **not**:
-
-- create Spec / Plan / Implement / Milestone / PR issues
-- start `/harness` phases
-- shadow OMP native `/goal` or `/guided-goal`
-
+1. Load `agents/project-init.md` / `runProjectInit` (`extensions/goal-harness/project-init.ts`).
+2. Scaffold AGENTS/CLAUDE; safe bd init only if missing (`--prefix`, no `--remote`).
+3. **Stop.** No Spec/Plan/Implement/PR. No `/harness`. Do not shadow `/goal`.

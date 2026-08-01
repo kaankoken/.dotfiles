@@ -1,5 +1,6 @@
 ---
 name: plan-reviewer
+model: anthropic/claude-opus-5:high
 description: Review implementation plan for ordering, size, risks, testability. JSON only.
 tools: [bash, read, search]
 spawns: []

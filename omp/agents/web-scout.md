@@ -1,5 +1,6 @@
 ---
 name: web-scout
+model: xai-oauth/grok-4.5:high
 description: Default internet research — search APIs and fetch pages. Read-mostly.
 tools: [bash, read, search, web_search]
 spawns: []

@@ -15,16 +15,13 @@ lsp:
   enabled: true
   lazy: true
   diagnosticsOnWrite: true
-task:
+task: 
   batch: true
   maxConcurrency: 8
-  # Show resolved provider/model id on task/subagent spawn rows in the TUI.
   showResolvedModelBadge: true
-tools:
-  # yolo = Claude/Grok-style auto; smart-approve (extensions/smart-approve)
-  # is the high-risk gate (force-push, rm -rf /, secrets paths, curl|sh, …).
+tools: 
   approvalMode: yolo
-  approval:
+  approval: 
     read: allow
     search: allow
     find: allow
@@ -33,8 +30,6 @@ tools:
     bash: allow
     edit: allow
     write: allow
-  # Rare tools as xd:// devices (schemas not top-level). catalog = name lines only
-  # in the mount notice — big cold-start win vs builtins (long descriptions).
   xdev: true
   xdevDocs: catalog
 skills: 
@@ -46,32 +41,24 @@ skills:
   enablePiProject: false
   enableAgentsUser: true
   enableAgentsProject: true
-  enableSkillCommands: true
+  enableSkillCommands: false
   customDirectories: 
     - ~/.agents/skills/superpowers
     - ~/.agents/skills
     - ~/.omp/agent/skills
     - ~/.claude/plugins/marketplaces/rust-skills/skills
     - ~/.claude/plugins/marketplaces/axiom-marketplace/axiom-codex/skills
-  # Cold-start catalog only (name+description in system prompt).
-  # Domain packs (rust / axiom / android) stay on disk via customDirectories but
-  # are NOT listed here — activate via /stack-rust|/stack-ios|/stack-android,
-  # stack-scout / implementer, harness stack detection, or:
-  #   omp --config ~/.dotfiles/omp/configs/pack-<name>.yml
-  # Ultra-cold: freeform intent-router + beads only. Superpowers / goal-harness /
-  # ponytail / stack routers load on demand via flows or pack overlays.
-  includeSkills:
+    - ~/.claude/plugins/marketplaces/google-skills/skills/cloud
+  includeSkills: 
     - intent-router
     - beads
-  ignoredSkills:
+  ignoredSkills: 
     []
-# Optional built-ins off at cold start (re-enable per session if needed).
-generate_image:
+generate_image: 
   enabled: false
-inspect_image:
+inspect_image: 
   mode: "off"
-# Built-in browser tool; webwright/CDP stays available via bash/skill when needed.
-browser:
+browser: 
   enabled: false
 providers: 
   webSearchOrder: 
@@ -99,7 +86,7 @@ providers:
     - mojeek
     - public
 modelRoles: 
-  default: openai-codex/gpt-5.6-sol:xhigh
+  default: xai-oauth/grok-4.5:xhigh
 symbolPreset: nerd
 theme: 
   dark: dark-tokyo-night
@@ -109,11 +96,11 @@ statusLine:
 tui: 
   textSizing: true
   imeSafeCursor: true
-display:
+display: 
   showTokenUsage: true
-images:
+images: 
   blockImages: false
-github:
+github: 
   enabled: true
-dev:
+dev: 
   autoqaConsent: granted
