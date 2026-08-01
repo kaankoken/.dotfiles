@@ -1,5 +1,6 @@
 ---
 name: spec-writer
+model: anthropic/claude-fable-5:max
 description: Brainstorm and write design/spec from goal + research. Producer for Spec gate.
 tools: [bash, read, search, web_search]
 spawns: []

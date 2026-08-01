@@ -1,7 +1,8 @@
 # Optional overlay: expand skill catalog with Android/Compose domain pack.
 # Usage (new session):
 #   omp --config ~/.dotfiles/omp/configs/pack-android.yml
-# Prefer /stack-android or stack-scout for on-demand path loads without a full catalog.
+# Prefer skill://stack-android or stack-scout for on-demand path loads.
+# Play/Google-services skills are explicit-path only (not in this catalog).
 
 skills:
   includeSkills:
@@ -28,7 +29,7 @@ skills:
     - stack-rust
     - stack-ios
     - stack-android
-    # android pack
+    # android pack (no Play/Engage/verified-email)
     - android-cli
     - adaptive
     - agp-9-upgrade
@@ -36,12 +37,9 @@ skills:
     - camera1-to-camerax
     - display-*
     - edge-to-edge
-    - engage-sdk-integration
     - migrate-xml-views-to-jetpack-compose
     - navigation-3
     - perfetto-*
-    - play-billing-library-version-upgrade
     - r8-analyzer
     - styles
     - testing-setup
-    - verified-email

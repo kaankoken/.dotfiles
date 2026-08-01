@@ -1,0 +1,45 @@
+# Optional overlay: expand skill catalog with Google Cloud pack (google/skills).
+# Usage (new session):
+#   omp --config ~/.dotfiles/omp/configs/pack-gcp.yml
+# Prefer skill://stack-gcp or intent stack route for on-demand path loads.
+
+skills:
+  includeSkills:
+    # cold core
+    - using-superpowers
+    - brainstorming
+    - writing-plans
+    - writing-skills
+    - requesting-code-review
+    - receiving-code-review
+    - systematic-debugging
+    - test-driven-development
+    - subagent-driven-development
+    - using-git-worktrees
+    - verification-before-completion
+    - finishing-a-development-branch
+    - dispatching-parallel-agents
+    - executing-plans
+    - goal-harness
+    - beads
+    - ponytail
+    - ponytail-*
+    - webwright
+    - stack-rust
+    - stack-ios
+    - stack-android
+    - stack-gcp
+    # gcp / google-skills cloud
+    - gcloud
+    - gke-*
+    - bigquery-*
+    - bigtable-*
+    - cloud-*
+    - google-cloud-*
+    - google-agents-cli-onboarding
+    - alloydb-*
+    - gemini-*
+    - agent-platform-*
+    - firebase-basics
+    - datalineage-*
+    - detection-engineering-*

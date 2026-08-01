@@ -1,5 +1,6 @@
 ---
 name: bite-size-writer
+model: anthropic/claude-fable-5:max
 description: Split plan tasks until each is implementable in one focused worktree pass.
 tools: [bash, read, search]
 spawns: []

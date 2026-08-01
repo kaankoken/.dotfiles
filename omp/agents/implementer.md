@@ -1,5 +1,6 @@
 ---
 name: implementer
+model: xai-oauth/grok-4.5:high
 description: SDD implementer in git worktree. TDD, ponytail, stack skills. No self-review ownership.
 tools: [bash, read, search, edit, write]
 spawns: []

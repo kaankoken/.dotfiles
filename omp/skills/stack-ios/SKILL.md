@@ -1,6 +1,6 @@
 ---
 name: stack-ios
-description: On-demand iOS/Axiom domain pack router. Load when working in Swift/Xcode/iOS projects or when the user invokes /stack-ios. Not needed for non-iOS work.
+description: On-demand iOS/Axiom domain pack router. Load when working in Swift/Xcode/iOS projects or stack route / harness marker / explicit ask. Not needed for non-iOS work.
 ---
 
 # stack-ios (on-demand pack)
@@ -10,7 +10,7 @@ Cold start does **not** catalog every Axiom skill. Activate this pack only when 
 ## When to use
 
 - `Package.swift`, `.xcodeproj`, `.xcworkspace`, or iOS app sources
-- User ran `/stack-ios` or harness stack marker is `ios`
+- Stack route / harness marker is `ios`
 - SwiftUI / concurrency / shipping / Xcode tooling work
 
 ## Load order (live paths — never vendor bodies)

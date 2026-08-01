@@ -1,41 +1,15 @@
 ---
 name: design
-description: Pre-harness system design — PDR, Arc42, ADRs. No build, no /harness auto-start.
+description: Empty shell — PDR/Arc42/ADR. Loads design-flow on invoke. Never auto-starts /harness.
 ---
 
 # /design
 
-Design-only entry. Expand `$ARGUMENTS` as the bound system/design goal.
+**Empty shell.** Expand `$ARGUMENTS` as bound design goal (required; ask once if empty).
 
-## Skills
+## On invoke only
 
-Load live `SKILL.md` for:
-
-- `using-superpowers`
-- `design-flow`
-- `brainstorming`
-
-## Deterministic layer
-
-Run `runDesignFlow` from `extensions/design-flow` (or `workflows/design-flow.ts`)
-against the active repository root with `boundGoal` = trimmed `$ARGUMENTS`
-(non-empty required; if empty, ask once for the design goal).
-
-Phases: Intake → PDR (writer→reviewer) → Arc42 (writer→reviewer) → ADR writer → Handoff.
-
-Models resolve via `resolveModelRoute` / `resolveReviewerModel` (design-pdr, design-adr, design-arc42).
-
-## Artifacts
-
-- PDR + Arc42: beads best-effort when issue available; session handoff always
-- ADRs only: controller writes `docs/adr/NNNN-title.md` after validating adr-writer JSON
-- Never create `docs/superpowers/**` or commit Superpowers plan/spec files
-
-## Stop
-
-After handoff summary, **stop**. Do **not**:
-
-- start `/harness` phases (never auto-start `/harness`)
-- open feature PRs
-- create implementer worktrees
-- shadow OMP native `/goal` or `/guided-goal`
+1. Load live: `skill://using-superpowers`, `skill://design-flow`, `skill://brainstorming`.
+2. Run `runDesignFlow` (`extensions/design-flow`) — PDR → Arc42 → ADR → handoff.
+3. ADRs only under `docs/adr/`. No superpowers specs in git.
+4. **Stop.** Do **not** start `/harness`, open feature PRs, or create implementer worktrees.

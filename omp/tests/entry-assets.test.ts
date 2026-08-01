@@ -139,19 +139,45 @@ describe("harness entry assets", () => {
     expect(raw).not.toMatch(/\/review-pr\b/);
   });
 
-  test("stack commands do not claim routers are cold-listed", () => {
-    for (const name of ["stack-rust", "stack-ios", "stack-android"]) {
-      const raw = readFileSync(join(OMP_ROOT, "commands", `${name}.md`), "utf8");
-      expect(raw).not.toMatch(/router always cold-listed/i);
-      expect(raw).toMatch(/on-demand|not cold/i);
+  test("no always-on stack or mcp-stack slash command files", () => {
+    const cmds = readdirSync(join(OMP_ROOT, "commands")).filter((f) =>
+      f.endsWith(".md"),
+    );
+    for (const name of [
+      "stack-rust.md",
+      "stack-ios.md",
+      "stack-android.md",
+      "mcp-stack.md",
+      "harness.md",
+      "pr-reviewer.md",
+    ]) {
+      expect(cmds).not.toContain(name);
+    }
+    // Only empty-shell flow files
+    for (const name of ["init.md", "design.md", "code-review.md"]) {
+      expect(cmds).toContain(name);
     }
   });
 
-  test("mcp-stack documents cold headroom/context-mode and opt-in context7", () => {
-    const raw = readFileSync(join(OMP_ROOT, "commands/mcp-stack.md"), "utf8");
-    expect(raw).toMatch(/context7/);
-    expect(raw).toMatch(/tokensave/);
-    // cold already has headroom + context-mode
-    expect(raw.toLowerCase()).toMatch(/already|cold/);
+  test("intent-router dispatches stack via skill:// and mcp via /mcp enable", () => {
+    const raw = readFileSync(
+      join(OMP_ROOT, "skills/intent-router/SKILL.md"),
+      "utf8",
+    );
+    expect(raw).toMatch(/skill:\/\/stack-/);
+    expect(raw).toMatch(/\/mcp enable context7/);
+    expect(raw).not.toMatch(/commands\/stack-/);
+    expect(raw).not.toMatch(/\/mcp-stack/);
+  });
+
+  test("stack skills remain on disk for path loads", () => {
+    for (const name of ["stack-rust", "stack-ios", "stack-android", "stack-gcp"]) {
+      const raw = readFileSync(
+        join(OMP_ROOT, "skills", name, "SKILL.md"),
+        "utf8",
+      );
+      expect(raw).toMatch(/on-demand|not cold/i);
+      expect(raw).not.toMatch(/user invokes \/stack-/i);
+    }
   });
 });

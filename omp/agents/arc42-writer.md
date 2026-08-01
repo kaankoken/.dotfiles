@@ -1,5 +1,6 @@
 ---
 name: arc42-writer
+model: xai-oauth/grok-4.5:high
 description: Produce Arc42 architecture sections + diagram sources for /design.
 tools: [bash, read, search, web_search]
 spawns: []

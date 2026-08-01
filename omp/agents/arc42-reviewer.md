@@ -1,5 +1,6 @@
 ---
 name: arc42-reviewer
+model: cursor/composer-2.5:high
 description: Gate Arc42 for /design against PDR. REVIEW-POLICY default PASS.
 tools: [bash, read, search]
 spawns: []

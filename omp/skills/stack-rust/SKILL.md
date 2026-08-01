@@ -1,6 +1,6 @@
 ---
 name: stack-rust
-description: On-demand Rust domain pack router. Load when working in a Rust/Cargo project or when the user invokes /stack-rust. Not needed for non-Rust work.
+description: On-demand Rust domain pack router. Load when working in a Rust/Cargo project or stack route / harness marker / explicit ask. Not needed for non-Rust work.
 ---
 
 # stack-rust (on-demand pack)
@@ -10,7 +10,7 @@ Cold start does **not** catalog every rust-skills skill. Activate this pack only
 ## When to use
 
 - `Cargo.toml` / Rust workspace present
-- User ran `/stack-rust` or harness stack marker is `rust`
+- Stack route / harness marker is `rust`
 - Debugging Rust borrow/type/tooling issues
 
 ## Load order (live paths — never vendor bodies)

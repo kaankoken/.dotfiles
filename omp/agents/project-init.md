@@ -1,5 +1,6 @@
 ---
 name: project-init
+model: anthropic/claude-fable-5:medium
 description: Stack-aware project scaffold — AGENTS.md tree, CLAUDE.md symlinks, bd init, stack skill checklist. No full harness.
 tools: [bash, read, search, edit, write]
 spawns: []

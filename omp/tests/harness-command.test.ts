@@ -49,14 +49,13 @@ describe("harness command binding", () => {
 
   test("handler queues exactly one internal start message importing workflow", () => {
     const result = handleHarnessCommand("");
+    expect(result.mode).toBe("soft");
     expect(result.startMessages.length).toBe(1);
     expect(result.startMessages[0].workflowModule).toBe(
       "omp/workflows/goal-harness.ts",
     );
-    expect(result.boundGoal).toBe(DEFAULT_GOAL);
-    expect(result.controllerPolicy).toBeTruthy();
-    expect(result.boundGoal).not.toContain(result.controllerPolicy);
-    expect(result.controllerPolicy).not.toContain("1. No errors");
+    expect(result.startMessages[0].boundGoal).toBe(DEFAULT_GOAL);
+    expect(result.controllerPolicy).toMatch(/HARD orchestrator|Parent is supervisor/i);
   });
 
   test("boundGoal is separate from controller policy", () => {

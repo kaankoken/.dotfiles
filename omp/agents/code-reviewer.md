@@ -1,5 +1,6 @@
 ---
 name: code-reviewer
+model: anthropic/claude-fable-5:max
 description: Multi-angle code review — correctness, tests, ponytail, stack. JSON review result.
 tools: [bash, read, search]
 spawns: []

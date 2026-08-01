@@ -7,6 +7,7 @@
 import {
   applyTransition,
   createInitialSnapshot,
+  GATE_BUDGETS,
   type DurableSnapshot,
 } from "../extensions/goal-harness/phase-machine";
 import {
@@ -80,10 +81,10 @@ export function buildStartMessage(boundGoal: string): HarnessStartMessage {
     // boundGoal IS the task (like /goal text). Empty /harness → 8 defaults already applied.
     // Skill loads must use skill://<exact-name> — never skill:// alone.
     controllerPolicy: [
+      "HARD orchestrator: extension runs runGoalHarnessDetailed via Workflowz/pi.createAgentSession with model-router models — parent does not solo Spec/Plan/Implement.",
       "boundGoal is the only task text (same role as /goal args). Do not invent a second goal.",
-      "Parent skills (skill://NAME only, never empty skill://): skill://using-superpowers then skill://goal-harness then skill://requesting-code-review.",
-      "Then run phases: Spec (spec-writer→spec-reviewer + human approve) → Plan (plan-writer→plan-reviewer) → BiteSize → SDD implement lanes → Milestone (code-reviewer) → PR.",
-      "Superpowers: live SKILL.md reads by name; bd is SoT.",
+      "Parent is supervisor only after start: human Spec approve when prompted; no bulk implement in Main.",
+      "Superpowers: live SKILL.md reads by name inside role agents; bd is SoT.",
       "Never bare bd init from /harness. Workspace must already match repo prefix (bd where); init only via /init project-init safe args (--prefix, no --remote).",
     ].join(" "),
   };
@@ -98,7 +99,11 @@ export type RunHarnessOptions = {
   models?: {
     research?: string;
     spec?: string;
+    /** Independent Spec reviewer (model-router resolveReviewerModel). */
+    specReviewer?: string;
     plan?: string;
+    /** Independent Plan reviewer. */
+    planReviewer?: string;
     biteSize?: string;
   };
   researchScope?: "small" | "large";
@@ -221,29 +226,34 @@ export async function runGoalHarnessDetailed(
       return;
     }
 
+    // Default research scope "small" — large fan-out is opt-in.
     const research = await runResearch(
       wz,
       {
         boundGoal: opts.boundGoal,
-        scope: opts.researchScope ?? "large",
+        scope: opts.researchScope ?? "small",
         escalateBrowse: false,
         escalateBrowserUse: false,
         escalateWebwright: false,
         goalRule5VersionCheck: true,
       },
-      { model: opts.models?.research ?? "openai-codex/gpt-5.6-sol" },
+      {
+        model: opts.models?.research ?? "anthropic/claude-fable-5",
+      },
     );
     snap = applyTransition(snap, { type: "complete", phase: "Research" });
 
     wz.phase("Spec");
     snap = applyTransition(snap, { type: "begin", phase: "Spec" });
     const session = createSpecSession(opts.boundGoal, research.synthesis);
+    // Writer + independent reviewer; maxAttempts from GATE_BUDGETS.
     const gate = await runSpecGate(wz, session, {
-      model: opts.models?.spec ?? "openai-codex/gpt-5.6-sol",
-      reviewerModel: opts.models?.spec
-        ? opts.models.spec
-        : "anthropic/claude-fable-5",
-      maxAttempts: 3,
+      model: opts.models?.spec ?? "anthropic/claude-fable-5",
+      reviewerModel:
+        opts.models?.specReviewer ??
+        opts.models?.spec ??
+        "anthropic/claude-opus-5",
+      maxAttempts: GATE_BUDGETS.Spec,
     });
 
     let specPassed = false;
@@ -266,9 +276,11 @@ export async function runGoalHarnessDetailed(
     }
 
     if (specPassed && session.candidate) {
-      const planModel = opts.models?.plan ?? "openai-codex/gpt-5.6-sol";
+      const planModel = opts.models?.plan ?? "anthropic/claude-fable-5";
       const planReviewer =
-        opts.models?.plan ?? "anthropic/claude-fable-5";
+        opts.models?.planReviewer ??
+        opts.models?.plan ??
+        "anthropic/claude-opus-5";
 
       snap = applyTransition(snap, { type: "begin", phase: "Plan" });
       const planGate = await runPlanGate(
@@ -281,7 +293,7 @@ export async function runGoalHarnessDetailed(
         {
           model: planModel,
           reviewerModel: planReviewer,
-          maxAttempts: 3,
+          maxAttempts: GATE_BUDGETS.Plan,
           runNarrowResearch: async (w, areas) => {
             const pass2 = await runResearch(
               w,
@@ -317,7 +329,7 @@ export async function runGoalHarnessDetailed(
             published = await runBiteSizeGate(wz, plan, {
               model: opts.models?.biteSize ?? planModel,
               reviewerModel: opts.models?.biteSize ?? planReviewer,
-              maxAttempts: 2,
+              maxAttempts: GATE_BUDGETS.BiteSize,
               broker: opts.broker,
               runId: snap.runId,
             });
@@ -381,10 +393,10 @@ export async function runGoalHarnessDetailed(
     if (opts.milestone && snap.completed.includes("Integration")) {
       snap = applyTransition(snap, { type: "begin", phase: "Milestone" });
       milestone = await runMilestoneGate(wz, {
-        model: opts.models?.plan ?? "openai-codex/gpt-5.6-sol",
+        model: opts.models?.plan ?? "anthropic/claude-fable-5",
         context: opts.milestone.context ?? opts.boundGoal,
         verification: opts.milestone.verification,
-        maxAttempts: 3,
+        maxAttempts: GATE_BUDGETS.Milestone,
       });
       if (milestone.ok) {
         snap = applyTransition(snap, { type: "gate_pass", gate: "Milestone" });

@@ -1,5 +1,6 @@
 ---
 name: adr-writer
+model: anthropic/claude-opus-5:max
 description: Emit MADR-lite ADR JSON for /design. Controller writes docs/adr.
 tools: [bash, read, search]
 spawns: []

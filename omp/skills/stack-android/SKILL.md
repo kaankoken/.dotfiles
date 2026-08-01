@@ -1,17 +1,17 @@
 ---
 name: stack-android
-description: On-demand Android/Compose domain pack router. Load when working in Android/Gradle/Compose projects or when the user invokes /stack-android. Not needed for non-Android work.
+description: On-demand Android/Compose pack router. Stack route / harness marker / explicit ask — not cold-listed, no slash command.
 ---
 
 # stack-android (on-demand pack)
 
-Cold start does **not** catalog every Android skill. Activate this pack only when the repo or task needs Android.
+Cold start does **not** catalog every Android skill. Activate only when the repo or task needs Android.
 
 ## When to use
 
 - Gradle / Compose / Android app markers
-- User ran `/stack-android` or harness stack marker is `android`
-- AGP, Compose, navigation, billing, or Android testing work
+- Stack route / harness marker `android` / explicit ask
+- AGP, Compose, navigation, or Android testing work
 
 ## Load order (live paths — never vendor bodies)
 
@@ -25,10 +25,23 @@ Cold start does **not** catalog every Android skill. Activate this pack only whe
 ~/.agents/skills/navigation-3/SKILL.md
 ```
 
-3. Load further Android skills by path as needed (`edge-to-edge`, `r8-analyzer`, `perfetto-*`, …). Do not preload the full Android set.
+3. Load further **default** Android skills by path as needed (`edge-to-edge`, `r8-analyzer`, `perfetto-*`, …). Do not preload the full set.
+
+## Explicit-only (not default pack)
+
+Play / Google-services skills are **out of default android includeGlobs** (Play ≠ GCP). Load **only** on explicit user ask, by absolute path:
+
+```text
+~/.agents/skills/play-billing-library-version-upgrade/SKILL.md
+~/.agents/skills/engage-sdk-integration/SKILL.md
+~/.agents/skills/verified-email/SKILL.md
+```
+
+Do **not** route these through `skill://stack-gcp`.
 
 ## Do not
 
 - Assume Android skills appear in the cold-start skill list
 - Vendor skill bodies into prompts
-- Load rust/axiom packs for pure Android work
+- Load rust/axiom/gcp packs for pure Android UI work
+- Register `/stack-android` slash command

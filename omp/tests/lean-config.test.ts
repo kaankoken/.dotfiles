@@ -96,7 +96,7 @@ describe("lean OMP configuration", () => {
     ]) {
       expect(disabled).toContain(name);
     }
-    expect(existsSync(join(OMP_ROOT, "commands", "mcp-stack.md"))).toBe(true);
+    expect(existsSync(join(OMP_ROOT, "commands", "mcp-stack.md"))).toBe(false);
   });
 
   test("package.json has no pi-dynamic-workflows or pi-mcp-adapter", () => {
@@ -152,6 +152,7 @@ describe("lean OMP configuration", () => {
     expect(skills.enablePiProject).toBe(false);
     expect(skills.enableAgentsUser).toBe(true);
     expect(skills.enableAgentsProject).toBe(true);
+    expect(skills.enableSkillCommands).toBe(false);
     expect(Array.isArray(skills.customDirectories)).toBe(true);
     expect(skills.customDirectories.length).toBeGreaterThan(0);
   });
@@ -187,6 +188,7 @@ describe("lean OMP configuration", () => {
       // NO marketplaces/caveman/skills
       "marketplaces/rust-skills/skills",
       "axiom-marketplace/axiom-codex/skills",
+      "google-skills/skills/cloud",
     ];
     for (const frag of requiredFragments) {
       expect(
@@ -301,15 +303,15 @@ describe("lean OMP configuration", () => {
     expect(config.tools?.xdev).toBe(true);
     expect(config.tools?.xdevDocs).toBe("catalog");
 
-    // Thin routers still on disk for on-demand /stack-*
-    for (const name of ["stack-rust", "stack-ios", "stack-android"]) {
+    // Thin routers still on disk for on-demand skill://stack-*
+    for (const name of ["stack-rust", "stack-ios", "stack-android", "stack-gcp"]) {
       expect(
         existsSync(join(OMP_ROOT, "skills", name, "SKILL.md")),
       ).toBe(true);
     }
 
     // Pack overlays expand domain globs for optional full-catalog sessions
-    for (const pack of ["pack-rust", "pack-ios", "pack-android"]) {
+    for (const pack of ["pack-rust", "pack-ios", "pack-android", "pack-gcp"]) {
       const overlayPath = join(OMP_ROOT, "configs", `${pack}.yml`);
       expect(existsSync(overlayPath)).toBe(true);
       const overlay = parseYaml(readFileSync(overlayPath, "utf8")) as Record<
@@ -334,9 +336,9 @@ describe("lean OMP configuration", () => {
     ) as Record<string, any>;
     expect(androidOverlay.skills.includeSkills).toContain("android-cli");
 
-    // Stack activation commands exist
-    for (const cmd of ["stack-rust", "stack-ios", "stack-android"]) {
-      expect(existsSync(join(OMP_ROOT, "commands", `${cmd}.md`))).toBe(true);
+    // Stack activation is skill:// only — no always-on slash commands
+    for (const cmd of ["stack-rust", "stack-ios", "stack-android", "mcp-stack"]) {
+      expect(existsSync(join(OMP_ROOT, "commands", `${cmd}.md`))).toBe(false);
     }
 
     // Superpowers root must exist and known skills still resolve on demand
@@ -377,7 +379,7 @@ describe("lean OMP configuration", () => {
     const files = walkFiles(OMP_ROOT);
     // Allowed: harness/design skills + intent-router + thin on-demand pack routers.
     const allowedSkillMd =
-      /skills\/(goal-harness|design-flow|intent-router|stack-rust|stack-ios|stack-android)\/SKILL\.md$/;
+      /skills\/(goal-harness|design-flow|intent-router|stack-rust|stack-ios|stack-android|stack-gcp)\/SKILL\.md$/;
     for (const f of files) {
       if (f.endsWith("SKILL.md")) {
         expect(f).not.toMatch(/superpowers/i);

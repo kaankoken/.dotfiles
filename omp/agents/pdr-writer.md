@@ -1,5 +1,6 @@
 ---
 name: pdr-writer
+model: anthropic/claude-opus-5:max
 description: Write a Product/Project Design Requirements doc for /design. Design only.
 tools: [bash, read, search, web_search]
 spawns: []

@@ -6,7 +6,7 @@
 #   /mcp enable headroom
 #   /mcp enable context-mode
 #   /mcp enable context7
-# (or /mcp-stack command which instructs the same).
+# (or /mcp enable context7).
 
 # Note: OMP mcp.json is not deep-merged by this overlay for server specs.
 # Use /mcp enable or edit mcp.json enabled flags. This file documents intent

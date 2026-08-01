@@ -153,10 +153,10 @@ async function runWriteReviewGate(
   };
 }
 
-/** Hardcoded heads when no modelRouter (degraded). */
+/** Hardcoded heads when no modelRouter (degraded). OpenAI last until 2026-08-08. */
 const FALLBACK_MODELS = {
   pdr: "anthropic/claude-opus-5",
-  pdrReviewer: "openai-codex/gpt-5.6-terra",
+  pdrReviewer: "xai-oauth/grok-4.5",
   arc42: "xai-oauth/grok-4.5",
   arc42Reviewer: "cursor/composer-2.5",
   adr: "anthropic/claude-opus-5",

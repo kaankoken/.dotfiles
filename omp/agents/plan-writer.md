@@ -1,5 +1,6 @@
 ---
 name: plan-writer
+model: anthropic/claude-fable-5:max
 description: Write incremental implementation plan from approved spec. Producer for Plan gate.
 tools: [bash, read, search, web_search]
 spawns: []

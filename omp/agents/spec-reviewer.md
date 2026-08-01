@@ -1,5 +1,6 @@
 ---
 name: spec-reviewer
+model: anthropic/claude-opus-5:high
 description: Adversarial review of design/spec. Returns JSON only. Different agent from spec-writer.
 tools: [bash, read, search]
 spawns: []
