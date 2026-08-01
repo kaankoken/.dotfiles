@@ -129,7 +129,56 @@ describe("hard orchestrator", () => {
     // Regression: plain settings object crashed OMP initializeWithSettings
     // (_K6.get("disabledProviders") is not a function).
     expect(capture.sessions[0]!.settings).toBeUndefined();
+    // Concurrent sessions must not share default "Main" roster id.
+    expect(capture.sessions[0]!.agentId).toBeDefined();
+    expect(capture.sessions[0]!.agentId).not.toBe("Main");
+    expect(capture.sessions[0]!.agentId).toMatch(/^harness-spec-writer-/);
   });
+
+  test("parallel workflowz agents get distinct agentIds (no Main race)", async () => {
+    const capture: { sessions: SessionCreateOpts[] } = { sessions: [] };
+    const pi = fakePi(capture, [
+      { text: "a", sources: [], findings: [] },
+      { text: "b", sources: [], findings: [] },
+      { text: "c", sources: [], findings: [] },
+    ]);
+    const wz = createWorkflowzFromPi({ cwd: "/tmp", pi, agentsDir });
+    await wz.parallel([
+      () =>
+        wz.agent("r1", {
+          agentName: "code-graph-scout",
+          model: "xai-oauth/grok-4.5",
+          effort: "high",
+          outputSchema: { type: "object" },
+          schemaMode: "strict",
+        }),
+      () =>
+        wz.agent("r2", {
+          agentName: "web-scout",
+          model: "xai-oauth/grok-4.5",
+          effort: "high",
+          outputSchema: { type: "object" },
+          schemaMode: "strict",
+        }),
+      () =>
+        wz.agent("r3", {
+          agentName: "docs-scout",
+          model: "xai-oauth/grok-4.5",
+          effort: "high",
+          outputSchema: { type: "object" },
+          schemaMode: "strict",
+        }),
+    ]);
+    expect(capture.sessions).toHaveLength(3);
+    const ids = capture.sessions.map((s) => s.agentId);
+    expect(new Set(ids).size).toBe(3);
+    for (const id of ids) {
+      expect(id).toBeDefined();
+      expect(id).not.toBe("Main");
+      expect(id).toMatch(/^harness-/);
+    }
+  });
+
 
   test("soft register path: no pi → mode soft + triggerTurn true", async () => {
     const messages: Array<{ mode?: string; triggerTurn?: boolean }> = [];

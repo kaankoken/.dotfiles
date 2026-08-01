@@ -7,6 +7,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
+  uniqueHarnessAgentId,
   unwrapAgentSession,
   type ActivePiApi,
   type AgentSession,
@@ -69,6 +70,9 @@ export function createWorkflowzFromPi(opts: OmpWorkflowzOpts): Workflowz {
 
       const systemPrompt = loadAgentRolePrompt(options.agentName, agentsDir);
       const sessionManager = opts.pi.SessionManager.inMemory();
+      // Never default agentId "Main": parallel research/gates race the global
+      // roster → Agent "Main" was replaced during session initialization.
+      const agentId = uniqueHarnessAgentId(options.agentName);
       const created = await opts.pi.createAgentSession({
         cwd: opts.cwd,
         model: options.model,
@@ -79,6 +83,7 @@ export function createWorkflowzFromPi(opts: OmpWorkflowzOpts): Workflowz {
         requireYieldTool: true,
         enableLsp: false,
         systemPrompt,
+        agentId,
         // Do NOT pass a plain object as `settings`. OMP's createAgentSession
         // calls initializeWithSettings(settings) which requires Settings.get().
         // A bare `{ memory, todo, autolearn }` crashes:

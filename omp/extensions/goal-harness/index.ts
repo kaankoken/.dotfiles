@@ -88,12 +88,17 @@ export {
 export { reviewResultSchema, implementerEvidenceSchema } from "./schemas";
 export { buildStartMessage } from "../../workflows/goal-harness";
 export type { HarnessStartMessage } from "../../workflows/goal-harness";
-export { runAssignedLane, unwrapAgentSession } from "./lane-runner";
+export {
+  runAssignedLane,
+  uniqueHarnessAgentId,
+  unwrapAgentSession,
+} from "./lane-runner";
 export type {
   ActiveExtensionApi,
   AgentSession,
   CreateAgentSessionResult,
   LaneAssignment,
+  SessionCreateOpts,
 } from "./lane-runner";
 export { IMPLEMENTER_EVIDENCE_SCHEMA } from "./evidence";
 export {

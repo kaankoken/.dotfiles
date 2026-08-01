@@ -66,6 +66,12 @@ export type SessionCreateOpts = {
   enableLsp: boolean;
   systemPrompt?: string;
   /**
+   * Unique agent roster id. Required for concurrent in-process sessions.
+   * Default OMP id is "Main"; a second createAgentSession without a distinct
+   * agentId fails with: Agent "Main" was replaced during session initialization.
+   */
+  agentId?: string;
+  /**
    * Optional OMP Settings instance (must expose `.get` / `.set`).
    * NEVER pass a plain config object — createAgentSession treats this as
    * Settings and calls `.get("disabledProviders")`.
@@ -124,6 +130,19 @@ export function unwrapAgentSession(
     `createAgentSession returned no session.prompt (got keys: ${keys || "empty"}). ` +
       "Expected CreateAgentSessionResult `{ session }` or a bare AgentSession.",
   );
+}
+
+/**
+ * Build a roster-safe agentId for hard-harness / lane child sessions.
+ * Never returns "Main" (process-global default races under concurrency).
+ */
+export function uniqueHarnessAgentId(role: string): string {
+  const safe = (role || "agent").replace(/[^a-zA-Z0-9._-]+/g, "-").slice(0, 48);
+  const rand =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID().slice(0, 8)
+      : Math.random().toString(36).slice(2, 10);
+  return `harness-${safe}-${Date.now().toString(36)}-${rand}`;
 }
 
 export type LaneAssignment = {
@@ -284,6 +303,8 @@ export async function createLaneSession(
     requireYieldTool: true,
     enableLsp: true,
     systemPrompt: rolePrompt,
+    // Distinct from parent "Main" — concurrent lanes must not share roster id.
+    agentId: uniqueHarnessAgentId(`implementer-${assignment.issueId}`),
     // Omit settings: host Settings.init({ cwd }) loads agent config.yml.
     // Plain `{ memory:false, ... }` is not a Settings instance and crashes
     // initializeWithSettings via disabledProviders (.get is not a function).

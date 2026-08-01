@@ -20,7 +20,8 @@
     "outputSchemaMode",
     "requireYieldTool",
     "enableLsp",
-    "sessionManager"
+    "sessionManager",
+    "agentId"
   ],
   "taskFields": [
     "context",

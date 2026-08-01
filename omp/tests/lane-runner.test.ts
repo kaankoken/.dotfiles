@@ -113,6 +113,9 @@ describe("SDK session", () => {
     expect(sessionOpts.enableLsp).toBe(true);
     // settings must be omitted or a real Settings instance — never a plain object
     expect(sessionOpts.settings).toBeUndefined();
+    expect(sessionOpts.agentId).toBeDefined();
+    expect(sessionOpts.agentId).not.toBe("Main");
+    expect(sessionOpts.agentId).toMatch(/^harness-implementer-/);
     expect(rolePrompt).toMatch(/implementer/i);
     expect(rolePrompt).toMatch(/Cannot.*worktree|assigned worktree/i);
     expect(capture.opts?.cwd).toBe(assignment.worktreePath);
