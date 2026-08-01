@@ -9,6 +9,9 @@ description: Empty shell — local/diff multi-angle review. Not PR dual-agent (/
 
 ## On invoke only
 
-1. Load: `agents/code-reviewer.md`, `skill://requesting-code-review`, `skill://ponytail-review` (+ `ponytail-audit` if multi-file/tree).
+1. Load by **path** (not cold `skill://`):
+   - `agents/code-reviewer.md`
+   - `~/.agents/skills/superpowers/requesting-code-review/SKILL.md`
+   - `~/.agents/skills/ponytail-review/SKILL.md` (+ `ponytail-audit` if multi-file/tree)
 2. Follow `agents/REVIEW-POLICY.md`. Return JSON `{ "ok", "feedback", "blocking" }`.
 3. **Stop.** Do not implement fixes unless a new user turn asks. GitHub PR dual-review → `/pr-reviewer` only.

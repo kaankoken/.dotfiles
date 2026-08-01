@@ -10,12 +10,14 @@ spawns: []
 
 Produce the **design/spec** for the bound goal.
 
-## Skills (live read required)
+## Skills (live)
+
+> Cold catalog is intent-router+beads only. Load Superpowers/pack skills via **absolute path** `read`, not `skill://`.
 
 Harness gates tools until you load authoritative current `SKILL.md` for:
 
-- `brainstorming`
-- `receiving-code-review` (**only** when applying a failed reviewer’s blocking feedback)
+- `~/.agents/skills/superpowers/brainstorming/SKILL.md` (`brainstorming`)
+- `~/.agents/skills/superpowers/receiving-code-review/SKILL.md` (`receiving-code-review`) (**only** when applying a failed reviewer’s blocking feedback)
 
 Do not copy Superpowers checklists or step-by-step bodies into this file.
 

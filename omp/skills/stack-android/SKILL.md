@@ -5,6 +5,8 @@ description: On-demand Android/Compose pack router. Stack route / harness marker
 
 # stack-android (on-demand pack)
 
+Load this file by path `~/.omp/agent/skills/stack-android/SKILL.md` — not `skill://stack-android` (not cold-listed).
+
 Cold start does **not** catalog every Android skill. Activate only when the repo or task needs Android.
 
 ## When to use
@@ -15,7 +17,7 @@ Cold start does **not** catalog every Android skill. Activate only when the repo
 
 ## Load order (live paths — never vendor bodies)
 
-1. Prefer `read skill://android-cli` only if present in the session catalog (e.g. after `omp --config …/configs/pack-android.yml`).
+1. Prefer path load if catalogued; else `read android-cli` only if present in the session catalog (e.g. after `omp --config …/configs/pack-android.yml`).
 2. Otherwise read entry skills by absolute path under `~/.agents/skills/`:
 
 ```text
@@ -37,7 +39,7 @@ Play / Google-services skills are **out of default android includeGlobs** (Play 
 ~/.agents/skills/verified-email/SKILL.md
 ```
 
-Do **not** route these through `skill://stack-gcp`.
+Do **not** route these through `~/.omp/agent/skills/stack-gcp/SKILL.md`.
 
 ## Do not
 

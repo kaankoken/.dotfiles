@@ -5,6 +5,8 @@ description: On-demand Rust domain pack router. Load when working in a Rust/Carg
 
 # stack-rust (on-demand pack)
 
+Load this file by path `~/.omp/agent/skills/stack-rust/SKILL.md` — not `skill://stack-rust` (not cold-listed).
+
 Cold start does **not** catalog every rust-skills skill. Activate this pack only when the repo or task needs Rust.
 
 ## When to use
@@ -15,7 +17,7 @@ Cold start does **not** catalog every rust-skills skill. Activate this pack only
 
 ## Load order (live paths — never vendor bodies)
 
-1. Prefer `read skill://rust-router` **only if** that skill is in the current session catalog (e.g. after `omp --config …/configs/pack-rust.yml`).
+1. Prefer path load if catalogued; else `read rust-router` **only if** that skill is in the current session catalog (e.g. after `omp --config …/configs/pack-rust.yml`).
 2. Otherwise read entry `SKILL.md` files by absolute path from the rust-skills marketplace root, typically:
 
 ```text

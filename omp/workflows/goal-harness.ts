@@ -79,12 +79,12 @@ export function buildStartMessage(boundGoal: string): HarnessStartMessage {
     workflowModule: "omp/workflows/goal-harness.ts",
     boundGoal,
     // boundGoal IS the task (like /goal text). Empty /harness → 8 defaults already applied.
-    // Skill loads must use skill://<exact-name> — never skill:// alone.
+    // Superpowers: path loads; skill:// only for cold-listed intent-router/beads.
     controllerPolicy: [
       "HARD orchestrator: extension runs runGoalHarnessDetailed via Workflowz/pi.createAgentSession with model-router models — parent does not solo Spec/Plan/Implement.",
       "boundGoal is the only task text (same role as /goal args). Do not invent a second goal.",
       "Parent is supervisor only after start: human Spec approve when prompted; no bulk implement in Main.",
-      "Superpowers: live SKILL.md reads by name inside role agents; bd is SoT.",
+      "Superpowers: role agents read SKILL.md by absolute path under ~/.agents/skills/superpowers (cold skill:// is only intent-router+beads); bd is SoT.",
       "Never bare bd init from /harness. Workspace must already match repo prefix (bd where); init only via /init project-init safe args (--prefix, no --remote).",
     ].join(" "),
   };

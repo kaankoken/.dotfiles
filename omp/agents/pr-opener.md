@@ -14,7 +14,9 @@ Open a GitHub PR for the completed harness run after Milestone gate PASS.
 
 ## Skills (live)
 
-- `finishing-a-development-branch`
+> Cold catalog is intent-router+beads only. Load Superpowers/pack skills via **absolute path** `read`, not `skill://`.
+
+- `~/.agents/skills/superpowers/finishing-a-development-branch/SKILL.md` (`finishing-a-development-branch`)
 
 ## Boundaries
 

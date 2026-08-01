@@ -14,8 +14,10 @@ Commission multi-angle reviews for a milestone. Do not implement features.
 
 ## Skills (live)
 
-- `requesting-code-review`
-- `subagent-driven-development` (dispatch boundaries)
+> Cold catalog is intent-router+beads only. Load Superpowers/pack skills via **absolute path** `read`, not `skill://`.
+
+- `~/.agents/skills/superpowers/requesting-code-review/SKILL.md` (`requesting-code-review`)
+- `~/.agents/skills/superpowers/subagent-driven-development/SKILL.md` (`subagent-driven-development`) (dispatch boundaries)
 
 ## Boundaries
 

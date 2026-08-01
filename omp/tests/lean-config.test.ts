@@ -303,7 +303,7 @@ describe("lean OMP configuration", () => {
     expect(config.tools?.xdev).toBe(true);
     expect(config.tools?.xdevDocs).toBe("catalog");
 
-    // Thin routers still on disk for on-demand skill://stack-*
+    // Thin routers still on disk for on-demand path load stack-*
     for (const name of ["stack-rust", "stack-ios", "stack-android", "stack-gcp"]) {
       expect(
         existsSync(join(OMP_ROOT, "skills", name, "SKILL.md")),
@@ -336,7 +336,7 @@ describe("lean OMP configuration", () => {
     ) as Record<string, any>;
     expect(androidOverlay.skills.includeSkills).toContain("android-cli");
 
-    // Stack activation is skill:// only — no always-on slash commands
+    // Stack activation is path/skill router only — no always-on slash commands
     for (const cmd of ["stack-rust", "stack-ios", "stack-android", "mcp-stack"]) {
       expect(existsSync(join(OMP_ROOT, "commands", `${cmd}.md`))).toBe(false);
     }

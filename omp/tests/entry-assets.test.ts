@@ -159,15 +159,17 @@ describe("harness entry assets", () => {
     }
   });
 
-  test("intent-router dispatches stack via skill:// and mcp via /mcp enable", () => {
+  test("intent-router dispatches stack via path load and mcp via /mcp enable", () => {
     const raw = readFileSync(
       join(OMP_ROOT, "skills/intent-router/SKILL.md"),
       "utf8",
     );
-    expect(raw).toMatch(/skill:\/\/stack-/);
+    expect(raw).toMatch(/stack-\{rust,ios,android,gcp\}|stack-\{rust,ios,android\}|omp\/agent\/skills\/stack-/);
     expect(raw).toMatch(/\/mcp enable context7/);
     expect(raw).not.toMatch(/commands\/stack-/);
     expect(raw).not.toMatch(/\/mcp-stack/);
+    // Superpowers not cold skill:// under lean catalog
+    expect(raw).not.toMatch(/skill:\/\/finishing-a-development-branch/);
   });
 
   test("stack skills remain on disk for path loads", () => {

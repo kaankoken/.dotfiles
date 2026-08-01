@@ -18,7 +18,7 @@ here.
 
 ## Cold session
 
-- **Skills cold catalog:** exactly `intent-router`, `beads` (`config.yml` `includeSkills`).
+- **Skills cold catalog:** exactly `intent-router`, `beads` (`config.yml` `includeSkills`). All other skills (Superpowers, goal-harness, stacks, ponytail) load via **absolute path** `read` — not `skill://` (OMP only resolves cold-listed names).
 - **customDirectories:** Superpowers + agents + omp skills + pack roots (rust/axiom/google-skills cloud) for **resolve only** — not cold-catalogued.
 - **MCP cold:** `tokensave`, `headroom`, `context-mode` enabled. `context7` opt-in via `/mcp enable context7`.
 - **Shell toolkit:** rtk + modern CLIs (see `RTK.md`). RTK is not an MCP server.
@@ -53,7 +53,7 @@ per thread. Mid-flow freeform is steering, not a new route.
 | `/init` | empty shell → `runProjectInit` / `project-init` |
 | `/pr-reviewer` | PR dual-review controller (extension; agents `pr-*`) |
 | `/code-review` | empty shell → `code-reviewer` + `requesting-code-review`, `ponytail-review`(+audit) |
-| stack packs | **no slash** — `skill://stack-{rust,ios,android,gcp}` on demand (or pack overlay session) |
+| stack packs | **no slash** — path `~/.omp/agent/skills/stack-*/SKILL.md` on demand (or pack overlay session) |
 | context7 | `/mcp enable context7` (not a custom command file) |
 
 Do **not** shadow native `/goal` or `/guided-goal`. Do **not** add `commands/harness.md`.

@@ -8,6 +8,21 @@ description: >
 
 # OMP Goal harness
 
+## Loading skills (cold catalog)
+
+Cold `includeSkills` is **only** `intent-router` + `beads`. OMP `skill://NAME` works for those two only.
+
+For Superpowers / flow / pack skills use **absolute path** `read` (roots stay in `customDirectories`):
+
+| Kind | Path pattern |
+|------|----------------|
+| Superpowers | `~/.agents/skills/superpowers/<name>/SKILL.md` |
+| OMP flow/stack | `~/.omp/agent/skills/<name>/SKILL.md` |
+| ponytail* | `~/.agents/skills/<name>/SKILL.md` |
+
+Do **not** `skill://finishing-a-development-branch` (etc.) — fails with "Unknown skill".
+
+
 Process engine: **Superpowers** (read live `SKILL.md` by path + SHA). Named roles:
 `omp/agents/*.md` (19-role parity manifest). Do not run two competing full harness chains.
 
@@ -16,7 +31,7 @@ Process engine: **Superpowers** (read live `SKILL.md` by path + SHA). Named role
 1. No errors, no warnings, no test failures.
 2. No warning suppressions in production (test-only OK with reason).
 3. Everything wired — no stubs, TODO/TBD/FIXME, unfinished work.
-4. Mandated skills: using-superpowers + project stack skills + ponytail (exact skill:// names; never empty skill://).
+4. Mandated skills: using-superpowers + project stack skills + ponytail (load by **path** under cold catalog; never empty skill://; skill:// only for intent-router/beads).
 5. Latest dependencies — verify on the web (not training data alone).
 6. Complete all superpowers-derived spec/plan tasks.
 7. Specs, plans, goals, updates tracked in **bd** (SoT).
@@ -34,7 +49,7 @@ With arguments: replace 1–8 completely with that text.
 | 3 | BiteSize | writing-plans | `bite-size-writer` | `bite-size-reviewer` | 2 |
 | 4 | Implement | test-driven-development, using-git-worktrees, subagent-driven-development | `implementer` | optional light | — |
 | 5 | Milestone | requesting-code-review, verification-before-completion | multi `code-reviewer` | `milestone-organizer` | 3 |
-| 6 | PR | finishing-a-development-branch | `pr-opener` | — | — |
+| 6 | PR | path `…/superpowers/finishing-a-development-branch/SKILL.md` | `pr-opener` | — | — |
 
 **Max attempts = ceiling, not a quota.** First reviewer `ok: true` ends the gate.
 Producer rewrite runs **only** when the reviewer returns `ok: false` (blocking items).

@@ -36,7 +36,7 @@ Decide a route (mentally or as a single short JSON line), then **act once**:
 ```
 
 `boundGoal` = user message trimmed (verbatim). Do not invent a second goal.
-`stackId: gcp` → load `skill://stack-gcp` (path loads). If pack root missing, print install clone command — never fake skills.
+`stackId: gcp` → `read ~/.omp/agent/skills/stack-gcp/SKILL.md` then cloud entry paths. If pack root missing, print install clone command — never fake skills.
 
 ## Taxonomy (route ids)
 
@@ -83,9 +83,9 @@ intent-dispatch middleware module and **no** second harness registration.
 | `init` | Follow `commands/init.md` / `runProjectInit` — no Spec/Plan issues. |
 | `review_pr` | Same as `/pr-reviewer`: require parseable target; `buildReviewPrControllerMessage({ target, dryRun })` → sendMessage. Missing target → ask once. |
 | `code_review` | Follow `commands/code-review.md` → `agents/code-reviewer.md` + live skills there. **Not** PR dual-review. |
-| `stack` | Load `skill://stack-{rust,ios,android,gcp}` (on-demand router) then entry skills by absolute path. **No** always-on stack slash commands. Missing gcp pack → honest install message. |
+| `stack` | `read ~/.omp/agent/skills/stack-{rust,ios,android,gcp}/SKILL.md` then entry skills by absolute path. **No** always-on stack slash; **no** `skill://stack-*` under cold catalog. Missing gcp pack → honest install message. |
 | `mcp` | `/mcp enable context7` only (headroom+context-mode already cold). **No** `` command. |
-| `local` | Answer with cold tools only (tokensave, rtk, headroom, context-mode, bd). May ad-hoc `read skill://ponytail` if user wants minimal code — still not cold-listed. |
+| `local` | Answer with cold tools only (tokensave, rtk, headroom, context-mode, bd). May ad-hoc `read ~/.agents/skills/ponytail/SKILL.md` if user wants minimal code — still not cold-listed. |
 | `ambiguous` | Ask **one** clarifying question; stop; do not start a flow. |
 
 ## Double-start guard

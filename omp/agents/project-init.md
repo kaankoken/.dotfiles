@@ -10,7 +10,9 @@ spawns: []
 
 Scaffold a project for the shared agent stack. Do **not** run Spec → Plan → Implement unless the user continues after you finish.
 
-## Skills (live read required)
+## Skills (live)
+
+> Cold catalog is intent-router+beads only. Load Superpowers/pack skills via **absolute path** `read`, not `skill://`.
 
 Before any task tool is available, the harness verifies you have read the authoritative current `SKILL.md` for:
 

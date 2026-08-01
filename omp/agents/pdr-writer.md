@@ -10,11 +10,13 @@ spawns: []
 
 Produce a **PDR** for the bound design goal. No code, no implementation plan tasks.
 
-## Skills (live read required)
+## Skills (live)
 
-- `brainstorming`
+> Cold catalog is intent-router+beads only. Load Superpowers/pack skills via **absolute path** `read`, not `skill://`.
+
+- `~/.agents/skills/superpowers/brainstorming/SKILL.md` (`brainstorming`)
 - `ponytail`
-- `receiving-code-review` only when applying a failed reviewer’s blocking feedback
+- `~/.agents/skills/superpowers/receiving-code-review/SKILL.md` (`receiving-code-review`) only when applying a failed reviewer’s blocking feedback
 
 When skill `architect` exists later, load it; until then brainstorming only.
 

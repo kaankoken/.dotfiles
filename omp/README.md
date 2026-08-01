@@ -103,7 +103,7 @@ Most residual cold cost is **not** skill bodies — it is OMP system prompt +
 | Skill catalog | `skills.includeSkills`: **intent-router**, **beads** only |
 | Skill slash | `skills.enableSkillCommands: false` (no `/skill:*` flood) |
 | Intent | freeform → `skill://intent-router` → one dispatch into existing flows |
-| Domain packs | On demand: `skill://stack-*`, stack-scout, `configs/pack-*.yml` |
+| Domain packs | On demand: path `stack-*` routers, stack-scout, `configs/pack-*.yml` |
 | Cold MCP | tokensave + headroom + context-mode; context7 via `/mcp enable context7` |
 | Foreign MCP | `mcp.json` `disabledServers` (codebase-memory, chrome-devtools, node_repl, …) |
 | xd:// docs | `tools.xdev: true`, `tools.xdevDocs: catalog` (names only, not long summaries) |
@@ -114,7 +114,7 @@ Most residual cold cost is **not** skill bodies — it is OMP system prompt +
 |---------|------|
 | Cold catalog | `intent-router`, `beads` |
 | Slash shells | `/harness` `/init` `/design` `/code-review` `/pr-reviewer` only |
-| `skill://stack-{rust,ios,android,gcp}` | Activate pack for current turn via path loads (no `/stack-*` command) |
+| path `…/skills/stack-*/SKILL.md` | Activate pack for current turn (no `/stack-*` command; not cold `skill://`) |
 | `/mcp enable context7` | Connect docs MCP (headroom + context-mode already cold) |
 | `stack-scout` / implementer / harness markers | Detect stack → entry skills by absolute path |
 | `omp --config configs/pack-rust.yml` (etc.) | Optional **new session** with full pack skill catalog |

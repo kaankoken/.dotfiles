@@ -5,6 +5,8 @@ description: On-demand Google Cloud pack router (google/skills cloud). Load on s
 
 # stack-gcp (on-demand pack)
 
+Load this file by path `~/.omp/agent/skills/stack-gcp/SKILL.md` — not `skill://stack-gcp` (not cold-listed).
+
 Cold start does **not** catalog google/skills. Activate only for GCP/cloud work.
 
 ## When to use
@@ -28,7 +30,7 @@ If that directory is missing: **say pack not installed** and print the clone com
 
 ## Load order (live paths — never vendor bodies)
 
-1. Prefer `skill://gcloud` only if present in session catalog (e.g. pack-gcp overlay).
+1. Prefer path `…/cloud/gcloud/SKILL.md` only if present in session catalog (e.g. pack-gcp overlay).
 2. Otherwise read entry `SKILL.md` by absolute path:
 
 ```text

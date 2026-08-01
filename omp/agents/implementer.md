@@ -10,18 +10,20 @@ spawns: []
 
 Implement one claimed bd task inside a harness-assigned git worktree.
 
-## Skills (live read required)
+## Skills (live)
 
-- `test-driven-development`
-- `subagent-driven-development` (boundaries only — harness owns dispatch)
-- `using-git-worktrees` (consume assigned worktree; do not create your own)
-- `receiving-code-review` when fixing review findings
+> Cold catalog is intent-router+beads only. Load Superpowers/pack skills via **absolute path** `read`, not `skill://`.
+
+- `~/.agents/skills/superpowers/test-driven-development/SKILL.md` (`test-driven-development`)
+- `~/.agents/skills/superpowers/subagent-driven-development/SKILL.md` (`subagent-driven-development`) (boundaries only — harness owns dispatch)
+- `~/.agents/skills/superpowers/using-git-worktrees/SKILL.md` (`using-git-worktrees`) (consume assigned worktree; do not create your own)
+- `~/.agents/skills/superpowers/receiving-code-review/SKILL.md` (`receiving-code-review`) when fixing review findings
 - **Stack packs on demand** when worktree markers require them — not cold-loaded:
   - rust → `stack-rust` router + entry paths (`rust-router`, `coding-guidelines`)
   - ios → `stack-ios` router + Axiom entry paths
   - android → `stack-android` router + Android entry paths
   - Prefer harness `prepareStackSkills` / `domain-packs` absolute paths over assuming `skill://rust-*` exists in the catalog
-- `ponytail` by name
+- `~/.agents/skills/ponytail/SKILL.md` (`ponytail`) by name
 
 Load complete current `SKILL.md` paths; never vendor skill bodies.
 

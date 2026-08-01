@@ -22,7 +22,9 @@ wrong or unsafe.
 
 ## Skills (live)
 
-- `requesting-code-review` (reviewer contract)
+> Cold catalog is intent-router+beads only. Load Superpowers/pack skills via **absolute path** `read`, not `skill://`.
+
+- `~/.agents/skills/superpowers/requesting-code-review/SKILL.md` (`requesting-code-review`) (reviewer contract)
 - **`ponytail-review`** (diff overbuild) — load by name every review
 - **`ponytail-audit`** when the review scope is multi-file / whole-tree / milestone
 - Stack skills as needed

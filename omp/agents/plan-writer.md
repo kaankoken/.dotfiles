@@ -10,10 +10,12 @@ spawns: []
 
 Produce the **implementation plan**.
 
-## Skills (live read required)
+## Skills (live)
 
-- `writing-plans`
-- `receiving-code-review` (**only** when applying a failed reviewer’s blocking feedback)
+> Cold catalog is intent-router+beads only. Load Superpowers/pack skills via **absolute path** `read`, not `skill://`.
+
+- `~/.agents/skills/superpowers/writing-plans/SKILL.md` (`writing-plans`)
+- `~/.agents/skills/superpowers/receiving-code-review/SKILL.md` (`receiving-code-review`) (**only** when applying a failed reviewer’s blocking feedback)
 
 Load complete current `SKILL.md` by path; never vendor skill text here.
 
