@@ -15,7 +15,6 @@ Emit one or more **Architecture Decision Records** from accepted PDR + Arc42.
 > Cold catalog is intent-router+beads only. Load Superpowers/pack skills via **absolute path** `read`, not `skill://`.
 
 - `~/.agents/skills/ponytail/SKILL.md` (`ponytail`)
-- `~/.agents/skills/architect/SKILL.md` (`architect`) when present — fail-open if missing
 - Prefer few decisive ADRs over essay sprawl
 
 ## Output

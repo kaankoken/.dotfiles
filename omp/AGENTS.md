@@ -22,7 +22,7 @@ here.
 - **customDirectories:** Superpowers + agents + omp skills + pack roots (rust/axiom/google-skills cloud) for **resolve only** — not cold-catalogued.
 - **MCP cold:** `tokensave`, `headroom`, `context-mode` enabled. `context7` opt-in via `/mcp enable context7`.
 - **Shell toolkit:** rtk + modern CLIs (see `RTK.md`). RTK is not an MCP server.
-- **Not cold-loaded:** Superpowers workflow skills, `goal-harness`, `design-flow`, `ponytail`(+review/audit), `stack-*` routers, domain pack globs. Flows load them live when invoked.
+- **Not cold-loaded:** Superpowers workflow skills, `goal-harness`, `design-flow`, `architect`, `ponytail`(+review/audit), `stack-*` routers, domain pack globs. Flows load them live when invoked.
 
 ## Freeform intent routing
 
@@ -50,6 +50,7 @@ per thread. Mid-flow freeform is steering, not a new route.
 |-------|----------------|
 | `/harness` | extension-registered only — `using-superpowers` → `goal-harness` → phase roles via `REQUIRED_SKILLS_BY_ROLE` (hard path: `runHardHarness` when `pi` available) |
 | `/design` | empty shell → `using-superpowers`, `design-flow`, `brainstorming` — ADRs under `docs/adr/` only; never auto-starts `/harness` |
+| `/architect` | empty shell → `using-superpowers`, `architect`, `brainstorming` (by path) — in-session consult; ADRs optional under `docs/adr/`; never auto-starts `/design` or `/harness` |
 | `/init` | empty shell → `runProjectInit` / `project-init` |
 | `/pr-reviewer` | PR dual-review controller (extension; agents `pr-*`) |
 | `/code-review` | empty shell → `code-reviewer` + `requesting-code-review`, `ponytail-review`(+audit) |

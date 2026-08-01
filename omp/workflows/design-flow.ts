@@ -29,7 +29,7 @@ export function buildDesignStartMessage(args: string): DesignStartMessage {
       "Phases: Intake → PDR (pdr-writer→pdr-reviewer) → Arc42 (arc42-writer→arc42-reviewer) → ADR (adr-writer JSON-only; controller writes docs/adr) → Handoff.",
       "Models via resolveModelRoute/resolveReviewerModel. PDR/Arc42: bd best-effort when issue available; session handoff always.",
       "Never write docs/superpowers or docs/plans. Never auto-start /harness. Design only — no code/worktrees/implementer.",
-      "Writers path-load ~/.agents/skills/architect/SKILL.md when present (fail-open if missing); do not vendor skill bodies.",
+      "Architect skill: writers load ~/.omp/agent/skills/architect/SKILL.md by path (never cold skill://).",
     ].join(" "),
   };
 }

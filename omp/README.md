@@ -41,9 +41,9 @@ Run `bun test` in this directory after installing `omp`.
 Sibling of `/harness`, not a harness phase. Runs PDR → Arc42 → ADR handoff.
 ADRs land in `docs/adr/`; PDR/Arc42 stay in bd/session. Superpowers plans/specs
 are never written into the repo by this flow. See `skills/design-flow/SKILL.md`.
-Writers path-load `~/.agents/skills/architect/SKILL.md` when installed (Nix
-agents activation; fail-open if missing). Skill tree:
-`nix-setup/modules/agents/skills/architect` (upstream pin in `UPSTREAM.md`).
+PDR/Arc42 writers path-load `~/.omp/agent/skills/architect/SKILL.md`
+(required; vendored at `omp/skills/architect/`, shipped by the `link.sh`
+`skills` symlink; upstream pin in the SKILL.md provenance footer).
 
 ## Stage 3 parity (Pi goal-harness)
 

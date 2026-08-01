@@ -377,9 +377,9 @@ describe("lean OMP configuration", () => {
 
   test("no Superpowers SKILL.md bodies under omp/", () => {
     const files = walkFiles(OMP_ROOT);
-    // Allowed: harness/design skills + intent-router + thin on-demand pack routers.
+    // Allowed: harness/design/architect skills + intent-router + thin on-demand pack routers.
     const allowedSkillMd =
-      /skills\/(goal-harness|design-flow|intent-router|stack-rust|stack-ios|stack-android|stack-gcp)\/SKILL\.md$/;
+      /skills\/(goal-harness|design-flow|architect|intent-router|stack-rust|stack-ios|stack-android|stack-gcp)\/SKILL\.md$/;
     for (const f of files) {
       if (f.endsWith("SKILL.md")) {
         expect(f).not.toMatch(/superpowers/i);

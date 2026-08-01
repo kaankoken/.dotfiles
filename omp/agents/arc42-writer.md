@@ -16,7 +16,7 @@ Produce **Arc42** structured output from the accepted PDR. Design only.
 
 - `~/.agents/skills/superpowers/brainstorming/SKILL.md` (`brainstorming`)
 - `~/.agents/skills/ponytail/SKILL.md` (`ponytail`)
-- `~/.agents/skills/architect/SKILL.md` (`architect`) when present — fail-open if missing
+- `~/.omp/agent/skills/architect/SKILL.md` (`architect`) — required
 - `~/.agents/skills/superpowers/receiving-code-review/SKILL.md` (`receiving-code-review`) only when applying failed review blocking feedback
 
 ## Diagrams
