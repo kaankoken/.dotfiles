@@ -33,3 +33,19 @@ describe("design entry stop-clean contract", () => {
     expect(facade).toMatch(/buildDesignStartMessage/);
   });
 });
+
+test("design-flow extension default export is a factory that registers /design", async () => {
+  const mod = await import("../extensions/design-flow/index.ts");
+  expect(typeof mod.default).toBe("function");
+  const registered: string[] = [];
+  const messages: unknown[] = [];
+  await mod.default({
+    registerCommand: (name: string) => {
+      registered.push(name);
+    },
+    sendMessage: async (text: string) => {
+      messages.push(JSON.parse(text));
+    },
+  });
+  expect(registered).toEqual(["design"]);
+});
