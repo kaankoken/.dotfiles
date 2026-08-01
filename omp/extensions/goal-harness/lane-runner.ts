@@ -41,7 +41,13 @@ export class LaneRunnerError extends Error {
 
 /** Active OMP extension API surface used by the lane runner (injected). */
 export type ActivePiApi = {
-  createAgentSession: (opts: SessionCreateOpts) => Promise<AgentSession>;
+  /**
+   * Official SDK returns `CreateAgentSessionResult` (`{ session, ... }`),
+   * NOT a bare `AgentSession`. Callers MUST unwrap via `unwrapAgentSession`.
+   */
+  createAgentSession: (
+    opts: SessionCreateOpts,
+  ) => Promise<CreateAgentSessionResult | AgentSession>;
   SessionManager: { inMemory: () => unknown };
 };
 
@@ -71,7 +77,54 @@ export type AgentSession = {
   prompt: (text: string) => Promise<unknown>;
   /** Optional yield of structured output */
   getOutput?: () => Promise<unknown>;
+  /** Optional cleanup (official SDK) */
+  dispose?: () => Promise<void> | void;
 };
+
+/**
+ * Official `createAgentSession` return value (see oh-my-pi docs/sdk.md).
+ * The harness historically treated the whole return as `AgentSession`, which
+ * crashes live hard `/harness` with:
+ *   session.prompt is not a function
+ */
+export type CreateAgentSessionResult = {
+  session: AgentSession;
+  modelFallbackMessage?: string;
+  [key: string]: unknown;
+};
+
+function isAgentSession(value: unknown): value is AgentSession {
+  return (
+    !!value &&
+    typeof value === "object" &&
+    typeof (value as AgentSession).prompt === "function"
+  );
+}
+
+/**
+ * Normalize createAgentSession return to a usable AgentSession.
+ * Accepts official `{ session }` wrapper and bare session (unit fakes).
+ */
+export function unwrapAgentSession(
+  result: CreateAgentSessionResult | AgentSession | null | undefined,
+): AgentSession {
+  if (isAgentSession(result)) return result;
+  if (
+    result &&
+    typeof result === "object" &&
+    isAgentSession((result as CreateAgentSessionResult).session)
+  ) {
+    return (result as CreateAgentSessionResult).session;
+  }
+  const keys =
+    result && typeof result === "object"
+      ? Object.keys(result as object).join(",")
+      : String(result);
+  throw new LaneRunnerError(
+    `createAgentSession returned no session.prompt (got keys: ${keys || "empty"}). ` +
+      "Expected CreateAgentSessionResult `{ session }` or a bare AgentSession.",
+  );
+}
 
 export type LaneAssignment = {
   issueId: string;
@@ -236,7 +289,8 @@ export async function createLaneSession(
     // initializeWithSettings via disabledProviders (.get is not a function).
   };
 
-  const session = await api.pi.createAgentSession(sessionOpts);
+  const created = await api.pi.createAgentSession(sessionOpts);
+  const session = unwrapAgentSession(created);
   return { session, sessionOpts, rolePrompt, userPrompt };
 }
 

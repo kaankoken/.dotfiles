@@ -6,7 +6,11 @@
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { ActivePiApi, AgentSession } from "./lane-runner";
+import {
+  unwrapAgentSession,
+  type ActivePiApi,
+  type AgentSession,
+} from "./lane-runner";
 import type { Workflowz, AgentOptions } from "./workflow-adapter";
 
 export type OmpWorkflowzOpts = {
@@ -65,7 +69,7 @@ export function createWorkflowzFromPi(opts: OmpWorkflowzOpts): Workflowz {
 
       const systemPrompt = loadAgentRolePrompt(options.agentName, agentsDir);
       const sessionManager = opts.pi.SessionManager.inMemory();
-      const session: AgentSession = await opts.pi.createAgentSession({
+      const created = await opts.pi.createAgentSession({
         cwd: opts.cwd,
         model: options.model,
         thinkingLevel: options.effort ?? "high",
@@ -82,18 +86,28 @@ export function createWorkflowzFromPi(opts: OmpWorkflowzOpts): Workflowz {
         // Child sessions inherit Settings.init({ cwd }) → agent config.yml
         // (memory.backend off, todo/autolearn disabled in our profile).
       });
+      // Official SDK: createAgentSession → { session, ... } (not bare session).
+      const session: AgentSession = unwrapAgentSession(created);
 
-      await session.prompt(prompt);
-      const raw = session.getOutput
-        ? await session.getOutput()
-        : await session.prompt("__yield_structured__");
+      try {
+        await session.prompt(prompt);
+        const raw = session.getOutput
+          ? await session.getOutput()
+          : await session.prompt("__yield_structured__");
 
-      if (raw == null || typeof raw !== "object" || Array.isArray(raw)) {
-        throw new Error(
-          `omp-workflowz: agent ${options.agentName} returned non-object (prose fallback forbidden)`,
-        );
+        if (raw == null || typeof raw !== "object" || Array.isArray(raw)) {
+          throw new Error(
+            `omp-workflowz: agent ${options.agentName} returned non-object (prose fallback forbidden)`,
+          );
+        }
+        return raw;
+      } finally {
+        try {
+          await session.dispose?.();
+        } catch {
+          /* best-effort cleanup */
+        }
       }
-      return raw;
     },
 
     async parallel<T>(jobs: Array<() => Promise<T>>): Promise<T[]> {

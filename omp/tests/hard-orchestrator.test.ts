@@ -17,6 +17,8 @@ const agentsDir = join(import.meta.dir, "../agents");
 function fakePi(
   capture: { sessions: SessionCreateOpts[] },
   outputs: unknown[],
+  /** When true, return bare AgentSession (legacy unit shape). */
+  bareSession = false,
 ): ActivePiApi {
   let i = 0;
   return {
@@ -28,14 +30,17 @@ function fakePi(
     async createAgentSession(opts) {
       capture.sessions.push(opts);
       const out = outputs[i++] ?? { ok: true, feedback: "", blocking: [] };
-      return {
+      const session = {
         async prompt() {
           return {};
         },
         async getOutput() {
           return out;
         },
+        async dispose() {},
       };
+      // Official SDK shape is CreateAgentSessionResult `{ session, ... }`.
+      return bareSession ? session : { session, modelFallbackMessage: undefined };
     },
   };
 }
@@ -55,6 +60,49 @@ describe("hard orchestrator", () => {
   test("loadAgentRolePrompt reads omp/agents/*.md", () => {
     const body = loadAgentRolePrompt("spec-writer", agentsDir);
     expect(body).toMatch(/spec-writer/i);
+  });
+
+  test("createWorkflowzFromPi unwraps official { session } return shape", async () => {
+    const capture: { sessions: SessionCreateOpts[] } = { sessions: [] };
+    const pi = fakePi(capture, [
+      { title: "t", sections: { a: "b" }, sources: ["s"] },
+    ]);
+    const wz = createWorkflowzFromPi({
+      cwd: "/tmp",
+      pi,
+      agentsDir,
+    });
+    // Must not throw "session.prompt is not a function"
+    const raw = await wz.agent("write spec", {
+      agentName: "spec-writer",
+      model: "anthropic/claude-fable-5",
+      effort: "max",
+      outputSchema: { type: "object" },
+      schemaMode: "strict",
+    });
+    expect(raw).toMatchObject({ title: "t" });
+  });
+
+  test("createWorkflowzFromPi still accepts bare AgentSession fakes", async () => {
+    const capture: { sessions: SessionCreateOpts[] } = { sessions: [] };
+    const pi = fakePi(
+      capture,
+      [{ title: "bare", sections: {}, sources: [] }],
+      true,
+    );
+    const wz = createWorkflowzFromPi({
+      cwd: "/tmp",
+      pi,
+      agentsDir,
+    });
+    const raw = await wz.agent("write spec", {
+      agentName: "spec-writer",
+      model: "anthropic/claude-fable-5",
+      effort: "max",
+      outputSchema: { type: "object" },
+      schemaMode: "strict",
+    });
+    expect(raw).toMatchObject({ title: "bare" });
   });
 
   test("createWorkflowzFromPi passes explicit model to session (not parent)", async () => {

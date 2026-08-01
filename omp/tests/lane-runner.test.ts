@@ -49,12 +49,16 @@ function fakeApi(capture: { opts?: SessionCreateOpts }): ActiveExtensionApi {
       },
       async createAgentSession(opts) {
         capture.opts = opts;
+        // Official SDK: CreateAgentSessionResult, not bare session
         return {
-          async prompt() {
-            return {};
-          },
-          async getOutput() {
-            return null;
+          session: {
+            async prompt() {
+              return {};
+            },
+            async getOutput() {
+              return null;
+            },
+            async dispose() {},
           },
         };
       },

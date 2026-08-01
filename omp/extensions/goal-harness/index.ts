@@ -88,8 +88,13 @@ export {
 export { reviewResultSchema, implementerEvidenceSchema } from "./schemas";
 export { buildStartMessage } from "../../workflows/goal-harness";
 export type { HarnessStartMessage } from "../../workflows/goal-harness";
-export { runAssignedLane } from "./lane-runner";
-export type { ActiveExtensionApi, LaneAssignment } from "./lane-runner";
+export { runAssignedLane, unwrapAgentSession } from "./lane-runner";
+export type {
+  ActiveExtensionApi,
+  AgentSession,
+  CreateAgentSessionResult,
+  LaneAssignment,
+} from "./lane-runner";
 export { IMPLEMENTER_EVIDENCE_SCHEMA } from "./evidence";
 export {
   OMP_READ_DEFAULT_MAX_BYTES,
