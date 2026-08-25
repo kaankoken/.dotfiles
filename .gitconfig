@@ -9,6 +9,7 @@
 	attributesfile = /Users/legolas/.gitattributes
 	ignorecase = false
 	pager = delta
+	hooksPath = /Users/legolas/.config/git/hooks
 [interactive]
 	diffFilter = delta --color-only
 [diff]
