@@ -1,0 +1,69 @@
+# Theme
+theme = dark:Rose Pine,light:Rose Pine Dawn
+
+# Font
+font-family = "JetBrainsMono Nerd Font Mono"
+font-size = 16
+
+cursor-style = block
+adjust-cell-height = 0%
+background-opacity = 1
+mouse-hide-while-typing = true
+mouse-scroll-multiplier = 1.5
+macos-titlebar-style = hidden
+window-padding-balance = true
+window-save-state = always
+
+## Focus
+keybind = cmd+h=ignore
+keybind = cmd+j=ignore
+keybind = cmd+k=ignore
+keybind = cmd+l=ignore
+
+## Move window
+keybind = cmd+shift+h=ignore
+keybind = cmd+shift+j=ignore
+keybind = cmd+shift+k=ignore
+keybind = cmd+shift+l=ignore
+
+## Workspaces
+keybind = cmd+1=ignore
+keybind = cmd+2=ignore
+keybind = cmd+3=ignore
+keybind = cmd+4=ignore
+keybind = cmd+5=ignore
+keybind = cmd+6=ignore
+keybind = cmd+7=ignore
+
+## Send to workspace
+keybind = cmd+shift+1=ignore
+keybind = cmd+shift+2=ignore
+keybind = cmd+shift+3=ignore
+keybind = cmd+shift+4=ignore
+keybind = cmd+shift+5=ignore
+keybind = cmd+shift+6=ignore
+keybind = cmd+shift+7=ignore
+
+## Workspace nav
+keybind = cmd+shift+p=ignore
+keybind = cmd+shift+n=ignore
+keybind = cmd+shift+tab=ignore
+
+## Resize
+keybind = cmd+minus=ignore
+keybind = cmd+equal=ignore
+
+## Monitors
+keybind = cmd+ctrl+s=ignore
+keybind = cmd+ctrl+g=ignore
+keybind = cmd+ctrl+tab=ignore
+
+## Cheatsheet + leader
+keybind = cmd+slash=ignore
+keybind = cmd+semicolon=ignore
+
+# Integration
+shell-integration = nushell
+command = ~/.bin/nu-for-ghostty
+auto-update = download
+custom-shader-animation = true

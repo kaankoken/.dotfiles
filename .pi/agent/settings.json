@@ -1,0 +1,26 @@
+{
+  "npmCommand": [
+    "bun"
+  ],
+  "packages": [
+    "npm:context-mode",
+    "npm:pi-cursor-sdk",
+    "npm:pi-hashline-edit-pro",
+    "npm:bigpowers"
+  ],
+  "lastChangelogVersion": "0.84.3",
+  "theme": "dark",
+  "defaultProvider": "xai",
+  "defaultModel": "grok-4.6",
+  "defaultThinkingLevel": "xhigh",
+  "images": {
+    "blockImages": true
+  },
+  "showHardwareCursor": true,
+  "terminal": {
+    "showTerminalProgress": true,
+    "clearOnShrink": true
+  },
+  "enableInstallTelemetry": false,
+  "tuiMode": "fullscreen"
+}

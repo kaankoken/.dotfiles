@@ -1,0 +1,62 @@
+#!/bin/sh
+set -e
+
+echo "==> Updating shell-installed tools"
+
+# --- Atuin ---
+if command -v atuin >/dev/null 2>&1; then
+  echo "-> Atuin"
+  if atuin update 2>/dev/null; then
+    echo "   atuin update OK"
+  else
+    :
+  fi
+else
+  echo "-> Atuin not found, skipping"
+fi
+
+# --- Rust (rustup) ---
+if command -v rustup >/dev/null 2>&1; then
+  echo "-> Rust (rustup)"
+  rustup update
+else
+  echo "-> Rustup not found, skipping"
+fi
+
+# --- uv ---
+if command -v uv >/dev/null 2>&1; then
+  echo "-> uv"
+  if uv self update 2>/dev/null; then
+    echo "   uv self update OK"
+  else
+    :
+  fi
+else
+  echo "-> uv not found, skipping"
+fi
+
+# --- tokensave ---
+if command -v tokensave >/dev/null 2>&1; then
+  echo "-> tokensave"
+  if tokensave upgrade 2>/dev/null; then
+    echo "   tokensave upgrade OK"
+  else
+    :
+  fi
+else
+  echo "-> tokensave not found, skipping"
+fi
+
+# --- bun ---
+if command -v bun >/dev/null 2>&1; then
+  echo "-> bun"
+  if bun upgrade 2>/dev/null; then
+    echo "   bun upgrade OK"
+  else
+    :
+  fi
+else
+  echo "-> bun not found, skipping"
+fi
+
+echo "==> Done"

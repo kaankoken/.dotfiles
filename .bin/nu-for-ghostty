@@ -1,0 +1,7 @@
+exec /opt/homebrew/bin/nu -l \
+  --config "$HOME/.config/nushell/config.nu" \
+  --env-config "$HOME/.config/nushell/env.nu" \
+  "$@"
+EOF
+
+chmod +x ~/.dotfiles/.bin/nu-for-ghostty

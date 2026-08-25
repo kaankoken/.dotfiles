@@ -1,0 +1,30 @@
+[init]
+	defaultBranch = master
+[merge]
+	conflictStyle = zdiff3
+[merge "mergiraf"]
+	name = mergiraf
+	driver = mergiraf merge --git %O %A %B -s %S -x %X -y %Y -p %P -l %L
+[core]
+	attributesfile = /Users/legolas/.gitattributes
+	ignorecase = false
+	pager = delta
+[interactive]
+	diffFilter = delta --color-only
+[diff]
+  external = difft
+[difftool]
+  prompt = false
+[pager]
+  difftool = true
+[diff]
+  tool = difftastic
+[fetch]
+	pruneTags = true
+[rebase]
+	updateRefs = true
+[delta]
+	navigate = true
+	dark = true
+	line-numbers = true
+	side-by-side = true

@@ -1,0 +1,214 @@
+# AeroSpace — Cmd hierarchy (see docs/keybindings.md)
+# Direct Cmd = daily · Cmd+; = leader · Cmd+/ = cheatsheet
+# Turkish Q: no Option/Alt binds
+config-version = 2
+
+after-startup-command = ['exec-and-forget ~/.config/aerospace/launch-apps.sh']
+
+start-at-login = true
+
+enable-normalization-flatten-containers = true
+enable-normalization-opposite-orientation-for-nested-containers = true
+
+on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
+
+default-root-container-layout = 'tiles'
+default-root-container-orientation = 'auto'
+
+accordion-padding = 30
+automatically-unhide-macos-hidden-apps = false
+
+persistent-workspaces = ['1', '2', '3', '4', '5', '6', '7']
+
+[gaps]
+inner.horizontal = 10
+inner.vertical = 10
+outer.left = 10
+outer.right = 10
+outer.top = 0
+outer.bottom = 10
+
+# ---------------------------------------------------------------------------
+# Main mode — direct chords
+# ---------------------------------------------------------------------------
+[mode.main.binding]
+
+# Focus
+cmd-h = 'focus left'
+cmd-j = 'focus down'
+cmd-k = 'focus up'
+cmd-l = 'focus right'
+
+# Move window
+cmd-shift-h = 'move left'
+cmd-shift-j = 'move down'
+cmd-shift-k = 'move up'
+cmd-shift-l = 'move right'
+
+# Workspaces
+cmd-1 = 'workspace 1'
+cmd-2 = 'workspace 2'
+cmd-3 = 'workspace 3'
+cmd-4 = 'workspace 4'
+cmd-5 = 'workspace 5'
+cmd-6 = 'workspace 6'
+cmd-7 = 'workspace 7'
+
+# Send window to workspace (Shift = stronger sibling of Cmd+N)
+cmd-shift-1 = 'move-node-to-workspace 1'
+cmd-shift-2 = 'move-node-to-workspace 2'
+cmd-shift-3 = 'move-node-to-workspace 3'
+cmd-shift-4 = 'move-node-to-workspace 4'
+cmd-shift-5 = 'move-node-to-workspace 5'
+cmd-shift-6 = 'move-node-to-workspace 6'
+cmd-shift-7 = 'move-node-to-workspace 7'
+
+cmd-shift-p = 'workspace --wrap-around prev'
+cmd-shift-n = 'workspace --wrap-around next'
+cmd-shift-tab = 'workspace-back-and-forth'
+
+# Resize
+cmd-minus = 'resize smart -50'
+cmd-equal = 'resize smart +50'
+
+# Monitors
+cmd-ctrl-s = 'focus-monitor left'
+cmd-ctrl-g = 'focus-monitor right'
+cmd-ctrl-tab = 'move-workspace-to-monitor --wrap-around next'
+
+# Cheatsheet (Swift app via show-keybinds; markdown fallback)
+cmd-slash = 'exec-and-forget ~/.dotfiles/bin/show-keybinds aerospace'
+
+# Leader mode
+cmd-semicolon = 'mode leader'
+
+# ---------------------------------------------------------------------------
+# Leader (Cmd+;) — structural ops + help
+# ---------------------------------------------------------------------------
+[mode.leader.binding]
+esc = 'mode main'
+
+# Join / merge
+h = ['join-with left', 'mode main']
+j = ['join-with down', 'mode main']
+k = ['join-with up', 'mode main']
+l = ['join-with right', 'mode main']
+
+# Layout orientation (prefer join-with over split when flatten-containers is on)
+s = ['layout h_tiles', 'mode main']
+v = ['layout v_tiles', 'mode main']
+o = ['layout tiles horizontal vertical', 'mode main']
+
+# Swap sub-mode
+w = 'mode leader-swap'
+
+f = ['layout floating tiling', 'mode main']
+m = ['fullscreen', 'mode main']
+e = ['balance-sizes', 'mode main']
+r = ['reload-config', 'mode main']
+b = ['close-all-windows-but-current', 'mode main']
+
+# Cheatsheet from leader (i = info; / also)
+i = ['exec-and-forget ~/.dotfiles/bin/show-keybinds aerospace', 'mode main']
+slash = ['exec-and-forget ~/.dotfiles/bin/show-keybinds aerospace', 'mode main']
+
+# ---------------------------------------------------------------------------
+# Leader → swap (Cmd+; w then hjkl)
+# ---------------------------------------------------------------------------
+[mode.leader-swap.binding]
+esc = 'mode main'
+h = ['swap left', 'mode main']
+j = ['swap down', 'mode main']
+k = ['swap up', 'mode main']
+l = ['swap right', 'mode main']
+
+# ---------------------------------------------------------------------------
+# Window rules
+# ---------------------------------------------------------------------------
+[[on-window-detected]]
+if.app-id = 'com.apple.calculator'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.systempreferences'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.fortinet.forticlient'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.iphonesimulator'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'org.qemu.qemu'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.google.android.simulator'
+run = 'layout floating'
+
+[[on-window-detected]]
+if.app-id = 'com.apple.finder'
+run = 'layout floating'
+
+# Workspace 1: Safari Personal and Spotify
+[[on-window-detected]]
+if.app-id = 'com.apple.Safari'
+if.window-title-regex-substring = '.*Personal.*|^(?!.*Capybara).*$'
+run = 'move-node-to-workspace 1'
+
+[[on-window-detected]]
+if.app-id = 'com.spotify.client'
+run = 'move-node-to-workspace 1'
+
+# Workspace 2: Ghostty
+[[on-window-detected]]
+if.app-id = 'com.mitchellh.ghostty'
+run = [
+  'move-node-to-workspace 2',
+  'layout tiling',
+]
+
+# Workspace 3: WhatsApp and Signal
+[[on-window-detected]]
+if.app-id = 'net.whatsapp.WhatsApp'
+run = 'move-node-to-workspace 3'
+
+[[on-window-detected]]
+if.app-id = 'org.whispersystems.signal-desktop'
+run = 'move-node-to-workspace 3'
+
+# Workspace 4: Safari Capybara
+[[on-window-detected]]
+if.app-id = 'com.apple.Safari'
+if.window-title-regex-substring = '^(?!.*Capybara).*$'
+run = 'move-node-to-workspace 4'
+
+# Workspace 5: Slack and Microsoft Outlook
+[[on-window-detected]]
+if.app-id = 'com.tinyspeck.slackmacgap'
+run = 'move-node-to-workspace 5'
+
+[[on-window-detected]]
+if.app-id = 'com.microsoft.Outlook'
+run = 'move-node-to-workspace 5'
+
+# Workspace 6: Chrome and Claude desktop
+# [[on-window-detected]]
+# if.app-id = 'com.google.Chrome'
+# run = 'move-node-to-workspace 6'
+
+# [[on-window-detected]]
+# if.app-id = 'com.anthropic.claudefordesktop'
+# run = 'move-node-to-workspace 6'
+
+[workspace-to-monitor-force-assignment]
+1 = 'main'
+2 = 'main'
+3 = 'main'
+4 = 'secondary'
+5 = 'secondary'
+6 = 'secondary'
+7 = 'secondary'

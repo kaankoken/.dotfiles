@@ -1,0 +1,1 @@
+nushell/config.nu

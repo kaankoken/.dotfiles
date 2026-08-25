@@ -1,0 +1,455 @@
+"$schema" = 'https://starship.rs/config-schema.json'
+
+format = '$directory$all$character'
+add_newline = true
+right_format = '$time'
+palette = 'rose-pine'
+
+# ── Full Rosé Pine (main) palette ──────────────────────────────────────────
+[palettes.rose-pine]
+base = '#191724'
+surface = '#1f1d2e'
+overlay = '#26233a'
+muted = '#6e6a86'
+subtle = '#908caa'
+text = '#e0def4'
+love = '#eb6f92'
+gold = '#f6c177'
+rose = '#ebbcba'
+pine = '#31748f'
+foam = '#9ccfd8'
+iris = '#c4a7e7'
+leaf = '#95b1ac'
+highlight_low = '#21202e'
+highlight_med = '#403d52'
+highlight_high = '#524f67'
+
+# ── Core ───────────────────────────────────────────────────────────────────
+[character]
+success_symbol = '[➜](bold fg:pine)'
+error_symbol = '[➜](bold fg:love)'
+
+[directory]
+style = 'bold fg:foam'
+read_only = ' 󰌾'
+truncation_length = 3
+truncate_to_repo = true
+use_logical_path = true
+format = '[$path]($style)[$read_only](fg:gold) '
+
+[time]
+disabled = false
+format = '[$time]($style) '
+style = 'fg:muted'
+time_format = '%H:%M'
+
+[cmd_duration]
+min_time = 500
+format = 'took [$duration](bold fg:gold) '
+
+# ── Git (meaningful status + Rosé Pine colors) ─────────────────────────────
+[git_branch]
+symbol = ' '
+style = 'bold fg:iris'
+format = 'on [$symbol$branch]($style) '
+
+[git_status]
+style = 'bold'
+format = '([$all_status$ahead_behind]($style) )'
+conflicted = '[⚔](fg:love)'
+ahead = '[⇡${count}](fg:foam)'
+behind = '[⇣${count}](fg:rose)'
+diverged = '[⇕⇡${ahead_count}⇣${behind_count}](fg:iris)'
+up_to_date = ''
+untracked = '[…](fg:gold)'
+stashed = '[≡](fg:iris)'
+modified = '[!](fg:gold)'
+staged = '[+](fg:pine)'
+renamed = '[»](fg:foam)'
+deleted = '[✘](fg:love)'
+
+[git_commit]
+tag_symbol = '  '
+
+[git_state]
+style = 'bold fg:gold'
+format = '([$state( $progress_current/$progress_total)]($style) )'
+
+# ── Languages / tools (icons kept, colors themed) ──────────────────────────
+[aws]
+symbol = ' '
+style = 'fg:gold'
+
+[azure]
+symbol = ' '
+style = 'fg:foam'
+
+[battery]
+full_symbol = '󰁹 '
+charging_symbol = '󰂄 '
+discharging_symbol = '󰂃 '
+unknown_symbol = '󰂑 '
+empty_symbol = '󰂎 '
+
+[buf]
+symbol = ' '
+style = 'fg:foam'
+
+[bun]
+symbol = ' '
+style = 'fg:gold'
+
+[c]
+symbol = ' '
+style = 'fg:foam'
+
+[cpp]
+symbol = ' '
+style = 'fg:foam'
+
+[cmake]
+symbol = ' '
+style = 'fg:subtle'
+
+[cobol]
+symbol = ' '
+style = 'fg:subtle'
+
+[conda]
+symbol = ' '
+style = 'fg:pine'
+
+[container]
+symbol = ' '
+style = 'fg:iris'
+
+[crystal]
+symbol = ' '
+style = 'fg:text'
+
+[dart]
+symbol = ' '
+style = 'fg:foam'
+
+[deno]
+symbol = ' '
+style = 'fg:text'
+
+[direnv]
+symbol = ' '
+style = 'fg:subtle'
+
+[docker_context]
+symbol = ' '
+style = 'fg:foam'
+
+[dotnet]
+symbol = ' '
+style = 'fg:iris'
+
+[elixir]
+symbol = ' '
+style = 'fg:iris'
+
+[elm]
+symbol = ' '
+style = 'fg:foam'
+
+[erlang]
+symbol = ' '
+style = 'fg:love'
+
+[fennel]
+symbol = ' '
+style = 'fg:pine'
+
+[fortran]
+symbol = ' '
+style = 'fg:subtle'
+
+[fossil_branch]
+symbol = ' '
+style = 'fg:iris'
+
+[gcloud]
+symbol = '󱇶 '
+style = 'fg:foam'
+
+[gleam]
+symbol = ' '
+style = 'fg:gold'
+
+[golang]
+symbol = ' '
+style = 'fg:foam'
+
+[gradle]
+symbol = ' '
+style = 'fg:foam'
+
+[guix_shell]
+symbol = ' '
+style = 'fg:gold'
+
+[haskell]
+symbol = ' '
+style = 'fg:iris'
+
+[haxe]
+symbol = ' '
+style = 'fg:gold'
+
+[helm]
+symbol = ' '
+style = 'fg:iris'
+
+[hg_branch]
+symbol = ' '
+style = 'fg:iris'
+
+[hostname]
+ssh_symbol = ' '
+style = 'fg:subtle'
+
+[java]
+symbol = ' '
+style = 'fg:love'
+
+[julia]
+symbol = ' '
+style = 'fg:iris'
+
+[kotlin]
+symbol = ' '
+style = 'fg:iris'
+
+[kubernetes]
+symbol = '󱃾 '
+style = 'fg:foam'
+
+[lua]
+symbol = ' '
+style = 'fg:foam'
+
+[maven]
+symbol = ' '
+style = 'fg:rose'
+
+[memory_usage]
+symbol = '󰍛 '
+style = 'fg:gold'
+
+[meson]
+symbol = '󰔷 '
+style = 'fg:subtle'
+
+[mojo]
+symbol = '󰈸 '
+style = 'fg:love'
+
+[nats]
+symbol = ' '
+style = 'fg:subtle'
+
+[netns]
+symbol = '󰛳 '
+style = 'fg:subtle'
+
+[nim]
+symbol = ' '
+style = 'fg:gold'
+
+[nix_shell]
+symbol = ' '
+style = 'fg:foam'
+
+[nodejs]
+symbol = ' '
+style = 'fg:pine'
+
+[ocaml]
+symbol = ' '
+style = 'fg:gold'
+
+[odin]
+symbol = '󰟢 '
+style = 'fg:foam'
+
+[opa]
+symbol = ' '
+style = 'fg:subtle'
+
+[openstack]
+symbol = ' '
+style = 'fg:foam'
+
+[package]
+symbol = '󰏗 '
+disabled = true
+format = '[$symbol$version]($style) '
+style = 'fg:subtle'
+
+[perl]
+symbol = ' '
+style = 'fg:foam'
+
+[php]
+symbol = ' '
+style = 'fg:iris'
+
+[pijul_channel]
+symbol = ' '
+style = 'fg:iris'
+
+[pixi]
+symbol = '󰏗 '
+style = 'fg:gold'
+
+[pulumi]
+symbol = ' '
+style = 'fg:iris'
+
+[purescript]
+symbol = ' '
+style = 'fg:text'
+
+[python]
+symbol = ' '
+style = 'fg:gold'
+
+[raku]
+symbol = '󱖊 '
+style = 'fg:iris'
+
+[red]
+symbol = '󱍼 '
+style = 'fg:love'
+
+[rlang]
+symbol = '󰟔 '
+style = 'fg:foam'
+
+[ruby]
+symbol = ' '
+style = 'fg:love'
+
+[rust]
+symbol = '󱘗 '
+style = 'fg:rose'
+
+[scala]
+symbol = ' '
+style = 'fg:love'
+
+[shlvl]
+symbol = '󰹍 '
+style = 'fg:subtle'
+
+[singularity]
+symbol = ' '
+style = 'fg:iris'
+
+[solidity]
+symbol = ' '
+style = 'fg:subtle'
+
+[spack]
+symbol = ' '
+style = 'fg:subtle'
+
+[status]
+symbol = ' '
+style = 'fg:love'
+
+[sudo]
+symbol = ' '
+style = 'fg:gold'
+
+[swift]
+symbol = ' '
+style = 'fg:rose'
+
+[terraform]
+symbol = ' '
+style = 'fg:iris'
+
+[typst]
+symbol = ' '
+style = 'fg:foam'
+
+[vagrant]
+symbol = ' '
+style = 'fg:subtle'
+
+[vlang]
+symbol = ' '
+style = 'fg:foam'
+
+[xmake]
+symbol = ' '
+style = 'fg:subtle'
+
+[zig]
+symbol = ' '
+style = 'fg:gold'
+
+# ── OS symbols (kept; style via os module if enabled) ──────────────────────
+[os.symbols]
+AIX = ' '
+AlmaLinux = ' '
+Alpaquita = ' '
+Alpine = ' '
+ALTLinux = ' '
+Amazon = ' '
+Android = ' '
+AOSC = ' '
+Arch = ' '
+Artix = ' '
+Bluefin = ' '
+CachyOS = ' '
+CentOS = ' '
+Debian = ' '
+DragonFly = ' '
+Elementary = ' '
+Emscripten = ' '
+EndeavourOS = ' '
+Fedora = ' '
+FreeBSD = ' '
+Garuda = ' '
+Gentoo = ' '
+HardenedBSD = '󰞌 '
+Illumos = ' '
+InstantOS = ' '
+Ios = '󰀷 '
+Kali = ' '
+Linux = ' '
+Mabox = ' '
+Macos = ' '
+Manjaro = ' '
+Mariner = ' '
+MidnightBSD = ' '
+Mint = ' '
+NetBSD = ' '
+NixOS = ' '
+Nobara = ' '
+OpenBSD = ' '
+OpenCloudOS = ' '
+openEuler = ' '
+openSUSE = ' '
+OracleLinux = '󰺡 '
+PikaOS = ' '
+Pop = ' '
+Raspbian = ' '
+Redhat = '󱄛 '
+RedHatEnterprise = '󱄛 '
+Redox = '󰀘 '
+RockyLinux = ' '
+Solus = ' '
+SUSE = ' '
+Ubuntu = ' '
+Ultramarine = ' '
+Unknown = ' '
+Uos = ' '
+Void = ' '
+Windows = '󰍲 '
+Zorin = ' '

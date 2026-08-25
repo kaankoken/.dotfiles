@@ -1,0 +1,8 @@
+{
+  "trustedformulae": [
+    "aovestdipaperino/tap/tokensave"
+  ],
+  "trustedcasks": [
+    "nikitabobko/tap/aerospace"
+  ]
+}

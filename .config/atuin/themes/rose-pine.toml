@@ -1,0 +1,14 @@
+[theme]
+name = "rose-pine"
+
+[colors]
+# Rosé Pine main palette
+Base = "#e0def4"
+Title = "#c4a7e7"
+Important = "#c4a7e7"
+Guidance = "#9ccfd8"
+Annotation = "#908caa"
+Muted = "#6e6a86"
+AlertInfo = "#31748f"
+AlertWarn = "#f6c177"
+AlertError = "#eb6f92"

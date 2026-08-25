@@ -1,0 +1,46 @@
+#!/bin/bash
+sleep 2
+
+# Workspace 1: Safari (Personal profile) & Spotify
+echo "Launching Safari (Personal profile) and Spotify on workspace 1..."
+open -a Safari --args --profile-directory="Profile 1"  # Adjust profile name as needed
+sleep 1
+open -a Spotify
+sleep 1
+
+# Workspace 2: Ghostty
+echo "Launching Ghostty on workspace 2..."
+open -a Ghostty
+sleep 1
+
+# Workspace 3: WhatsApp & Signal
+echo "Launching WhatsApp and Signal on workspace 3..."
+open -a WhatsApp
+sleep 1
+open -a Signal
+sleep 1
+
+# Workspace 4: Safari (Capybara profile)
+echo "Launching Safari (Capybara profile) on workspace 4..."
+open -a Safari --args --profile-directory="Capybara"
+sleep 1
+
+# Workspace 5: Slack & Microsoft Outlook
+echo "Launching Slack and Microsoft Outlook on workspace 5..."
+open -a Slack
+sleep 1
+open -a "Microsoft Outlook"
+sleep 1
+
+# Workspace 6: Chrome & Claude desktop
+#echo "Launching Chrome and Claude on workspace 6..."
+#open -a "Google Chrome"
+#sleep 1
+#open -a "Claude"
+#sleep 1
+
+echo "All applications launched!"
+
+# Optional: Focus on workspace 1 after launching
+sleep 2
+aerospace workspace 1

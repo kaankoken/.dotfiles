@@ -1,0 +1,12 @@
+.DS_Store
+**/.DS_Store
+
+# Pi
+/.pi/context-mode
+/.pi/agent/sessions/
+/.pi/agent/auth.json
+/.pi/agent/bin
+
+# History
+*.sqlite3*
+*.sqlite*
