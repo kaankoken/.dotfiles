@@ -6,15 +6,33 @@
     "npm:context-mode",
     "npm:pi-cursor-sdk",
     "npm:pi-hashline-edit-pro",
-    "npm:bigpowers"
+    "npm:bigpowers",
+    "npm:pi-zentui",
+    {
+      "source": "npm:mitsupi",
+      "extensions": [
+        "extensions/answer.ts",
+        "extensions/btw.ts",
+        "extensions/context.ts",
+        "extensions/go-to-bed.ts",
+        "extensions/loop.ts"
+      ],
+      "skills": [],
+      "prompts": [],
+      "themes": []
+    },
+    "npm:@quintinshaw/pi-dynamic-workflows",
+    "npm:@narumitw/pi-lsp",
+    "npm:pi-web-access",
+    "npm:pi-mcp-adapter"
   ],
-  "lastChangelogVersion": "0.84.3",
+  "lastChangelogVersion": "0.84.4",
   "theme": "dark",
-  "defaultProvider": "xai",
-  "defaultModel": "grok-4.6",
+  "defaultProvider": "cursor",
+  "defaultModel": "opus-5@300k:fast",
   "defaultThinkingLevel": "xhigh",
   "images": {
-    "blockImages": true
+    "blockImages": false
   },
   "showHardwareCursor": true,
   "terminal": {
@@ -22,5 +40,9 @@
     "clearOnShrink": true
   },
   "enableInstallTelemetry": false,
-  "tuiMode": "fullscreen"
+  "tuiMode": "fullscreen",
+  "editorPaddingX": 1,
+  "outputPad": 1,
+  "steeringMode": "one-at-a-time",
+  "treeFilterMode": "default"
 }

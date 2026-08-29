@@ -2,10 +2,17 @@
 **/.DS_Store
 
 # Pi
-/.pi/context-mode
+/.pi/context-mode/sessions
+/.pi/context-mode/content
 /.pi/agent/sessions/
 /.pi/agent/auth.json
-/.pi/agent/bin
+/.pi/agent/cursor-sdk-context-windows.json
+/.pi/agent/cursor-sdk-model-list.json
+/.pi/agent/models-store.json
+
+# SSH — deny by default so private keys can never be added
+/.ssh/*
+!/.ssh/config
 
 # History
 *.sqlite3*
