@@ -4,7 +4,6 @@
   ],
   "packages": [
     "npm:context-mode",
-    "npm:pi-cursor-sdk",
     "npm:pi-hashline-edit-pro",
     "npm:bigpowers",
     "npm:pi-zentui",
@@ -27,9 +26,9 @@
     "npm:pi-mcp-adapter"
   ],
   "lastChangelogVersion": "0.84.4",
-  "theme": "dark",
-  "defaultProvider": "cursor",
-  "defaultModel": "opus-5@300k:fast",
+  "theme": "rose-pine-moon",
+  "defaultProvider": "xai",
+  "defaultModel": "grok-4.6",
   "defaultThinkingLevel": "xhigh",
   "images": {
     "blockImages": false
