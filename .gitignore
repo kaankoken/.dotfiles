@@ -9,6 +9,7 @@
 /.pi/agent/cursor-sdk-context-windows.json
 /.pi/agent/cursor-sdk-model-list.json
 /.pi/agent/models-store.json
+/.pi/agent/mcp-cache.json
 
 # SSH — deny by default so private keys can never be added
 /.ssh/*
