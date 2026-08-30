@@ -3,7 +3,11 @@
     "bun"
   ],
   "packages": [
-    "npm:context-mode",
+    {
+      "source": "npm:context-mode",
+      "skills": [],
+      "prompts": []
+    },
     "npm:pi-hashline-edit-pro",
     "npm:bigpowers",
     "npm:pi-zentui",

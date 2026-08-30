@@ -2,9 +2,8 @@
   "mcpServers": {
     "tokensave": {
       "command": "/opt/homebrew/bin/tokensave",
-      "args": [
-        "serve"
-      ]
+      "args": ["serve"],
+      "lifecycle": "keep-alive"
     }
   }
 }
