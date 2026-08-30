@@ -3,8 +3,7 @@ name: plan-writer
 model: openai-codex/gpt-5.6-sol:xhigh
 route: writer
 description: Write incremental implementation plan from approved spec. Producer for Plan gate.
-tools: [bash, read, search, web_search]
-spawns: []
+tools: [bash, read, web_search]
 ---
 
 # plan-writer
@@ -28,7 +27,7 @@ First draft is the default. Rewrite **only** when `plan-reviewer` returns
 rewrite for them. Do not invent RevisionN rounds.
 Order work **product-first** (templates/UI/features before exhaustive
 evidence/Playwright/digest factories) unless the bound goal is evidence-only.
-See `REVIEW-POLICY.md`.
+See `~/.pi/agent/policy/REVIEW-POLICY.md`.
 
 ## Output
 

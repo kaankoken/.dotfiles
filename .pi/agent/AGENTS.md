@@ -67,7 +67,9 @@ PR review roles on Pi (local freeze, not OMP snapshot tools):
 | `pr-grok-reviewer` | `xai/grok-4.6:xhigh` | initial + rebuttal |
 | `pr-sol-reviewer` | `openai-codex/gpt-5.6-sol:xhigh` | initial + rebuttal |
 | `pr-opus-reviewer` | `anthropic/claude-opus-5:xhigh` | initial + rebuttal |
-| `pr-terra-judge` | `cursor/claude-opus-5@1m:max` | sole adjudication |
+| `pr-terra-judge` | `anthropic/claude-opus-5:max` (failover `cursor/claude-opus-5@1m:max`) | sole adjudication |
+
+Agent `route:` = chain in `workflows/model-routes.json`. Pin = first hop. Failover = `providerFailover` + remaining hops. DW binds only `name`/`model`/`tools`/`isolation`/body — `route` is our chain key, not a DW field.
 
 ## Commands
 

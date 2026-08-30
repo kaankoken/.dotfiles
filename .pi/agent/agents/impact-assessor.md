@@ -3,8 +3,7 @@ name: impact-assessor
 model: xai/grok-4.6:xhigh
 route: scout
 description: Plan-phase intermediary. Path-load assess-impact. Required gate design → harness.
-tools: [bash, read, search]
-spawns: []
+tools: [bash, read]
 ---
 
 # impact-assessor

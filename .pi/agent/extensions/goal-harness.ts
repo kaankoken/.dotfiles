@@ -19,8 +19,7 @@
  */
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent"
-import { readFileSync } from "node:fs"
-import { join } from "node:path"
+import { loadChain, type ModelHop } from "../workflows/model-routes.ts"
 /** Installed via `pi install npm:bigpowers@…` */
 const BIGPOWERS = "~/.pi/agent/npm/node_modules/bigpowers/skills"
 const PI_SKILLS = "~/.pi/agent/skills"
@@ -47,58 +46,6 @@ const DEFAULT_HARNESS_GOAL = [
   "7. Specs, plans, goals, updates tracked in bd (SoT). Optional specs/ cockpit via bp-bd-bridge only.",
   "8. Do not add unnecessary docstrings or comments; explanatory comments only where needed.",
 ].join("\n")
-
-type ModelHop = { provider: string; modelId: string; effort: string }
-
-type RouteDoc = {
-  providerFailover?: Record<string, string[]>
-  cursorModelIds?: Record<string, string>
-  composerThen?: ModelHop
-  chains?: Record<string, ModelHop[]>
-}
-
-function remapModelId(provider: string, modelId: string, doc: RouteDoc): string {
-  if (provider !== "cursor") return modelId
-  return doc.cursorModelIds?.[modelId] ?? modelId
-}
-
-function expandHop(hop: ModelHop, doc: RouteDoc): ModelHop[] {
-  const map = doc.providerFailover ?? {}
-  const providers = map[hop.provider] ?? [hop.provider]
-  const out: ModelHop[] = providers.map((provider) => ({
-    ...hop,
-    provider,
-    modelId: remapModelId(provider, hop.modelId, doc),
-  }))
-  const composer = hop.modelId.includes("composer")
-  if (composer && doc.composerThen) {
-    const thenProviders = map[doc.composerThen.provider] ?? [doc.composerThen.provider]
-    for (const provider of thenProviders) {
-      out.push({
-        ...doc.composerThen,
-        provider,
-        modelId: remapModelId(provider, doc.composerThen.modelId, doc),
-      })
-    }
-  }
-  return out
-}
-
-function loadChain(name: string): ModelHop[] {
-  try {
-    const raw = readFileSync(join(import.meta.dir, "../workflows/model-routes.json"), "utf8")
-    const doc = JSON.parse(raw) as RouteDoc
-    const hops = doc.chains?.[name] ?? []
-    return hops.flatMap((hop) => expandHop(hop, doc))
-  } catch {
-    return [
-      { provider: "xai", modelId: "grok-4.6", effort: "xhigh" },
-      { provider: "xai-oauth", modelId: "grok-4.6", effort: "xhigh" },
-      { provider: "openai-codex", modelId: "gpt-5.6-terra", effort: "max" },
-      { provider: "cursor", modelId: "gpt-5.6-terra@1m", effort: "max" },
-    ]
-  }
-}
 
 const RESEARCH_MODEL_ROUTE: ModelHop[] = loadChain("harness-research")
 type Notify = (m: string, k?: "info" | "warning" | "error") => void
@@ -129,9 +76,11 @@ function packageContractsBlock(): string[] {
     "- Not sandboxed (host perms/network).",
     "",
     "**Parallel multi-step**: dynamic-workflows `/workflows run …` or keyword `workflow`.",
-    "- `agent(prompt, { tier: 'small'|'medium'|'big', isolation: 'worktree' })`",
+    "- `agent(prompt, { agentType, isolation: 'worktree' })` — implementer uses isolation worktree.",
     "- Prefer registered `agentType` under `~/.pi/agent/agents/*.md`.",
-    "- tiers: `~/.pi/workflows/model-tiers.json`",
+    "- Agent `route:` names a chain in `~/.pi/agent/workflows/model-routes.json`. Pin = first hop. Failover = providerFailover + remaining hops (anthropic→cursor, openai-codex→cursor, xai→xai-oauth→cursor).",
+    "- If `agentType` model is missing, retry the next hop. Never run that role on the parent model.",
+    "- tiers: `~/.pi/workflows/model-tiers.json` (small=scout grok, medium=reviewer fable, big=writer sol)",
     "",
     "**Fusion** (`fusion_*` / `/fusion`): multi-model opinion only — not a bd gate substitute.",
     "",

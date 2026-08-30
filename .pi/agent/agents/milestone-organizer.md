@@ -2,9 +2,8 @@
 name: milestone-organizer
 model: openai-codex/gpt-5.6-terra:max
 route: milestone
-description: Run multi-angle milestone review workflow; commissions reviews; needs fresh command evidence for PASS. Model route terra(xhigh)→fable→sol→opus.
-tools: [bash, read, search]
-spawns: [code-reviewer]
+description: Run multi-angle milestone review workflow; commissions reviews; needs fresh command evidence for PASS.
+tools: [bash, read]
 ---
 
 # milestone-organizer

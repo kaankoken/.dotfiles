@@ -3,8 +3,8 @@ name: implementer
 model: openai-codex/gpt-5.6-sol:xhigh
 route: writer
 description: SDD implementer in git worktree. TDD, ponytail, stack skills. No self-review ownership.
-tools: [bash, read, search, edit, write]
-spawns: []
+tools: [bash, read, replace, insert, write]
+isolation: worktree
 ---
 
 # implementer
@@ -19,7 +19,7 @@ Implement one claimed bd task inside a harness-assigned git worktree. Consume de
 - `~/.pi/agent/npm/node_modules/bigpowers/skills/delegate-task/SKILL.md` (`delegate-task`) (boundaries only — harness owns dispatch)
 - `~/.pi/agent/npm/node_modules/bigpowers/skills/respond-review/SKILL.md` (`respond-review`) when fixing review findings
 - Stack packs on demand (path-load routers, not `skill://`): `stack-rust`, `stack-ios`, `stack-android`, `stack-gcp`
-- `~/.agents/skills/ponytail/SKILL.md` (`ponytail`)
+- `~/.pi/agent/npm/node_modules/@dietrichgebert/ponytail/skills/ponytail/SKILL.md` (`ponytail`)
 
 Never Superpowers. **bd** is SoT. Never vendor skill bodies.
 

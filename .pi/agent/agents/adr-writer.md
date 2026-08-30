@@ -3,8 +3,7 @@ name: adr-writer
 model: openai-codex/gpt-5.6-sol:xhigh
 route: writer
 description: Emit MADR-lite ADR JSON for /design. Controller writes docs/adr.
-tools: [bash, read, search]
-spawns: []
+tools: [bash, read]
 ---
 
 # adr-writer
@@ -13,7 +12,7 @@ Emit one or more **Architecture Decision Records** from accepted PDR + Arc42. Co
 
 ## Skills (live)
 
-- `~/.agents/skills/ponytail/SKILL.md` (`ponytail`)
+- `~/.pi/agent/npm/node_modules/@dietrichgebert/ponytail/skills/ponytail/SKILL.md` (`ponytail`)
 - Prefer few decisive ADRs over essay sprawl
 
 Never Superpowers. **bd** is SoT for the decision index; controller still writes `docs/adr/`.

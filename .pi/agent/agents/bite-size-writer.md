@@ -3,8 +3,7 @@ name: bite-size-writer
 model: openai-codex/gpt-5.6-sol:xhigh
 route: writer
 description: Split plan tasks until each is implementable in one focused worktree pass.
-tools: [bash, read, search]
-spawns: []
+tools: [bash, read]
 ---
 
 # bite-size-writer
@@ -29,4 +28,4 @@ Single primary outcome per task; clear files; concrete done-when; vertical slice
 First draft is the default. Rewrite **only** when `bite-size-reviewer` returns
 `ok: false`. Nits under `ok: true` are optional — do not rewrite for them.
 Do not invent extra RevisionN passes. Prefer product tasks before evidence-only
-prerequisites (see `REVIEW-POLICY.md`).
+prerequisites (see `~/.pi/agent/policy/REVIEW-POLICY.md`).

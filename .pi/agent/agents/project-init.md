@@ -3,8 +3,7 @@ name: project-init
 model: openai-codex/gpt-5.6-sol:xhigh
 route: writer
 description: Stack-aware project scaffold — AGENTS.md tree, CLAUDE.md symlinks, bd init, stack skill checklist. No full harness.
-tools: [bash, read, search, edit, write]
-spawns: []
+tools: [bash, read, replace, insert, write]
 ---
 
 # project-init
@@ -27,7 +26,7 @@ Also: `ponytail` by name when minimalism applies.
 Consume design-handoff from `/design` when present. Do not re-discover settled design.
 ## Templates
 
-Prefer OMP templates (after Stage 2+ link):
+Templates:
 
 | Template | Path |
 |----------|------|

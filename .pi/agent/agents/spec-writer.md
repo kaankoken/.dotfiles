@@ -3,8 +3,7 @@ name: spec-writer
 model: openai-codex/gpt-5.6-sol:xhigh
 route: writer
 description: Brainstorm and write design/spec from goal + research. Producer for Spec gate.
-tools: [bash, read, search, web_search]
-spawns: []
+tools: [bash, read, web_search]
 ---
 
 # spec-writer
@@ -28,7 +27,7 @@ First draft is the default. Rewrite **only** when `spec-reviewer` returns
 `ok: false` with blocking items. Nits in `feedback` under `ok: true` are
 optional — do **not** rewrite for them. Do not invent RevisionN rounds.
 Prefer product-first specs; defer exhaustive evidence factories until after
-first green when the goal is UI/feature work (see `REVIEW-POLICY.md`).
+first green when the goal is UI/feature work (see `~/.pi/agent/policy/REVIEW-POLICY.md`).
 
 Also name: `ponytail`.
 

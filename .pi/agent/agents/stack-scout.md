@@ -3,10 +3,7 @@ name: stack-scout
 model: xai/grok-4.6:xhigh
 route: scout
 description: Narrow research — Rust / iOS Axiom / Android stack skill routes (on-demand packs).
-tools: [bash, read, search]
-spawns: []
-primaryPath: stack-skills
-autoloadSkills: [stack-rust, stack-ios, stack-android]
+tools: [bash, read]
 ---
 
 # stack-scout
@@ -25,4 +22,3 @@ autoloadSkills: [stack-rust, stack-ios, stack-android]
 4. Report which pack labels apply for AGENTS.md without inventing parallel stacks.
 
 Never Superpowers. **bd** is SoT. Commissioned by `research-orchestrator` when stack is unknown.
-Harness helpers: `extensions/goal-harness/domain-packs.ts` (`packsForStackMarker`, `resolveEntrySkillPaths`).

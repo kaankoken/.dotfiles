@@ -454,6 +454,7 @@ function buildControllerMessage(opts: {
     "   - `agent(prompt, { agentType: 'pr-opus-reviewer' })`",
     "   - then `agent(prompt, { agentType: 'pr-terra-judge' })`",
     "   Or `/workflows run …` with the same agentTypes. Parallelize Grok+Sol+Opus.",
+    "   Pins are first hops of `route` in model-routes.json. If a pin is missing, retry that route's remaining hops (providerFailover). Never parent-as-reviewer.",
     "3. If DW unavailable, path-load agent md under `~/.pi/agent/agents/` and run sequential reviews yourself with the same prompts — still no live re-fetch.",
     "4. Each reviewer output = **JSON only** (schemas below). Save under bundle_dir:",
     "   - `grok-initial.json`, `sol-initial.json`, `opus-initial.json`",

@@ -3,9 +3,7 @@ name: browser-use-scout
 model: xai/grok-4.6:xhigh
 route: scout
 description: Heavy multi-step browser-use CLI (CDP). Last resort. Commissioned by research-orchestrator.
-tools: [bash, read, search]
-spawns: []
-primaryPath: browser-use
+tools: [bash, read]
 ---
 
 # browser-use-scout

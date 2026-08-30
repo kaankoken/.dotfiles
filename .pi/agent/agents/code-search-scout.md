@@ -3,9 +3,7 @@ name: code-search-scout
 model: xai/grok-4.6:xhigh
 route: scout
 description: Narrow research — AST/symbol/pattern search via sg and rg. Read-mostly.
-tools: [bash, read, search]
-spawns: []
-primaryPath: ast-search
+tools: [bash, read]
 ---
 
 # code-search-scout

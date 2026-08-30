@@ -25,7 +25,7 @@
       { "provider": "cursor", "modelId": "composer-2.5:fast", "effort": "high" }
     ],
     "reviewer": [
-      { "provider": "cursor", "modelId": "claude-fable-5@1m", "effort": "max" },
+      { "provider": "anthropic", "modelId": "claude-fable-5", "effort": "max" },
       { "provider": "openai-codex", "modelId": "gpt-5.6-sol", "effort": "max" },
       { "provider": "anthropic", "modelId": "claude-opus-5", "effort": "max" },
       { "provider": "openai-codex", "modelId": "gpt-5.6-sol", "effort": "xhigh" }

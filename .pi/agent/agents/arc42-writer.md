@@ -3,8 +3,7 @@ name: arc42-writer
 model: openai-codex/gpt-5.6-sol:xhigh
 route: writer
 description: Produce Arc42 architecture sections + diagram sources for /design.
-tools: [bash, read, search, web_search]
-spawns: []
+tools: [bash, read, web_search]
 ---
 
 # arc42-writer
@@ -17,7 +16,7 @@ Produce **Arc42** structured output from the accepted PDR. Design only.
 
 - `~/.pi/agent/npm/node_modules/bigpowers/skills/elaborate-spec/SKILL.md` (`elaborate-spec`)
 - `~/.pi/agent/npm/node_modules/bigpowers/skills/deepen-architecture/SKILL.md` (`deepen-architecture`)
-- `~/.agents/skills/ponytail/SKILL.md` (`ponytail`)
+- `~/.pi/agent/npm/node_modules/@dietrichgebert/ponytail/skills/ponytail/SKILL.md` (`ponytail`)
 - `~/.pi/agent/skills/architect/SKILL.md` (`architect`) — required; consume architecture-handoff; do not re-ask settled architecture
 - `~/.pi/agent/npm/node_modules/bigpowers/skills/respond-review/SKILL.md` (`respond-review`) only when applying failed review blocking feedback
 ## Diagrams

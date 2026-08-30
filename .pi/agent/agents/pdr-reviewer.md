@@ -1,10 +1,9 @@
 ---
 name: pdr-reviewer
-model: cursor/claude-fable-5@1m:max
+model: anthropic/claude-fable-5:max
 route: reviewer
 description: Gate PDR for /design. REVIEW-POLICY default PASS. JSON review result.
-tools: [bash, read, search]
-spawns: []
+tools: [bash, read]
 ---
 
 # pdr-reviewer
@@ -13,11 +12,13 @@ Review a PDR candidate. Read-only. Never rewrite the PDR yourself.
 
 ## Mandatory policy
 
-Follow `REVIEW-POLICY.md` (blocking vs nits, default PASS). Policy wins on conflict.
+Follow `~/.pi/agent/policy/REVIEW-POLICY.md` (blocking vs nits, default PASS). Policy wins on conflict.
 
 ## Skills
 
-- `~/.pi/agent/npm/node_modules/bigpowers/skills/request-review/SKILL.md` (`request-review`)
+- `~/.pi/agent/npm/node_modules/bigpowers/skills/audit-code/SKILL.md` (`audit-code`)
+- `~/.pi/agent/npm/node_modules/bigpowers/skills/request-review/SKILL.md` (`request-review`) — guidance; quality:normal, not Santa AND-gate
+- `~/.pi/agent/skills/adapters/bp-review-to-json/SKILL.md` (`bp-review-to-json`)
 - Design judgment only; no implementer skills
 - Do **not** load `respond-review`
 ## Output (JSON)
