@@ -1,6 +1,7 @@
 ---
 name: project-init
-model: openai-codex/gpt-5.6-sol:max
+model: openai-codex/gpt-5.6-sol:xhigh
+route: writer
 description: Stack-aware project scaffold — AGENTS.md tree, CLAUDE.md symlinks, bd init, stack skill checklist. No full harness.
 tools: [bash, read, search, edit, write]
 spawns: []

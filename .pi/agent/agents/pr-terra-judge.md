@@ -1,7 +1,8 @@
 ---
 name: pr-terra-judge
 description: Terra judge for dual PR freeze — sole final adjudication JSON.
-model: openai-codex/gpt-5.6-terra:max
+model: anthropic/claude-opus-5:max
+route: judge
 tools: [read, grep, find, ls]
 spawns: []
 ---

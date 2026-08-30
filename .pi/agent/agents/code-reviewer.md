@@ -1,6 +1,7 @@
 ---
 name: code-reviewer
-model: xai/grok-4.6:xhigh
+model: openai-codex/fable-5:max
+route: reviewer
 description: Multi-angle code review — correctness, tests, ponytail, stack. JSON review result.
 tools: [bash, read, search]
 spawns: []

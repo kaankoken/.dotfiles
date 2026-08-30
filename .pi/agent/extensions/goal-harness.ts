@@ -19,7 +19,8 @@
  */
 
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent"
-
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 /** Installed via `pi install npm:bigpowers@…` */
 const BIGPOWERS = "~/.pi/agent/npm/node_modules/bigpowers/skills"
 const PI_SKILLS = "~/.pi/agent/skills"
@@ -47,13 +48,45 @@ const DEFAULT_HARNESS_GOAL = [
   "8. Do not add unnecessary docstrings or comments; explanatory comments only where needed.",
 ].join("\n")
 
-const RESEARCH_MODEL_ROUTE = [
-  { provider: "xai", modelId: "grok-4.6", effort: "high" },
-  { provider: "xai-oauth", modelId: "grok-4.6", effort: "high" },
-  { provider: "xai", modelId: "grok-4.5", effort: "high" },
-  { provider: "openai-codex", modelId: "gpt-5.6-sol", effort: "medium" },
-] as const
+type ModelHop = { provider: string; modelId: string; effort: string }
 
+type RouteDoc = {
+  providerFailover?: Record<string, string[]>
+  composerThen?: ModelHop
+  chains?: Record<string, ModelHop[]>
+}
+
+function expandHop(hop: ModelHop, doc: RouteDoc): ModelHop[] {
+  const map = doc.providerFailover ?? {}
+  const providers = map[hop.provider] ?? [hop.provider]
+  const out: ModelHop[] = providers.map((provider) => ({ ...hop, provider }))
+  const composer = hop.provider === "cursor" && hop.modelId.includes("composer")
+  if (composer && doc.composerThen) {
+    const thenProviders = map[doc.composerThen.provider] ?? [doc.composerThen.provider]
+    for (const provider of thenProviders) {
+      out.push({ ...doc.composerThen, provider })
+    }
+  }
+  return out
+}
+
+function loadChain(name: string): ModelHop[] {
+  try {
+    const raw = readFileSync(join(import.meta.dir, "../workflows/model-routes.json"), "utf8")
+    const doc = JSON.parse(raw) as RouteDoc
+    const hops = doc.chains?.[name] ?? []
+    return hops.flatMap((hop) => expandHop(hop, doc))
+  } catch {
+    return [
+      { provider: "xai", modelId: "grok-4.6", effort: "xhigh" },
+      { provider: "xai-oauth", modelId: "grok-4.6", effort: "xhigh" },
+      { provider: "openai-codex", modelId: "gpt-5.6-terra", effort: "max" },
+      { provider: "cursor", modelId: "gpt-5.6-terra", effort: "max" },
+    ]
+  }
+}
+
+const RESEARCH_MODEL_ROUTE: ModelHop[] = loadChain("harness-research")
 type Notify = (m: string, k?: "info" | "warning" | "error") => void
 
 function requireArgs(args: string, usage: string, notify: Notify): string | null {
@@ -166,7 +199,7 @@ function buildHarnessStart(goal: string, usedDefault: boolean, cwd: string): str
     `   - ${PI_AGENTS}/code-reviewer.md`,
     "   - ~/.pi/agent/policy/REVIEW-POLICY.md",
     `   - ${PONYTAIL_REVIEW}/SKILL.md`,
-    "   Emit JSON { ok, feedback, blocking }. Optional DW `/code-review` or fusion_validate (advisory).",
+    "   Emit JSON { ok, feedback, blocking }. Max 3 review rounds; first ok:true ends the gate. Do not run leftover rounds.",
     "8. **Milestone** — `verify-gate` then organizer; fresh command evidence in bd; path-load",
     `   - ${PI_AGENTS}/verify-gate.md (required; ${BIGPOWERS}/verify-work/SKILL.md + validate-fix)`,
     `   - ${PI_AGENTS}/milestone-organizer.md when closing a multi-task epic.`,
@@ -290,7 +323,7 @@ export default function (pi: ExtensionAPI) {
         ctx.ui.notify("Empty /harness → default 8 quality requirements", "info")
       }
 
-      let selectedRoute: (typeof RESEARCH_MODEL_ROUTE)[number] | undefined
+      let selectedRoute: ModelHop | undefined
       for (const candidate of RESEARCH_MODEL_ROUTE) {
         const model = ctx.modelRegistry.find(candidate.provider, candidate.modelId)
         if (model && await pi.setModel(model)) {
@@ -300,7 +333,7 @@ export default function (pi: ExtensionAPI) {
       }
       if (!selectedRoute) {
         ctx.ui.notify(
-          "Harness stopped: no authenticated research model (Grok high → Sol medium).",
+          "Harness stopped: no authenticated research model (Grok 4.6 xhigh → Terra max).",
           "error",
         )
         return

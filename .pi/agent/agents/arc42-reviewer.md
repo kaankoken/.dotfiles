@@ -1,6 +1,7 @@
 ---
 name: arc42-reviewer
-model: xai/grok-4.6:high
+model: openai-codex/fable-5:max
+route: reviewer
 description: Gate Arc42 for /design against PDR. REVIEW-POLICY default PASS.
 tools: [bash, read, search]
 spawns: []

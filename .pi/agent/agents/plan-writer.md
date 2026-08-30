@@ -1,6 +1,7 @@
 ---
 name: plan-writer
-model: openai-codex/gpt-5.6-sol:max
+model: openai-codex/gpt-5.6-sol:xhigh
+route: writer
 description: Write incremental implementation plan from approved spec. Producer for Plan gate.
 tools: [bash, read, search, web_search]
 spawns: []

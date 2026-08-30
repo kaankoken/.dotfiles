@@ -1,5 +1,7 @@
 ---
 name: verify-gate
+model: xai/grok-4.6:xhigh
+route: scout
 description: Verify-phase intermediary. Path-load verify-work and validate-fix. Required gate implement → milestone.
 tools: [bash, read, search]
 spawns: []

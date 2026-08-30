@@ -1,6 +1,7 @@
 ---
 name: intent-router
-model: xai/grok-4.6:high
+model: xai/grok-4.6:xhigh
+route: scout
 description: Optional freeform intent classifier spawn. Thin; prefers session skill path.
 tools: [bash, read, search]
 spawns: []

@@ -157,10 +157,10 @@ describe("goal-harness handler start messages", () => {
 
     expect(notifications.some((n) => /default 8 quality/i.test(n.message))).toBe(true)
     expect(selectedModels).toEqual([{ provider: "xai", id: "grok-4.6" }])
-    expect(thinkingLevels).toEqual(["high"])
+    expect(thinkingLevels).toEqual(["xhigh"])
     expect(
       notifications.some((notification) =>
-        notification.message.includes("Harness research route: xai/grok-4.6:high"),
+        notification.message.includes("Harness research route: xai/grok-4.6:xhigh"),
       ),
     ).toBe(true)
     expect(userMessages).toHaveLength(1)
@@ -180,6 +180,7 @@ describe("goal-harness handler start messages", () => {
     expect(msg).toContain("graphify")
     expect(msg).toContain("caveman")
     expect(msg).toContain("context-mode")
+    expect(msg).toContain("Max 3 review rounds")
     expect(msg).not.toMatch(/using-superpowers|requiredSuperpowers|~\/\.omp\/agent\/(?:skills|extensions)/)
     const defaultGoal = msg
       .match(
@@ -206,7 +207,7 @@ describe("goal-harness handler start messages", () => {
     expect(userMessages[0]).toContain("ship pi cutover tests")
   })
 
-  test("/harness falls back to Sol medium when Grok is unavailable", async () => {
+  test("/harness falls back to Terra max when Grok is unavailable", async () => {
     const {
       pi,
       commands,
@@ -216,18 +217,18 @@ describe("goal-harness handler start messages", () => {
       thinkingLevels,
       ctx,
     } = createFakePi({
-      models: [{ provider: "openai-codex", id: "gpt-5.6-sol" }],
+      models: [{ provider: "openai-codex", id: "gpt-5.6-terra" }],
     })
     goalHarness(pi)
 
     await commands.get("harness")!.handler("research fallback", ctx)
 
     expect(selectedModels).toEqual([
-      { provider: "openai-codex", id: "gpt-5.6-sol" },
+      { provider: "openai-codex", id: "gpt-5.6-terra" },
     ])
-    expect(thinkingLevels).toEqual(["medium"])
+    expect(thinkingLevels).toEqual(["max"])
     expect(notifications).toContainEqual({
-      message: "Harness research route: openai-codex/gpt-5.6-sol:medium",
+      message: "Harness research route: openai-codex/gpt-5.6-terra:max",
       kind: "warning",
     })
     expect(userMessages).toHaveLength(1)
@@ -243,7 +244,7 @@ describe("goal-harness handler start messages", () => {
 
     expect(userMessages).toHaveLength(0)
     expect(notifications).toContainEqual({
-      message: "Harness stopped: no authenticated research model (Grok high → Sol medium).",
+      message: "Harness stopped: no authenticated research model (Grok 4.6 xhigh → Terra max).",
       kind: "error",
     })
   })

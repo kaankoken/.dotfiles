@@ -1,0 +1,40 @@
+{
+  "providerFailover": {
+    "anthropic": ["anthropic", "cursor"],
+    "openai": ["openai", "cursor"],
+    "openai-codex": ["openai-codex", "cursor"],
+    "xai": ["xai", "xai-oauth"],
+    "cursor": ["cursor"]
+  },
+  "composerThen": { "provider": "xai", "modelId": "grok-4.6", "effort": "xhigh" },
+  "chains": {
+    "writer": [
+      { "provider": "openai-codex", "modelId": "gpt-5.6-sol", "effort": "xhigh" },
+      { "provider": "anthropic", "modelId": "claude-opus-5", "effort": "xhigh" },
+      { "provider": "xai", "modelId": "grok-4.6", "effort": "xhigh" },
+      { "provider": "cursor", "modelId": "composer-2.5-fast", "effort": "high" }
+    ],
+    "reviewer": [
+      { "provider": "openai-codex", "modelId": "fable-5", "effort": "max" },
+      { "provider": "openai-codex", "modelId": "gpt-5.6-sol", "effort": "max" },
+      { "provider": "anthropic", "modelId": "claude-opus-5", "effort": "max" },
+      { "provider": "openai-codex", "modelId": "gpt-5.6-sol", "effort": "xhigh" }
+    ],
+    "judge": [
+      { "provider": "anthropic", "modelId": "claude-opus-5", "effort": "max" },
+      { "provider": "openai-codex", "modelId": "gpt-5.6-sol", "effort": "xhigh" }
+    ],
+    "milestone": [
+      { "provider": "openai-codex", "modelId": "gpt-5.6-terra", "effort": "max" },
+      { "provider": "xai", "modelId": "grok-4.6", "effort": "xhigh" }
+    ],
+    "scout": [
+      { "provider": "xai", "modelId": "grok-4.6", "effort": "xhigh" },
+      { "provider": "openai-codex", "modelId": "gpt-5.6-terra", "effort": "max" }
+    ],
+    "harness-research": [
+      { "provider": "xai", "modelId": "grok-4.6", "effort": "xhigh" },
+      { "provider": "openai-codex", "modelId": "gpt-5.6-terra", "effort": "max" }
+    ]
+  }
+}

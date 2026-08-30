@@ -1,6 +1,7 @@
 ---
 name: pdr-reviewer
-model: xai/grok-4.6:high
+model: openai-codex/fable-5:max
+route: reviewer
 description: Gate PDR for /design. REVIEW-POLICY default PASS. JSON review result.
 tools: [bash, read, search]
 spawns: []

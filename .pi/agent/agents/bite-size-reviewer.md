@@ -1,6 +1,7 @@
 ---
 name: bite-size-reviewer
-model: xai/grok-4.6:high
+model: openai-codex/fable-5:max
+route: reviewer
 description: Size gate for bite-sized tasks. JSON only. Max 2 attempts (rewrite only on FAIL).
 tools: [bash, read, search]
 spawns: []

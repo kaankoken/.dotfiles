@@ -46,14 +46,7 @@ Cold catalog is intent-router+beads only.
 
 ## Models
 
-Pins live in agent frontmatter + `~/.pi/workflows/model-tiers.json`. No OMP `resolveModelRoute`.
-
-| Phase | Pin |
-|-------|-----|
-| PDR / ADR writers | `openai-codex/gpt-5.6-sol:max` |
-| Arc42 writer | `openai-codex/gpt-5.6-sol:max` |
-| Reviewers | `xai/grok-4.6:high` |
-| DW small / medium / big | grok-4.6:high / grok-4.6:xhigh / sol:max |
+SoT: `~/.pi/agent/workflows/model-routes.json`. Writers = `writer` chain; reviewers = `reviewer` (max 3, first ok:true ends). Provider failover applies. No OMP `resolveModelRoute`.
 
 ## Artifacts
 

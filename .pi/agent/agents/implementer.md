@@ -1,6 +1,7 @@
 ---
 name: implementer
-model: openai-codex/gpt-5.6-sol:max
+model: openai-codex/gpt-5.6-sol:xhigh
+route: writer
 description: SDD implementer in git worktree. TDD, ponytail, stack skills. No self-review ownership.
 tools: [bash, read, search, edit, write]
 spawns: []

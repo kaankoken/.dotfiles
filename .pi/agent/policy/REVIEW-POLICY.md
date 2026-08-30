@@ -11,8 +11,8 @@ Set `ok: false` **only** when at least one **blocking** class below applies.
 If unsure → put it in `feedback` as a **nit** and keep `ok: true`.
 
 Nits never force a producer rewrite. Only non-empty `blocking` with `ok: false`
-triggers a revision (budget is a fail ceiling, not a quota).
-
+triggers a revision. **Max 3 review rounds.** First `{ ok: true }` **ends** the
+gate — do not run remaining rounds because budget remains.
 ## Blocking (only these)
 
 Each `blocking[]` item must be a **concrete fix instruction** for one producer pass.

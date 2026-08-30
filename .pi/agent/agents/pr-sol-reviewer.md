@@ -2,6 +2,7 @@
 name: pr-sol-reviewer
 description: Sol dual PR reviewer against a local freeze bundle (initial + rebuttal).
 model: openai-codex/gpt-5.6-sol:xhigh
+route: writer
 tools: [read, grep, find, ls]
 spawns: []
 ---

@@ -103,10 +103,9 @@ Load: `~/.pi/agent/skills/adapters/<name>/SKILL.md`.
 | 5 | Milestone | `audit-code`, `request-review` (guidance; Santa if `quality:strict`), `verify-work` | `bp-review-to-json`, ponytail-review(/audit) | multi `code-reviewer` | `milestone-organizer` | 3 |
 | 6 | PR | `commit-message`, `release-branch` | — | `pr-opener` | — | — |
 
-**Max attempts = ceiling, not a quota.** First reviewer `ok: true` ends the gate.
+**Max attempts = ceiling, not a quota (max 3).** First reviewer `ok: true` ends the gate.
 Producer rewrite runs **only** when the reviewer returns `ok: false` (blocking items).
-Do **not** spawn free-standing `*Revision1` / `*Revision2` agents “because budget remains.”
-Nits under `ok: true` are non-blocking notes — not revision triggers.
+Do **not** spawn extra rounds “because budget remains.”
 
 **Reviewer PASS bias:** all reviewers obey `policy/REVIEW-POLICY.md`. Default
 `ok: true` / empty `blocking`. Fail only for wrong, impossible, unsafe,
@@ -142,13 +141,17 @@ Do **not** paste Bigpowers skill bodies here — only names + “read authoritat
 
 Producers load `respond-review` **only** when applying `ok: false` blocking feedback.
 
-## Model routes (deterministic later tasks)
+## Model routes
 
-| Role | Chain preference | Effort |
-|------|------------------|--------|
-| Spec/plan/bite/milestone | sol → terra (frontmatter) | ultra/max |
-| Implement | grok 4.6 → sol high | high |
-| Scouts / reviewers | grok 4.6 high (code-reviewer xhigh) | — |
+SoT: `~/.pi/agent/workflows/model-routes.json`. Provider failover: anthropic→cursor, openai-codex→cursor, composer-2.5-fast→grok-4.6.
+
+| Role | Chain |
+|------|--------|
+| Writers | sol:xhigh → opus-5:xhigh → grok-4.6 → composer |
+| Reviewers | fable-5:max → sol:max → opus-5 → sol:xhigh. **Max 3 rounds; first ok:true ends.** |
+| Judges | opus-5:max → sol:xhigh |
+| Milestone | terra:max → grok-4.6:xhigh |
+| Scouts + harness research | grok-4.6:xhigh (deep-research) → terra:max |
 
 ## Agent yields over 50 KiB (`agent://`)
 

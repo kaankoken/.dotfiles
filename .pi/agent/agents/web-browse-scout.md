@@ -1,5 +1,7 @@
 ---
 name: web-browse-scout
+model: xai/grok-4.6:xhigh
+route: scout
 description: Short JS-rendered page via Chrome CDP. Use when web-scout fetch is empty. Commissioned by research-orchestrator.
 tools: [bash, read, search]
 spawns: []

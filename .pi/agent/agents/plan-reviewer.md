@@ -1,6 +1,7 @@
 ---
 name: plan-reviewer
-model: xai/grok-4.6:high
+model: openai-codex/fable-5:max
+route: reviewer
 description: Review implementation plan for ordering, size, risks, testability. JSON only.
 tools: [bash, read, search]
 spawns: []

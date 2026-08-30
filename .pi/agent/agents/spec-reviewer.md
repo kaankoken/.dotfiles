@@ -1,6 +1,7 @@
 ---
 name: spec-reviewer
-model: xai/grok-4.6:high
+model: openai-codex/fable-5:max
+route: reviewer
 description: Adversarial review of design/spec. Returns JSON only. Different agent from spec-writer.
 tools: [bash, read, search]
 spawns: []
@@ -34,5 +35,5 @@ Missing polish, more research, or exhaustive pre-product evidence → **nits**, 
 
 - Default: **`ok: true`**, `blocking: []`.
 - `ok: false` only for REVIEW-POLICY **blocking** classes, with non-empty `blocking`.
-- Writer revises **only** on `ok: false`. Never force a revision for nits.
+- Writer revises **only** on `ok: false`. Never force a revision for nits. Max 3 rounds; first `ok: true` ends.
 - Do not load methodology skill bodies here; use this contract + tools.
