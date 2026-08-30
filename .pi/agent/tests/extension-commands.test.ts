@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent"
 import goalHarness from "../extensions/goal-harness.ts"
-import prReviewer from "../extensions/pr-reviewer.ts"
+import prReviewer, { buildPrReviewWorkflowScript } from "../extensions/pr-reviewer.ts"
 
 type RegisteredCommand = {
   name: string
@@ -150,12 +150,13 @@ describe("local extension slash command registration", () => {
     expect(JSON.stringify(judge)).toContain("grok|sol|opus")
     const md = await Bun.file(new URL("../agents/pr-opus-reviewer.md", import.meta.url)).text()
     expect(md).toMatch(/^name: pr-opus-reviewer$/m)
-    expect(md).toContain("anthropic/claude-opus-5:xhigh")
+    expect(md).toContain("cursor/claude-opus-5@1m:max")
     expect(md).toContain("freeze paths + worktree")
     const ext = await Bun.file(new URL("../extensions/pr-reviewer.ts", import.meta.url)).text()
     expect(ext).toContain("pr-opus-reviewer")
     expect(ext).toContain("opus-initial.json")
-    expect(ext).toContain("own initial JSON plus the other two peer JSONs")
+    expect(ext).toContain("loadChain(\"judge\")")
+    expect(ext).toContain("buildPrReviewWorkflowScript")
   })
 
   test("combined local extensions never register duplicate slash names", () => {
@@ -366,5 +367,34 @@ describe("pr-reviewer command surface", () => {
     expect(notifications.some((n) => n.kind === "error" && /target required|Usage:/.test(n.message))).toBe(
       true,
     )
+  })
+
+  test("freeze workflow failovers opus/judge to cursor opus @1m", () => {
+    const script = buildPrReviewWorkflowScript({
+      bundlePath: "/tmp/BUNDLE.md",
+      diffPath: "/tmp/diff.patch",
+      worktreePath: "/tmp/wt",
+      runNonce: "r".repeat(32),
+      freezeNonce: "f".repeat(32),
+      headSha: "a".repeat(40),
+      diffDigest: "b".repeat(64),
+      call: {
+        grok: "1".repeat(32),
+        sol: "2".repeat(32),
+        opus: "3".repeat(32),
+        grokR: "4".repeat(32),
+        solR: "5".repeat(32),
+        opusR: "6".repeat(32),
+        judge: "7".repeat(32),
+      },
+    })
+    expect(script).toContain("pr-grok-reviewer")
+    expect(script).toContain("pr-sol-reviewer")
+    expect(script).toContain("pr-opus-reviewer")
+    expect(script).toContain("pr-terra-judge")
+    expect(script).toContain("cursor/claude-opus-5@1m:max")
+    expect(script).toContain("OPUS_MODELS")
+    expect(script).not.toContain("Math.random")
+    expect(script).not.toContain("Date.now")
   })
 })

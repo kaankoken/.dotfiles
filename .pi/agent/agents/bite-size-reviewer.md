@@ -1,6 +1,6 @@
 ---
 name: bite-size-reviewer
-model: anthropic/claude-fable-5:max
+model: cursor/claude-opus-5@1m:max
 route: reviewer
 description: Size gate for bite-sized tasks. JSON only. Max 2 attempts (rewrite only on FAIL).
 tools: [bash, read]

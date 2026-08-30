@@ -143,15 +143,15 @@ Producers load `respond-review` **only** when applying `ok: false` blocking feed
 
 ## Model routes
 
-SoT: `~/.pi/agent/workflows/model-routes.json`. Failover: anthropic/openai-codex → cursor (`@1m` / `composer-2.5:fast`). Composer-2.5-fast → grok-4.6.
+SoT: `~/.pi/agent/workflows/model-routes.json`. No native anthropic (third-party extra-usage 400). Failover: openai-codex → cursor `@1m`; xai → xai-oauth → cursor. Fable/opus via cursor `@1m`.
 
 | Role | Chain |
 |------|--------|
-| Writers | sol:xhigh → opus-5:xhigh → grok-4.6 → composer |
-| Reviewers | fable-5:max → sol:max → opus-5 → sol:xhigh. **Max 3 rounds; first ok:true ends.** |
-| Judges | opus-5:max → sol:xhigh |
+| Writers | sol:xhigh → cursor opus@1m:xhigh → grok-4.6 → composer |
+| Reviewers | cursor opus@1m:max → sol:max → sol:xhigh. **Max 3 rounds; first ok:true ends.** |
+| Judges | cursor opus@1m:max → sol:xhigh |
 | Milestone | terra:max → grok-4.6:xhigh |
-| Scouts + harness research | grok-4.6:xhigh (deep-research) → terra:max |
+| Scouts + harness research | grok-4.6:xhigh → terra:max |
 
 ## Agent yields over 50 KiB (`agent://`)
 

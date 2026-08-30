@@ -1,6 +1,6 @@
 ---
 name: pdr-reviewer
-model: anthropic/claude-fable-5:max
+model: cursor/claude-opus-5@1m:max
 route: reviewer
 description: Gate PDR for /design. REVIEW-POLICY default PASS. JSON review result.
 tools: [bash, read]

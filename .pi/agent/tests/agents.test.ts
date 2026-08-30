@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test"
 import { readdirSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import { parseAgentDefinition } from "../npm/node_modules/@quintinshaw/pi-dynamic-workflows/src/agent-registry.ts"
-import { expandHop, loadRouteDoc } from "../workflows/model-routes.ts"
+import { loadRouteDoc } from "../workflows/model-routes.ts"
 
 const AGENTS_DIR = join(import.meta.dir, "../agents")
 const KNOWN_TOOLS = new Set([
@@ -58,7 +58,7 @@ describe("agent registry", () => {
     expect(def.tools).toEqual(["bash", "read", "replace", "insert", "write"])
   })
 
-  test("route matches model-routes.json first hop (pr-opus keeps xhigh)", () => {
+  test("route matches model-routes.json first hop", () => {
     for (const file of files) {
       const raw = readFileSync(join(AGENTS_DIR, file), "utf8")
       const def = parseAgentDefinition(raw, "user", file)!
@@ -67,23 +67,18 @@ describe("agent registry", () => {
       expect(chains[route!], file).toBeTruthy()
       const first = chains[route!]![0]!
       const pin = `${first.provider}/${first.modelId}:${first.effort}`
-      if (def.name === "pr-opus-reviewer") {
-        expect(def.model).toBe("anthropic/claude-opus-5:xhigh")
-      } else {
-        expect(def.model, file).toBe(pin)
-      }
+      expect(def.model, file).toBe(pin)
+      expect(def.model?.startsWith("anthropic/"), file).toBe(false)
     }
   })
 
-  test("anthropic fable hop failovers to cursor @1m", () => {
-    const hops = expandHop(
-      { provider: "anthropic", modelId: "claude-fable-5", effort: "max" },
-      doc,
-    )
-    expect(hops.map((h) => `${h.provider}/${h.modelId}:${h.effort}`)).toEqual([
-      "anthropic/claude-fable-5:max",
-      "cursor/claude-fable-5@1m:max",
-    ])
+  test("chains have no native anthropic hops", () => {
+    expect(doc.providerFailover?.anthropic).toBeUndefined()
+    for (const [name, hops] of Object.entries(chains)) {
+      for (const hop of hops) {
+        expect(hop.provider, name).not.toBe("anthropic")
+      }
+    }
   })
 
   test("bodies do not point at dead ~/.agents/ponytail or context7 enable", () => {

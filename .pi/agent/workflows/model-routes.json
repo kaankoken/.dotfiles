@@ -1,6 +1,5 @@
 {
   "providerFailover": {
-    "anthropic": ["anthropic", "cursor"],
     "openai": ["openai", "cursor"],
     "openai-codex": ["openai-codex", "cursor"],
     "xai": ["xai", "xai-oauth", "cursor"],
@@ -20,18 +19,17 @@
   "chains": {
     "writer": [
       { "provider": "openai-codex", "modelId": "gpt-5.6-sol", "effort": "xhigh" },
-      { "provider": "anthropic", "modelId": "claude-opus-5", "effort": "xhigh" },
+      { "provider": "cursor", "modelId": "claude-opus-5@1m", "effort": "xhigh" },
       { "provider": "xai", "modelId": "grok-4.6", "effort": "xhigh" },
       { "provider": "cursor", "modelId": "composer-2.5:fast", "effort": "high" }
     ],
     "reviewer": [
-      { "provider": "anthropic", "modelId": "claude-fable-5", "effort": "max" },
+      { "provider": "cursor", "modelId": "claude-opus-5@1m", "effort": "max" },
       { "provider": "openai-codex", "modelId": "gpt-5.6-sol", "effort": "max" },
-      { "provider": "anthropic", "modelId": "claude-opus-5", "effort": "max" },
       { "provider": "openai-codex", "modelId": "gpt-5.6-sol", "effort": "xhigh" }
     ],
     "judge": [
-      { "provider": "anthropic", "modelId": "claude-opus-5", "effort": "max" },
+      { "provider": "cursor", "modelId": "claude-opus-5@1m", "effort": "max" },
       { "provider": "openai-codex", "modelId": "gpt-5.6-sol", "effort": "xhigh" }
     ],
     "milestone": [
