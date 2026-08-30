@@ -29,7 +29,8 @@
     "npm:pi-web-access",
     "npm:pi-mcp-adapter",
     "npm:pi-caveman",
-    "npm:@dietrichgebert/ponytail"
+    "npm:@dietrichgebert/ponytail",
+    "npm:@narumitw/pi-goal"
   ],
   "lastChangelogVersion": "0.84.4",
   "theme": "rose-pine-moon",
