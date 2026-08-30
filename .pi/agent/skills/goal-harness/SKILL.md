@@ -143,7 +143,7 @@ Producers load `respond-review` **only** when applying `ok: false` blocking feed
 
 ## Model routes
 
-SoT: `~/.pi/agent/workflows/model-routes.json`. Provider failover: anthropic→cursor, openai-codex→cursor, composer-2.5-fast→grok-4.6.
+SoT: `~/.pi/agent/workflows/model-routes.json`. Failover: anthropic/openai-codex → cursor (`@1m` / `composer-2.5:fast`). Composer-2.5-fast → grok-4.6.
 
 | Role | Chain |
 |------|--------|

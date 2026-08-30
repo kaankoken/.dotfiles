@@ -1,6 +1,6 @@
 ---
 name: arc42-reviewer
-model: openai-codex/fable-5:max
+model: cursor/claude-fable-5@1m:max
 route: reviewer
 description: Gate Arc42 for /design against PDR. REVIEW-POLICY default PASS.
 tools: [bash, read, search]

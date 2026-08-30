@@ -1,6 +1,6 @@
 ---
 name: plan-reviewer
-model: openai-codex/fable-5:max
+model: cursor/claude-fable-5@1m:max
 route: reviewer
 description: Review implementation plan for ordering, size, risks, testability. JSON only.
 tools: [bash, read, search]

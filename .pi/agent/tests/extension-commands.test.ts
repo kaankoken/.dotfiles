@@ -234,6 +234,31 @@ describe("goal-harness handler start messages", () => {
     expect(userMessages).toHaveLength(1)
   })
 
+  test("/harness falls back to Cursor Terra @1m when native Codex is unavailable", async () => {
+    const {
+      pi,
+      commands,
+      userMessages,
+      notifications,
+      selectedModels,
+      thinkingLevels,
+      ctx,
+    } = createFakePi({
+      models: [{ provider: "cursor", id: "gpt-5.6-terra@1m" }],
+    })
+    goalHarness(pi)
+
+    await commands.get("harness")!.handler("cursor fallback", ctx)
+
+    expect(selectedModels).toEqual([{ provider: "cursor", id: "gpt-5.6-terra@1m" }])
+    expect(thinkingLevels).toEqual(["max"])
+    expect(notifications).toContainEqual({
+      message: "Harness research route: cursor/gpt-5.6-terra@1m:max",
+      kind: "info",
+    })
+    expect(userMessages).toHaveLength(1)
+  })
+
   test("/harness stops when no authenticated research route exists", async () => {
     const { pi, commands, userMessages, notifications, ctx } = createFakePi({
       models: [],

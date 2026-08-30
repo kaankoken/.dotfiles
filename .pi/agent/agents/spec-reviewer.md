@@ -1,6 +1,6 @@
 ---
 name: spec-reviewer
-model: openai-codex/fable-5:max
+model: cursor/claude-fable-5@1m:max
 route: reviewer
 description: Adversarial review of design/spec. Returns JSON only. Different agent from spec-writer.
 tools: [bash, read, search]

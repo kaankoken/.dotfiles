@@ -1,6 +1,6 @@
 ---
 name: code-reviewer
-model: openai-codex/fable-5:max
+model: cursor/claude-fable-5@1m:max
 route: reviewer
 description: Multi-angle code review — correctness, tests, ponytail, stack. JSON review result.
 tools: [bash, read, search]

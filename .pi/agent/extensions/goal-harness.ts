@@ -52,19 +52,33 @@ type ModelHop = { provider: string; modelId: string; effort: string }
 
 type RouteDoc = {
   providerFailover?: Record<string, string[]>
+  cursorModelIds?: Record<string, string>
   composerThen?: ModelHop
   chains?: Record<string, ModelHop[]>
+}
+
+function remapModelId(provider: string, modelId: string, doc: RouteDoc): string {
+  if (provider !== "cursor") return modelId
+  return doc.cursorModelIds?.[modelId] ?? modelId
 }
 
 function expandHop(hop: ModelHop, doc: RouteDoc): ModelHop[] {
   const map = doc.providerFailover ?? {}
   const providers = map[hop.provider] ?? [hop.provider]
-  const out: ModelHop[] = providers.map((provider) => ({ ...hop, provider }))
-  const composer = hop.provider === "cursor" && hop.modelId.includes("composer")
+  const out: ModelHop[] = providers.map((provider) => ({
+    ...hop,
+    provider,
+    modelId: remapModelId(provider, hop.modelId, doc),
+  }))
+  const composer = hop.modelId.includes("composer")
   if (composer && doc.composerThen) {
     const thenProviders = map[doc.composerThen.provider] ?? [doc.composerThen.provider]
     for (const provider of thenProviders) {
-      out.push({ ...doc.composerThen, provider })
+      out.push({
+        ...doc.composerThen,
+        provider,
+        modelId: remapModelId(provider, doc.composerThen.modelId, doc),
+      })
     }
   }
   return out
@@ -81,7 +95,7 @@ function loadChain(name: string): ModelHop[] {
       { provider: "xai", modelId: "grok-4.6", effort: "xhigh" },
       { provider: "xai-oauth", modelId: "grok-4.6", effort: "xhigh" },
       { provider: "openai-codex", modelId: "gpt-5.6-terra", effort: "max" },
-      { provider: "cursor", modelId: "gpt-5.6-terra", effort: "max" },
+      { provider: "cursor", modelId: "gpt-5.6-terra@1m", effort: "max" },
     ]
   }
 }
