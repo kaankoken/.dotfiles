@@ -1,6 +1,8 @@
 {
   "trustedformulae": [
-    "aovestdipaperino/tap/tokensave"
+    "aovestdipaperino/tap/tokensave",
+    "hashicorp/tap/terraform",
+    "mhersson/formulas/mpls"
   ],
   "trustedcasks": [
     "nikitabobko/tap/aerospace"

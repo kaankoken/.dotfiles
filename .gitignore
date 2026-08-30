@@ -10,6 +10,7 @@
 /.pi/agent/cursor-sdk-model-list.json
 /.pi/agent/models-store.json
 /.pi/agent/mcp-cache.json
+/.config/pi/web-search-cache
 
 # SSH — deny by default so private keys can never be added
 /.ssh/*
@@ -18,3 +19,6 @@
 # History
 *.sqlite3*
 *.sqlite*
+
+# Helix
+/.config/helix/runtime/
