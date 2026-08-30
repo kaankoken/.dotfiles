@@ -13,6 +13,9 @@
 /.config/pi/web-search-cache
 /specs/
 
+# gh — per-machine accounts (auth switch dirties this)
+/.config/gh/hosts.yml
+
 
 # SSH — deny by default so private keys can never be added
 /.ssh/*
