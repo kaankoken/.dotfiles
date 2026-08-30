@@ -34,7 +34,8 @@
     "npm:pi-mcp-adapter",
     "npm:pi-caveman",
     "npm:@dietrichgebert/ponytail",
-    "npm:@narumitw/pi-goal"
+    "npm:@narumitw/pi-goal",
+    "npm:pi-cursor-sdk"
   ],
   "lastChangelogVersion": "0.84.4",
   "theme": "rose-pine-moon",
