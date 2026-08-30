@@ -13,7 +13,7 @@
     "adjudications": {
       "type": "array",
       "minItems": 0,
-      "maxItems": 200,
+      "maxItems": 300,
       "items": {
         "anyOf": [
           {
@@ -24,11 +24,11 @@
                 "minItems": 1,
                 "maxItems": 200,
                 "uniqueItems": true,
-                "items": { "type": "string", "minLength": 3, "maxLength": 134, "pattern": "^(grok|sol):[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" }
+                "items": { "type": "string", "minLength": 3, "maxLength": 134, "pattern": "^(grok|sol|opus):[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" }
               },
               "decision": { "enum": ["accept", "request_changes"] },
               "rationale": { "type": "string", "minLength": 1, "maxLength": 8192 },
-              "anchor_source_finding_id": { "type": "string", "minLength": 3, "maxLength": 134, "pattern": "^(grok|sol):[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+              "anchor_source_finding_id": { "type": "string", "minLength": 3, "maxLength": 134, "pattern": "^(grok|sol|opus):[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
               "body": { "type": "string", "minLength": 1, "maxLength": 65536 }
             },
             "required": ["source_finding_ids", "decision", "rationale", "anchor_source_finding_id", "body"],
@@ -42,7 +42,7 @@
                 "minItems": 1,
                 "maxItems": 200,
                 "uniqueItems": true,
-                "items": { "type": "string", "minLength": 3, "maxLength": 134, "pattern": "^(grok|sol):[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" }
+                "items": { "type": "string", "minLength": 3, "maxLength": 134, "pattern": "^(grok|sol|opus):[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" }
               },
               "decision": { "const": "reject" },
               "rationale": { "type": "string", "minLength": 1, "maxLength": 8192 }

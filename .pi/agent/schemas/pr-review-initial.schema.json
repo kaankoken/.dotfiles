@@ -5,7 +5,7 @@
   "type": "object",
   "properties": {
     "schema_version": { "const": 1 },
-    "reviewer": { "enum": ["grok", "sol"] },
+    "reviewer": { "enum": ["grok", "sol", "opus"] },
     "run_nonce": { "type": "string", "minLength": 32, "maxLength": 256 },
     "snapshot_nonce": { "type": "string", "minLength": 32, "maxLength": 256 },
     "call_nonce": { "type": "string", "minLength": 32, "maxLength": 256 },

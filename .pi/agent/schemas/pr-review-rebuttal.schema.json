@@ -5,7 +5,7 @@
   "type": "object",
   "properties": {
     "schema_version": { "const": 1 },
-    "reviewer": { "enum": ["grok", "sol"] },
+    "reviewer": { "enum": ["grok", "sol", "opus"] },
     "run_nonce": { "type": "string", "minLength": 32, "maxLength": 256 },
     "snapshot_nonce": { "type": "string", "minLength": 32, "maxLength": 256 },
     "call_nonce": { "type": "string", "minLength": 32, "maxLength": 256 },
@@ -14,13 +14,13 @@
     "responses": {
       "type": "array",
       "minItems": 0,
-      "maxItems": 100,
+      "maxItems": 200,
       "items": {
         "anyOf": [
           {
             "type": "object",
             "properties": {
-              "peer_finding_id": { "type": "string", "minLength": 3, "maxLength": 134, "pattern": "^(grok|sol):[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+              "peer_finding_id": { "type": "string", "minLength": 3, "maxLength": 134, "pattern": "^(grok|sol|opus):[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
               "stance": { "enum": ["support", "oppose"] },
               "rationale": { "type": "string", "minLength": 1, "maxLength": 8192 }
             },
@@ -30,7 +30,7 @@
           {
             "type": "object",
             "properties": {
-              "peer_finding_id": { "type": "string", "minLength": 3, "maxLength": 134, "pattern": "^(grok|sol):[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+              "peer_finding_id": { "type": "string", "minLength": 3, "maxLength": 134, "pattern": "^(grok|sol|opus):[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
               "stance": { "const": "refine" },
               "rationale": { "type": "string", "minLength": 1, "maxLength": 8192 },
               "replacement_body": { "type": "string", "minLength": 1, "maxLength": 65536 }
@@ -41,7 +41,7 @@
           {
             "type": "object",
             "properties": {
-              "peer_finding_id": { "type": "string", "minLength": 3, "maxLength": 134, "pattern": "^(grok|sol):[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
+              "peer_finding_id": { "type": "string", "minLength": 3, "maxLength": 134, "pattern": "^(grok|sol|opus):[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" },
               "stance": { "const": "refine" },
               "rationale": { "type": "string", "minLength": 1, "maxLength": 8192 }
             },
@@ -56,7 +56,7 @@
       "minItems": 0,
       "maxItems": 100,
       "uniqueItems": true,
-      "items": { "type": "string", "minLength": 3, "maxLength": 134, "pattern": "^(grok|sol):[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" }
+      "items": { "type": "string", "minLength": 3, "maxLength": 134, "pattern": "^(grok|sol|opus):[A-Za-z0-9][A-Za-z0-9._-]{0,127}$" }
     }
   },
   "required": ["schema_version", "reviewer", "run_nonce", "snapshot_nonce", "call_nonce", "head_sha", "diff_digest", "responses", "withdrawn_own_ids"],

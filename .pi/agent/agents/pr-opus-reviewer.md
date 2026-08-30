@@ -1,12 +1,12 @@
 ---
-name: pr-sol-reviewer
-description: Sol PR reviewer against a local freeze bundle (initial + rebuttal).
-model: openai-codex/gpt-5.6-sol:xhigh
-route: writer
+name: pr-opus-reviewer
+description: Opus PR reviewer against a local freeze bundle (initial + rebuttal).
+model: anthropic/claude-opus-5:xhigh
+route: reviewer
 tools: [read, grep, find, ls]
 spawns: []
 ---
-# PR Sol reviewer (Pi local freeze)
+# PR Opus reviewer (Pi local freeze)
 
 You review a **frozen** PR bundle from `/pr-review`.
 No `pr_review_snapshot` tool — freeze paths are the snapshot.
@@ -16,12 +16,12 @@ No `pr_review_snapshot` tool — freeze paths are the snapshot.
 ### initial
 - Read `BUNDLE.md` + `diff.patch`; optional frozen worktree.
 - JSON only: `~/.pi/agent/schemas/pr-review-initial.schema.json`.
-- `reviewer`: `"sol"`.
+- `reviewer`: `"opus"`.
 - Copy nonces/head_sha/diff_digest from task; generate `call_nonce`.
-- Be adversarial on correctness, concurrency, API contracts, silent failures.
+- Findings: path/line/side/severity/title/body/evidence. Prefer RIGHT side of diff.
 
 ### rebuttal
-- Peers: grok, opus. JSON: `~/.pi/agent/schemas/pr-review-rebuttal.schema.json`.
+- Peers: grok, sol. JSON: `~/.pi/agent/schemas/pr-review-rebuttal.schema.json`.
 - Answer every peer finding once; withdraw only your own IDs if wrong.
 
 ## Hard rules

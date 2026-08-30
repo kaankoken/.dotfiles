@@ -126,8 +126,36 @@ describe("local extension slash command registration", () => {
     expect(goal.commands.has("pr-reviewer")).toBe(false)
     expect(pr.commands.has("pr-review")).toBe(true)
     expect(pr.commands.has("pr-reviewer")).toBe(true)
-    expect(pr.commands.get("pr-review")?.description ?? "").toMatch(/Grok\+Sol\+Terra|local worktree freeze/i)
+    expect(pr.commands.get("pr-review")?.description ?? "").toMatch(/Grok\+Sol\+Opus\+Terra/)
     expect(pr.commands.get("pr-reviewer")?.handler).toBe(pr.commands.get("pr-review")?.handler)
+  })
+
+  test("opus reviewer is wired into freeze schemas and agent file", async () => {
+    const { pi, commands } = createFakePi()
+    prReviewer(pi)
+    expect(commands.get("pr-review")?.description ?? "").toMatch(/Opus/)
+    const initial = (await Bun.file(
+      new URL("../schemas/pr-review-initial.schema.json", import.meta.url),
+    ).json()) as { properties: { reviewer: { enum: string[] } } }
+    expect(initial.properties.reviewer.enum).toEqual(["grok", "sol", "opus"])
+    const rebuttal = (await Bun.file(
+      new URL("../schemas/pr-review-rebuttal.schema.json", import.meta.url),
+    ).json()) as { properties: { responses: { maxItems: number } } }
+    const judge = (await Bun.file(
+      new URL("../schemas/pr-review-judge.schema.json", import.meta.url),
+    ).json()) as { properties: { adjudications: { maxItems: number } } }
+    expect(rebuttal.properties.responses.maxItems).toBe(200)
+    expect(judge.properties.adjudications.maxItems).toBe(300)
+    expect(JSON.stringify(rebuttal)).toContain("grok|sol|opus")
+    expect(JSON.stringify(judge)).toContain("grok|sol|opus")
+    const md = await Bun.file(new URL("../agents/pr-opus-reviewer.md", import.meta.url)).text()
+    expect(md).toMatch(/^name: pr-opus-reviewer$/m)
+    expect(md).toContain("anthropic/claude-opus-5:xhigh")
+    expect(md).toContain("freeze paths + worktree")
+    const ext = await Bun.file(new URL("../extensions/pr-reviewer.ts", import.meta.url)).text()
+    expect(ext).toContain("pr-opus-reviewer")
+    expect(ext).toContain("opus-initial.json")
+    expect(ext).toContain("own initial JSON plus the other two peer JSONs")
   })
 
   test("combined local extensions never register duplicate slash names", () => {

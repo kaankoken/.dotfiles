@@ -176,7 +176,7 @@ create their own worktree (`kickoff-branch` consumes assignment only).
 | `/init` | Scaffold only → `project-init` |
 | `/design` | Design-flow only (not full implement) |
 | `/code-review` | Owned by dynamic-workflows (local/diff) |
-| `/pr-reviewer` | Local Pi freeze (Grok+Sol reviewers, Terra judge) |
+| `/pr-review` | Local Pi freeze (Grok+Sol+Opus reviewers, Terra judge) |
 | `/goal`, `/guided-goal` | **Native Pi** — do not override |
 
 ## Chain

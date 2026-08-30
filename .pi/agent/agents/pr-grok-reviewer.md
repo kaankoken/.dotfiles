@@ -1,6 +1,6 @@
 ---
 name: pr-grok-reviewer
-description: Grok dual PR reviewer against a local freeze bundle (initial + rebuttal).
+description: Grok PR reviewer against a local freeze bundle (initial + rebuttal).
 model: xai/grok-4.6:xhigh
 route: scout
 tools: [read, grep, find, ls]
@@ -22,7 +22,7 @@ No `pr_review_snapshot` tool — freeze paths in the task are the snapshot.
 - Findings: path/line/side/severity/title/body/evidence. Prefer RIGHT side of diff.
 
 ### rebuttal
-- Inputs: your initial JSON + peer (sol) initial JSON only.
+- Inputs: your initial JSON + peer initials (sol, opus) only.
 - Answer every peer finding once; withdraw only your own IDs if wrong.
 - JSON only per `~/.pi/agent/schemas/pr-review-rebuttal.schema.json`.
 
@@ -36,4 +36,4 @@ No `pr_review_snapshot` tool — freeze paths in the task are the snapshot.
 
 - `~/.pi/agent/npm/node_modules/bigpowers/skills/security-review/SKILL.md` (`security-review`)
 - `~/.pi/agent/npm/node_modules/bigpowers/skills/audit-code/SKILL.md` (`audit-code`)
-- `~/.agents/skills/ponytail-review/SKILL.md`
+- `~/.pi/agent/npm/node_modules/@dietrichgebert/ponytail/skills/ponytail-review/SKILL.md`

@@ -9,7 +9,7 @@ Upstream **Pi** host (`pi` / [pi.dev](https://pi.dev)).
 - **Live:** `~/.pi/agent/` is the same directory: `~/.pi` is a stow tree-fold symlink to `~/.dotfiles/.pi`.
 - **Apply:** edits are live immediately. Clean-machine setup is `stow .` + two symlinks — see [README](README.md#clean-machine-order).
 - **Runtime state** (gitignored, never edit as config): `auth.json`, `sessions/`, `npm/`, `git/`, `mcp-cache.json`, `bin/{fd,rg}`.
-- **OMP:** emergency only for hard SessionManager gates / shake / collab — **no OMP tree symlinks**. Behavioral Pi flow (harness, design, local dual PR freeze) is complete on Pi.
+- **OMP:** emergency only for hard SessionManager gates / shake / collab — **no OMP tree symlinks**. Behavioral Pi flow (harness, design, local PR freeze) is complete on Pi.
 
 ## Non-negotiables
 
@@ -45,10 +45,10 @@ non-negotiables above. The ADR and design-plan documents are not in this repo.
 | `npm:bigpowers@2.87.5` | methodology skills (replaces Superpowers) |
 | `extensions/rtk.ts` | RTK bash rewrite |
 | `extensions/goal-harness.ts` | exact `/harness` `/design` `/architect` `/architect-layered` `/init` |
-| `extensions/pr-reviewer.ts` | exact `/pr-reviewer` local freeze dual review (Grok+Sol+Terra) |
+| `extensions/pr-reviewer.ts` | exact `/pr-review` local freeze review (Grok+Sol+Opus+Terra) |
 | `npm:pi-cursor-sdk` | Cursor bridge (`/cursor-*`); unpinned so it tracks the Cursor host |
 
-Docs: [hashline](https://pi.dev/packages/pi-hashline-edit-pro?name=read) · [background-tasks](https://pi.dev/packages/pi-background-tasks?name=read) · [bigpowers](https://pi.dev/packages/bigpowers)
+Docs: [hashline](https://pi.dev/packages/pi-hashline-edit-pro?name=read) · [background-tasks](https://pi.dev/packages/pi-background-tasks?name=read) · [bigpowers]
 
 Model tiers: `~/.pi/workflows/model-tiers.json`.
 
@@ -60,13 +60,14 @@ Harness path-loads the same files for soft `/harness` / `/design`. Exact `/code-
 
 Policy (not an agent): `~/.pi/agent/policy/REVIEW-POLICY.md`
 
-PR dual-review roles on Pi (local freeze, not OMP snapshot tools):
+PR review roles on Pi (local freeze, not OMP snapshot tools):
 
 | agentType | model pin | role |
 |-----------|-----------|------|
-| `pr-grok-reviewer` | `xai/grok-4.6:high` | initial + rebuttal |
+| `pr-grok-reviewer` | `xai/grok-4.6:xhigh` | initial + rebuttal |
 | `pr-sol-reviewer` | `openai-codex/gpt-5.6-sol:xhigh` | initial + rebuttal |
-| `pr-terra-judge` | `openai-codex/gpt-5.6-terra:max` | sole adjudication |
+| `pr-opus-reviewer` | `anthropic/claude-opus-5:xhigh` | initial + rebuttal |
+| `pr-terra-judge` | `cursor/claude-opus-5@1m:max` | sole adjudication |
 
 ## Commands
 
@@ -77,7 +78,7 @@ PR dual-review roles on Pi (local freeze, not OMP snapshot tools):
 | `/architect` / `/architect-layered` | In-session architecture consult |
 | `/init` | AGENTS/bd scaffold only |
 | `/code-review` | Local/diff multi-angle — **dynamic-workflows** exact command (not goal-harness) |
-| `/pr-reviewer` | Local freeze dual review (Grok+Sol+Terra); single publish; immutable freeze |
+| `/pr-review` | Local freeze review (Grok+Sol+Opus+Terra); single publish; immutable freeze |
 | `/workflows …` | dynamic-workflows |
 | `/bg` `/jobs` `/logs` `/fusion` | background-tasks |
 

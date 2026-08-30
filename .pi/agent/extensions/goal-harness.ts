@@ -221,7 +221,7 @@ function buildHarnessStart(goal: string, usedDefault: boolean, cwd: string): str
     `   - ${BIGPOWERS}/commit-message/SKILL.md`,
     `   - ${BIGPOWERS}/release-branch/SKILL.md`,
     `   - ${PI_AGENTS}/pr-opener.md` + " (`gh`).",
-    "   Dual GitHub PR review on Pi: exact `/pr-reviewer` (local freeze, Grok+Sol+Terra).",
+    "   GitHub PR review on Pi: exact `/pr-review` (local freeze, Grok+Sol+Opus+Terra).",
     "   Local/diff multi-angle (not GitHub dual): exact `/code-review` (dynamic-workflows).",
     "",
     "### Bug lane (when goal is a bug)",

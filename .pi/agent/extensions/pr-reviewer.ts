@@ -1,12 +1,12 @@
 /**
- * Pi dual PR reviewer — local git freeze (no OMP pr_review_snapshot).
+ * Pi PR reviewer — local git freeze (no OMP pr_review_snapshot).
  *
  * /pr-review (alias /pr-reviewer) <PR-URL | owner/repo#n | n> [--dry-run] [--publish]
  *
  * 1. Resolve target via gh
  * 2. Worktree checkout of PR head SHA
  * 3. Write immutable bundle under .pi/pr-review/<n>/<sha>/
- * 4. Kick controller turn: Grok + Sol in parallel (DW agentType), then Terra judge
+ * 4. Kick controller turn: Grok + Sol + Opus in parallel (DW agentType), then Terra judge
  * 5. Optional COMMENT publish if --publish and head still matches
  *
  * Review evidence SoT is bd, not a markdown board.
@@ -444,19 +444,20 @@ function buildControllerMessage(opts: {
     `- bundle_dir: ${freeze.bundleDir}`,
     "",
     "## Your job (controller)",
-    "You orchestrate dual PR review using **local freeze** (immutable bundle; single publish).",
-    "",
+    "You orchestrate PR review using **local freeze** (immutable bundle; single publish).",
+
     "### Hard rules",
     "1. Reviewers must read **only** the freeze paths above. No fresh `gh pr diff`.",
     "2. Prefer dynamic-workflows:",
     "   - `agent(prompt, { agentType: 'pr-grok-reviewer' })`",
     "   - `agent(prompt, { agentType: 'pr-sol-reviewer' })`",
+    "   - `agent(prompt, { agentType: 'pr-opus-reviewer' })`",
     "   - then `agent(prompt, { agentType: 'pr-terra-judge' })`",
-    "   Or `/workflows run …` with the same agentTypes. Parallelize Grok+Sol.",
+    "   Or `/workflows run …` with the same agentTypes. Parallelize Grok+Sol+Opus.",
     "3. If DW unavailable, path-load agent md under `~/.pi/agent/agents/` and run sequential reviews yourself with the same prompts — still no live re-fetch.",
     "4. Each reviewer output = **JSON only** (schemas below). Save under bundle_dir:",
-    "   - `grok-initial.json`, `sol-initial.json`",
-    "   - `grok-rebuttal.json`, `sol-rebuttal.json` (optional if timeboxed — may skip rebuttal if both initials empty findings)",
+    "   - `grok-initial.json`, `sol-initial.json`, `opus-initial.json`",
+    "   - `grok-rebuttal.json`, `sol-rebuttal.json`, `opus-rebuttal.json` (optional if timeboxed — may skip rebuttal if all initials empty findings)",
     "   - `judge.json`",
     "5. Fill nonce fields from RUN_NONCE / FREEZE_NONCE; head_sha and diff_digest from freeze.",
     "6. Do **not** publish with gh unless PUBLISH is true. If PUBLISH:",
@@ -468,15 +469,15 @@ function buildControllerMessage(opts: {
     dryRun
       ? "9. DRY_RUN=true: skip worktree already skipped; still produce reviews from diff file; never publish."
       : "9. After finish, you may `git worktree remove --force` the worktree path if still present.",
-    "",
+
     "### Schemas",
-    `- initial: ${schemaInitial} (reviewer: grok|sol)`,
+    `- initial: ${schemaInitial} (reviewer: grok|sol|opus)`,
     `- rebuttal: ${schemaRebuttal}`,
     `- judge: ${schemaJudge}`,
-    "",
-    "### Initial review prompt template (give each of Grok and Sol)",
+
+    "### Initial review prompt template (give each of Grok, Sol, Opus)",
     "```",
-    `You are the dual PR reviewer agentType. Stage=initial.`,
+    `You are the PR reviewer agentType. Stage=initial.`,
     `Read bundle: ${freeze.bundlePath}`,
     `Read full diff: ${freeze.diffPath}`,
     freeze.worktreePath
@@ -487,22 +488,22 @@ function buildControllerMessage(opts: {
     `call_nonce=<generate 32 hex>`,
     `head_sha=${pr.headSha}`,
     `diff_digest=${freeze.diffDigest}`,
-    `Emit JSON only per ${schemaInitial}. reviewer field must match your role (grok or sol).`,
+    `Emit JSON only per ${schemaInitial}. reviewer field must match your role (grok, sol, or opus).`,
     "```",
-    "",
-    "### Rebuttal (after both initials exist)",
-    "Each reviewer gets peer JSON only (not full re-review). JSON per rebuttal schema.",
-    "",
+
+    "### Rebuttal (after all initials exist)",
+    "Each reviewer gets own initial JSON plus the other two peer JSONs (not full re-review). JSON per rebuttal schema.",
+
     "### Judge",
-    "Terra judge reads both initials + rebuttals + bundle. JSON per judge schema. Do not invent anchors.",
-    "",
-    "Start now: confirm freeze files exist, then run Grok+Sol initials in parallel.",
+    "Terra judge reads all initials + rebuttals + bundle. JSON per judge schema. Do not invent anchors.",
+
+    "Start now: confirm freeze files exist, then run Grok+Sol+Opus initials in parallel.",
   ].join("\n")
 }
 
 export default function (pi: ExtensionAPI) {
   const prReviewCommand = {
-    description: USAGE + " — local worktree freeze dual review (Grok+Sol+Terra)",
+    description: USAGE + " — local worktree freeze review (Grok+Sol+Opus+Terra)",
     handler: async (args: string, ctx: {
       cwd?: string
       isIdle: () => boolean
