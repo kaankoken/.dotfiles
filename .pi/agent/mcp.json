@@ -4,6 +4,10 @@
       "command": "/opt/homebrew/bin/tokensave",
       "args": ["serve"],
       "lifecycle": "keep-alive"
+    },
+    "atlassian": {
+      "url": "https://mcp.atlassian.com/v1/mcp/authv2",
+      "auth": "oauth"
     }
   }
 }
