@@ -17,6 +17,10 @@ rulers = [100]
 end-of-line-diagnostics = "hint"
 # OSC-52 so yank works over SSH / Zellij → Ghostty (same idea as nvim polish.lua)
 clipboard-provider = "pasteboard"
+trim-trailing-whitespace = true
+
+[editor.auto-save]
+focus-lost = true
 
 [editor.cursor-shape]
 insert = "bar"
