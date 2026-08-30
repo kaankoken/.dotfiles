@@ -15,8 +15,9 @@ true-color = true
 undercurl = true
 rulers = [100]
 end-of-line-diagnostics = "hint"
-# OSC-52 so yank works over SSH / Zellij → Ghostty (same idea as nvim polish.lua)
+# `p`/`y` use macOS clipboard (nvim unnamedplus). pasteboard = pbcopy/pbpaste.
 clipboard-provider = "pasteboard"
+default-yank-register = "+"
 trim-trailing-whitespace = true
 
 [editor.auto-save]
