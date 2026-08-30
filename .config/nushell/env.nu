@@ -1,8 +1,8 @@
 $env.XDG_CONFIG_HOME = $"($env.HOME)/.config"
 
 let managed_paths = ([
-    "/opt/homebrew/bin"
     $"($env.HOME)/.bin"
+    "/opt/homebrew/bin"
     $"($env.HOME)/.bun/bin"
     $"($env.HOME)/.cargo/bin"
     $"($env.HOME)/.atuin/bin"

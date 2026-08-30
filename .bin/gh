@@ -1,0 +1,118 @@
+#!/bin/sh
+# kaaninspace → GitHub CLI read-only. Write: gh auth switch --user kaankoken
+REAL=/opt/homebrew/bin/gh
+RO=kaaninspace
+
+if [ ! -x "$REAL" ]; then
+  echo "gh: missing $REAL" >&2
+  exit 127
+fi
+
+active=$(awk '/^    user:/{print $2; exit}' "${GH_CONFIG_DIR:-$HOME/.config/gh}/hosts.yml" 2>/dev/null || true)
+if [ "$active" != "$RO" ]; then
+  exec "$REAL" "$@"
+fi
+
+cmd=
+sub=
+skip=0
+for a in "$@"; do
+  if [ "$skip" = 1 ]; then
+    skip=0
+    continue
+  fi
+  case $a in
+    -R|--repo|--hostname|-X|--method)
+      skip=1
+      continue
+      ;;
+    --repo=*|--hostname=*|-R=*|--method=*|-X?*)
+      continue
+      ;;
+    -h|--help|--version)
+      exec "$REAL" "$@"
+      ;;
+    -*)
+      continue
+      ;;
+    *)
+      if [ -z "$cmd" ]; then
+        cmd=$a
+      elif [ -z "$sub" ]; then
+        sub=$a
+      fi
+      ;;
+  esac
+done
+
+[ -z "$cmd" ] && exec "$REAL" "$@"
+
+deny() {
+  echo "gh: $RO is read-only (blocked \`$cmd${sub:+ $sub}\`). gh auth switch --user kaankoken" >&2
+  exit 1
+}
+
+if [ "$cmd" = api ]; then
+  method=GET
+  graphql=0
+  mutation=0
+  prev=
+  for a in "$@"; do
+    if [ "$prev" = -X ] || [ "$prev" = --method ]; then
+      method=$a
+      prev=
+      continue
+    fi
+    case $a in
+      graphql) graphql=1 ;;
+      -X?*) method=${a#-X} ;;
+      --method=*) method=${a#--method=} ;;
+      *mutation*|*Mutation*) mutation=1 ;;
+    esac
+    prev=$a
+  done
+  if [ "$graphql" = 1 ]; then
+    [ "$mutation" = 1 ] && deny
+    exec "$REAL" "$@"
+  fi
+  case $method in
+    GET|HEAD|get|head) exec "$REAL" "$@" ;;
+    *) deny ;;
+  esac
+fi
+
+case $cmd in
+  auth|config|alias|completion|browse|status|search|licenses|help|extension|co)
+    exec "$REAL" "$@"
+    ;;
+esac
+
+case ${cmd}/${sub:-} in
+  pr/|pr/list|pr/view|pr/status|pr/checks|pr/diff|pr/files|pr/checkout|\
+  issue/|issue/list|issue/view|issue/status|\
+  repo/|repo/list|repo/view|repo/clone|repo/gitignore|\
+  gist/|gist/list|gist/view|gist/clone|\
+  org/|org/list|\
+  run/|run/list|run/view|run/watch|\
+  workflow/|workflow/list|workflow/view|\
+  release/|release/list|release/view|release/download|\
+  cache/|cache/list|\
+  secret/|secret/list|\
+  variable/|variable/list|\
+  label/|label/list|\
+  project/|project/list|project/view|\
+  ssh-key/|ssh-key/list|\
+  gpg-key/|gpg-key/list|\
+  discussion/|discussion/list|discussion/view|\
+  ruleset/|ruleset/list|ruleset/view|ruleset/check|\
+  attestation/|attestation/verify|attestation/download|\
+  codespace/|codespace/list|codespace/view|codespace/logs|\
+  stack/|stack/view|stack/checkout|stack/up|stack/down|stack/top|stack/bottom|stack/trunk|\
+  skill/|skill/list|\
+  agent-task/|agent-task/list|agent-task/view)
+    exec "$REAL" "$@"
+    ;;
+  *)
+    deny
+    ;;
+esac
