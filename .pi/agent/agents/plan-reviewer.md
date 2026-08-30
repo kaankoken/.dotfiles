@@ -1,6 +1,6 @@
 ---
 name: plan-reviewer
-model: xai/grok-4.5:high
+model: xai/grok-4.6:high
 description: Review implementation plan for ordering, size, risks, testability. JSON only.
 tools: [bash, read, search]
 spawns: []

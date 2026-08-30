@@ -146,9 +146,9 @@ Producers load `respond-review` **only** when applying `ok: false` blocking feed
 
 | Role | Chain preference | Effort |
 |------|------------------|--------|
-| Spec/plan/bite/milestone | sol → terra → opus (live routes in agent frontmatter) | ultra/max |
-| Implement | grok 4.5 → sol high → sonnet | high |
-| Scouts | medium / grok high when used | — |
+| Spec/plan/bite/milestone | sol → terra (frontmatter) | ultra/max |
+| Implement | grok 4.6 → sol high | high |
+| Scouts / reviewers | grok 4.6 high (code-reviewer xhigh) | — |
 
 ## Agent yields over 50 KiB (`agent://`)
 

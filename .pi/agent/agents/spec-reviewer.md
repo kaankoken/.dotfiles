@@ -1,6 +1,6 @@
 ---
 name: spec-reviewer
-model: xai/grok-4.5:high
+model: xai/grok-4.6:high
 description: Adversarial review of design/spec. Returns JSON only. Different agent from spec-writer.
 tools: [bash, read, search]
 spawns: []

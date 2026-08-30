@@ -1,6 +1,6 @@
 ---
 name: intent-router
-model: xai/grok-4.5:high
+model: xai/grok-4.6:high
 description: Optional freeform intent classifier spawn. Thin; prefers session skill path.
 tools: [bash, read, search]
 spawns: []

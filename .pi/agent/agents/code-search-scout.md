@@ -1,6 +1,6 @@
 ---
 name: code-search-scout
-model: xai/grok-4.5:high
+model: xai/grok-4.6:high
 description: Narrow research — AST/symbol/pattern search via sg and rg. Read-mostly.
 tools: [bash, read, search]
 spawns: []

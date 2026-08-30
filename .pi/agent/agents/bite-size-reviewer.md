@@ -1,6 +1,6 @@
 ---
 name: bite-size-reviewer
-model: xai/grok-4.5:high
+model: xai/grok-4.6:high
 description: Size gate for bite-sized tasks. JSON only. Max 2 attempts (rewrite only on FAIL).
 tools: [bash, read, search]
 spawns: []

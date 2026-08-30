@@ -64,7 +64,7 @@ PR dual-review roles on Pi (local freeze, not OMP snapshot tools):
 
 | agentType | model pin | role |
 |-----------|-----------|------|
-| `pr-grok-reviewer` | `xai/grok-4.5:high` | initial + rebuttal |
+| `pr-grok-reviewer` | `xai/grok-4.6:high` | initial + rebuttal |
 | `pr-sol-reviewer` | `openai-codex/gpt-5.6-sol:xhigh` | initial + rebuttal |
 | `pr-terra-judge` | `openai-codex/gpt-5.6-terra:max` | sole adjudication |
 

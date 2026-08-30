@@ -1,6 +1,6 @@
 ---
 name: docs-scout
-model: xai/grok-4.5:high
+model: xai/grok-4.6:high
 description: Narrow research — library/API truth via context7 (and web if needed). Read-mostly.
 tools: [bash, read, search, web_search]
 spawns: []

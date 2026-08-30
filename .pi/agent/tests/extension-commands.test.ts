@@ -32,7 +32,7 @@ function createFakePi(options: FakePiOptions = {}) {
   const userMessages: string[] = []
   const notifications: Array<{ message: string; kind?: string }> = []
   const availableModels = options.models ?? [
-    { provider: "xai", id: "grok-4.5" },
+    { provider: "xai", id: "grok-4.6" },
     { provider: "openai-codex", id: "gpt-5.6-sol" },
   ]
   const selectedModels: FakeModel[] = []
@@ -156,11 +156,11 @@ describe("goal-harness handler start messages", () => {
     await commands.get("harness")!.handler("", ctx)
 
     expect(notifications.some((n) => /default 8 quality/i.test(n.message))).toBe(true)
-    expect(selectedModels).toEqual([{ provider: "xai", id: "grok-4.5" }])
+    expect(selectedModels).toEqual([{ provider: "xai", id: "grok-4.6" }])
     expect(thinkingLevels).toEqual(["high"])
     expect(
       notifications.some((notification) =>
-        notification.message.includes("Harness research route: xai/grok-4.5:high"),
+        notification.message.includes("Harness research route: xai/grok-4.6:high"),
       ),
     ).toBe(true)
     expect(userMessages).toHaveLength(1)

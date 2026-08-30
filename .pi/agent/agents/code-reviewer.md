@@ -1,6 +1,6 @@
 ---
 name: code-reviewer
-model: xai/grok-4.5:xhigh
+model: xai/grok-4.6:xhigh
 description: Multi-angle code review — correctness, tests, ponytail, stack. JSON review result.
 tools: [bash, read, search]
 spawns: []

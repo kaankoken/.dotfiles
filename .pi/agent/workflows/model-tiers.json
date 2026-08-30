@@ -1,0 +1,7 @@
+{
+  "tiers": {
+    "small": "xai/grok-4.6:high",
+    "medium": "xai/grok-4.6:xhigh",
+    "big": "openai-codex/gpt-5.6-sol:max"
+  }
+}

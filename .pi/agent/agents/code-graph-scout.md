@@ -1,6 +1,6 @@
 ---
 name: code-graph-scout
-model: xai/grok-4.5:high
+model: xai/grok-4.6:high
 description: Narrow research — structure, callers, impact via tokensave. Read-mostly.
 tools: [bash, read, search]
 spawns: []

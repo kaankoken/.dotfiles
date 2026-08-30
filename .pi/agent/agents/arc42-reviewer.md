@@ -1,6 +1,6 @@
 ---
 name: arc42-reviewer
-model: xai/grok-4.5:high
+model: xai/grok-4.6:high
 description: Gate Arc42 for /design against PDR. REVIEW-POLICY default PASS.
 tools: [bash, read, search]
 spawns: []

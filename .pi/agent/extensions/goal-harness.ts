@@ -48,8 +48,9 @@ const DEFAULT_HARNESS_GOAL = [
 ].join("\n")
 
 const RESEARCH_MODEL_ROUTE = [
+  { provider: "xai", modelId: "grok-4.6", effort: "high" },
+  { provider: "xai-oauth", modelId: "grok-4.6", effort: "high" },
   { provider: "xai", modelId: "grok-4.5", effort: "high" },
-  { provider: "xai-oauth", modelId: "grok-4.5", effort: "high" },
   { provider: "openai-codex", modelId: "gpt-5.6-sol", effort: "medium" },
 ] as const
 

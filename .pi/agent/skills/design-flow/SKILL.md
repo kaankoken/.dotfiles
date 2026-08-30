@@ -44,16 +44,16 @@ Cold catalog is intent-router+beads only.
 - `~/.pi/agent/skills/architect/SKILL.md` (`architect`) — required on PDR/Arc42 writers; never cold-listed; never vendor its body into prompts
 - Never vendor Bigpowers bodies into prompts
 
-## Models (`model-router` phases)
+## Models
 
-Resolve via `resolveModelRoute` / `resolveReviewerModel` (never sole hardcodes):
+Pins live in agent frontmatter + `~/.pi/workflows/model-tiers.json`. No OMP `resolveModelRoute`.
 
-| Phase | Chain |
-|-------|--------|
-| PDR / ADR (`design-pdr`, `design-adr`) | Opus 5 **max/xhigh** → Terra 5.6 **max** → Sol 5.6 **xhigh** → Grok |
-| Arc42 (`design-arc42`) | Grok → Composer 2.5 |
-
-Reviewers use the same chain with producer id skipped (`resolveReviewerModel`).
+| Phase | Pin |
+|-------|-----|
+| PDR / ADR writers | `openai-codex/gpt-5.6-sol:max` |
+| Arc42 writer | `openai-codex/gpt-5.6-sol:max` |
+| Reviewers | `xai/grok-4.6:high` |
+| DW small / medium / big | grok-4.6:high / grok-4.6:xhigh / sol:max |
 
 ## Artifacts
 

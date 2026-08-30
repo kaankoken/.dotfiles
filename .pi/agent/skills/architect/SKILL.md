@@ -124,7 +124,7 @@ Reversibility labels on candidates: **Easy / Medium / Hard**.
 | Agent systems | Control plane invariants | `references/agent-control-plane.md` |
 | ADR (OMP) | MADR-lite; session writes `docs/adr/` | ADR contract above |
 | Blueprint | Consult deliverable shape | `assets/planning/architecture-blueprint.md` |
-| Handoff | Paste into `/harness` | `assets/planning/architecture-handoff.md` |
+| Handoff | For `/design` (bd + session) | `assets/planning/architecture-handoff.md` |
 | QA scenarios | ATAM-lite | `assets/planning/qa-scenarios.md` |
 | Layered doctrines | Clean/onion/hex | **`optional/layered-doctrines.md` via `/architect-layered` only** |
 
@@ -187,7 +187,7 @@ reversible; document the hard-to-reverse ones as ADRs.
 list `docs/adr/` and call out conflicts/supersede needs before recommending.
 
 **Handoff (always):** fill `assets/planning/architecture-handoff.md` in session
-text. Suggest `/design` or `/harness` — never auto-start.
+text (also bd). Next step is `/design`. Never auto-start `/harness`.
 
 Current-trend questions: live `web_search` — no vendored trend digests.
 
@@ -239,7 +239,7 @@ Templates: `assets/planning/architecture-blueprint.md`,
 - `/design` — gated multi-agent pipeline (reviewed PDR + Arc42 + ADR)
 - `stack-*` packs — language/platform implementation depth
 - `/code-review` — review implementations against this architecture
-- `/harness` — build; paste handoff skeleton into the bound goal
+- `/harness` — build **after** `/design` consumes architecture-handoff
 
 <!-- provenance: vendored from https://github.com/vasilyu1983/AI-Agents-public
      frameworks/shared-skills/skills/software-architecture-design

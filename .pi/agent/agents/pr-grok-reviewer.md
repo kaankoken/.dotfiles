@@ -1,7 +1,7 @@
 ---
 name: pr-grok-reviewer
 description: Grok dual PR reviewer against a local freeze bundle (initial + rebuttal).
-model: xai/grok-4.5:high
+model: xai/grok-4.6:high
 tools: [read, grep, find, ls]
 spawns: []
 ---
