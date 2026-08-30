@@ -18,6 +18,7 @@ end-of-line-diagnostics = "hint"
 # `p`/`y` use macOS clipboard (nvim unnamedplus). pasteboard = pbcopy/pbpaste.
 clipboard-provider = "pasteboard"
 default-yank-register = "+"
+mouse-yank-register = "+"
 trim-trailing-whitespace = true
 
 [editor.auto-save]
