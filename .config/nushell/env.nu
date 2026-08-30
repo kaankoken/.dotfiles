@@ -15,6 +15,7 @@ $env.PATH = ($managed_paths | append $env.PATH | uniq)
 $env.CARGO_HOME = $"($env.HOME)/.cargo"
 $env.COLORTERM = "truecolor"
 $env.STARSHIP_CONFIG = $"($env.HOME)/.config/starship/starship.toml"
+$env.HELIX_RUNTIME = $"($env.HOME)/Desktop/personal/helix-steel/runtime"
 
 # Starship → vendor autoload
 let autoload_dir = ($nu.data-dir | path join "vendor/autoload")
