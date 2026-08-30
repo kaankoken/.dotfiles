@@ -1,0 +1,25 @@
+# Optional overlay: Android/Compose domain pack.
+# Reference only — nothing reads this file. Pi has no OMP `--config` schema; to
+# apply an overlay, add these patterns to the session settings `skills` list.
+#
+# Domain skills only. The cold core (Bigpowers, adapters, architect, design-flow,
+# goal-harness, the stack-* routers) is path-load-only by design — see the
+# `skills` denylist in settings.json — so it is not repeated here.
+#
+# Pack roots are not installed on this machine; path-load via /stack-android.
+# Play / Engage / verified-email stay explicit-path only.
+skills:
+  includeSkills:
+    - android-cli
+    - adaptive
+    - agp-9-upgrade
+    - appfunctions
+    - camera1-to-camerax
+    - display-*
+    - edge-to-edge
+    - migrate-xml-views-to-jetpack-compose
+    - navigation-3
+    - perfetto-*
+    - r8-analyzer
+    - styles
+    - testing-setup

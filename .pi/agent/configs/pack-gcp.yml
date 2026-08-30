@@ -1,0 +1,25 @@
+# Optional overlay: Google Cloud domain pack (google/skills).
+# Reference only — nothing reads this file. Pi has no OMP `--config` schema; to
+# apply an overlay, add these patterns to the session settings `skills` list.
+#
+# Domain skills only. The cold core (Bigpowers, adapters, architect, design-flow,
+# goal-harness, the stack-* routers) is path-load-only by design — see the
+# `skills` denylist in settings.json — so it is not repeated here.
+#
+# Pack roots are not installed on this machine; path-load via /stack-gcp.
+# `cloud-*` matches on name alone: narrow it if a non-GCP pack ever ships one.
+skills:
+  includeSkills:
+    - gcloud
+    - gke-*
+    - bigquery-*
+    - bigtable-*
+    - cloud-*
+    - google-cloud-*
+    - google-agents-cli-onboarding
+    - alloydb-*
+    - gemini-*
+    - agent-platform-*
+    - firebase-basics
+    - datalineage-*
+    - detection-engineering-*

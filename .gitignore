@@ -11,6 +11,8 @@
 /.pi/agent/models-store.json
 /.pi/agent/mcp-cache.json
 /.config/pi/web-search-cache
+/specs/
+
 
 # SSH — deny by default so private keys can never be added
 /.ssh/*

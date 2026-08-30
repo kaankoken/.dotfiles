@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://dotfiles.local/schemas/adr-output-v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["adrs"],
+  "properties": {
+    "adrs": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "title",
+          "status",
+          "context",
+          "decision",
+          "consequences"
+        ],
+        "properties": {
+          "title": { "type": "string", "minLength": 1 },
+          "status": {
+            "type": "string",
+            "enum": ["proposed", "accepted", "deprecated", "superseded"]
+          },
+          "context": { "type": "string", "minLength": 1 },
+          "decision": { "type": "string", "minLength": 1 },
+          "consequences": { "type": "string", "minLength": 1 },
+          "date": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

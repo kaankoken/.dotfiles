@@ -1,49 +1,110 @@
-# Pi agent
+# Pi agent (dotfiles)
 
-Global instructions. Live dir is `~/.pi/agent` (`~/.pi` → `~/.dotfiles/.pi`).
+Upstream **Pi** host (`pi` / [pi.dev](https://pi.dev)).
 
-## Always-on extensions / packages
+## Host
 
-| Piece | Role | Model sees it as |
-|-------|------|------------------|
-| `extensions/rtk.ts` | GNU→brew then `rtk rewrite` on bash + ctx_execute shell + ctx_batch_execute | Invisible. Prefer **bash** for CLIs so it fires |
-| `npm:pi-hashline-edit-pro` | Anchor `read` / `replace` / `insert` / `grep`; disables built-in `edit` | Those tools |
-| `npm:pi-caveman` | `/caveman` — terse output. Default **full** | Injected when on |
-| `npm:@dietrichgebert/ponytail` | `/ponytail` — YAGNI ladder. Default **full** | Injected when on |
-| `npm:pi-mcp-adapter` + tokensave | Code graph MCP, keep-alive | `mcp` / `mcp__tokensave` |
-| `skills/graphify` | Architecture / corpus graph | Skill — load it, then `graphify query` |
-| `npm:context-mode` | `ctx_*` tools (extension only; skill catalog stripped) | Large-output processing, not default shell |
+- **Binary:** `@earendil-works/pi-coding-agent` (`pi` — 0.84.x). No Node on this machine; nushell runs it as `bun ~/.bun/bin/pi`.
+- **SoT:** `~/.dotfiles/.pi/agent/` — a single tree, no second copy.
+- **Live:** `~/.pi/agent/` is the same directory: `~/.pi` is a stow tree-fold symlink to `~/.dotfiles/.pi`.
+- **Apply:** edits are live immediately. Clean-machine setup is `stow .` + two symlinks — see [README](README.md#clean-machine-order).
+- **Runtime state** (gitignored, never edit as config): `auth.json`, `sessions/`, `npm/`, `git/`, `mcp-cache.json`, `bin/{fd,rg}`.
+- **OMP:** emergency only for hard SessionManager gates / shake / collab — **no OMP tree symlinks**. Behavioral Pi flow (harness, design, local dual PR freeze) is complete on Pi.
 
-Hard routing lives in `APPEND_SYSTEM.md`. This file is the human-readable map.
+## Non-negotiables
 
-## CLI replacements (brew)
+1. No `~/.omp` ↔ `~/.pi` symlinks for skills/agents/extensions.
+2. Load flow assets only from `~/.pi/agent/{skills,agents,schemas,templates,policy}`.
+3. Edits: **hashline-edit-pro** only (`read`/`replace`; built-in `edit` disabled).
+4. Long jobs / inspect scouts: **pi-background-tasks**; multi-step parallel: **dynamic-workflows** + **bd**.
+5. Code graphs: **tokensave** = live symbol graph (callers/impact/edits); **graphify** = architecture/corpus graph (path-load). Never codebase-memory.
+6. Prefer **`/harness`** for multi-step build/fix work.
+7. **Methodology = Bigpowers** (ADR-0001). Never path-load `~/.agents/skills/superpowers/**`.
+8. **bd is task SoT** (ADR-0002). Optional `specs/` only via `skills/adapters/bp-bd-bridge`.
 
-Never GNU if a replacement is on PATH. Canonical brew set: **bat, eza, fd, fzf, rg, sd, dust, procs, git-delta** (`delta`).
+## Methodology
 
-| Don't | Use | Auto-swap |
-|-------|-----|-----------|
-| `grep` / `egrep` / `fgrep` | `rg` | yes → `rtk rg` |
-| `ls` | `eza` | yes (`rtk ls` → `eza`) |
-| `cat` / `less` / `more` | hashline `read` (edit) or `bat -P` (dump) | yes → `bat -P` |
-| `du` / `du -sh` | `dust` | yes |
-| `ps` / `ps aux` / `ps -ef` | `procs` | yes |
-| `find` | `fd` | no — flags differ, type `fd` |
-| `sed` | `sd` | no — flags differ, type `sd` |
-| `diff` | `rtk diff` (agent) | git pager already `delta` |
-| `git` / `gh` | via bash | yes — `rtk git` / `rtk gh` |
+| Piece | Location |
+|-------|----------|
+| Bigpowers skills | `~/.pi/agent/npm/node_modules/bigpowers/skills/<name>/SKILL.md` (`npm:bigpowers@2.87.5`) |
+| Owned adapters | `~/.pi/agent/skills/adapters/{bp-bd-bridge,bp-plan-to-bd,bp-review-to-json,dispatch-via-dw}` |
+| Grep gate | `~/.pi/agent/scripts/assert-no-superpowers.sh` |
+| Contract tests | `~/.pi/agent/tests/` (`cd ~/.pi/agent && bun test tests`) |
 
-Never TUI from the agent: `fzf`, `lazygit`, `hx`, `zellij`.
+ADR-0001 (Bigpowers) and ADR-0002 (bd) are referenced by name in the
+non-negotiables above. The ADR and design-plan documents are not in this repo.
 
-## Code intel
+## Packages
 
-- **tokensave** = live symbol graph (callers, impact, edits). Start with `tokensave_context`.
-- **graphify** = architecture/corpus graph. Path-load the skill; need `graphify-out/graph.json`.
-- **hashline** = file read/edit. Anchors from `read`/`grep` go into `replace`/`insert`.
-- Do not invent a fourth memory system.
+| Package | Role |
+|---------|------|
+| `pi-hashline-edit-pro` | `read`/`replace`/`undo_last_replace` |
+| `pi-background-tasks` | `/bg`, `bg_run`, `bg_delegate`, fusion |
+| `@quintinshaw/pi-dynamic-workflows` | parallel agents / workflows; exact `/code-review` |
+| `vendor/smart-approve` | high-risk approval gate |
+| `npm:bigpowers@2.87.5` | methodology skills (replaces Superpowers) |
+| `extensions/rtk.ts` | RTK bash rewrite |
+| `extensions/goal-harness.ts` | exact `/harness` `/design` `/architect` `/architect-layered` `/init` |
+| `extensions/pr-reviewer.ts` | exact `/pr-reviewer` local freeze dual review (Grok+Sol+Terra) |
+| `npm:pi-cursor-sdk` | Cursor bridge (`/cursor-*`); unpinned so it tracks the Cursor host |
+
+Docs: [hashline](https://pi.dev/packages/pi-hashline-edit-pro?name=read) · [background-tasks](https://pi.dev/packages/pi-background-tasks?name=read) · [bigpowers](https://pi.dev/packages/bigpowers)
+
+Model tiers: `~/.pi/workflows/model-tiers.json`.
+
+## Agents (dynamic-workflows registry)
+
+Location: `~/.pi/agent/agents/*.md` — loaded by **pi-dynamic-workflows** as `agentType`.
+
+Harness path-loads the same files for soft `/harness` / `/design`. Exact `/code-review` is DW-owned.
+
+Policy (not an agent): `~/.pi/agent/policy/REVIEW-POLICY.md`
+
+PR dual-review roles on Pi (local freeze, not OMP snapshot tools):
+
+| agentType | model pin | role |
+|-----------|-----------|------|
+| `pr-grok-reviewer` | `xai/grok-4.5:high` | initial + rebuttal |
+| `pr-sol-reviewer` | `openai-codex/gpt-5.6-sol:xhigh` | initial + rebuttal |
+| `pr-terra-judge` | `openai-codex/gpt-5.6-terra:max` | sole adjudication |
 
 ## Commands
 
-- `/caveman [lite\|full\|ultra\|off]`
-- `/ponytail [lite\|full\|ultra\|off\|status]`
-- `/mcp` — tokensave should show connected, not merely cached
-- `/reload` after editing this file, `APPEND_SYSTEM.md`, `mcp.json`, or `extensions/rtk.ts`
+| Command | Behavior |
+|---------|----------|
+| **`/harness [goal]`** | Main process. Empty args → 8 default quality lines. Bigpowers + bd + adapters. |
+| `/design <goal>` | PDR/Arc42/ADR only (`elaborate-spec` + design-flow) |
+| `/architect` / `/architect-layered` | In-session architecture consult |
+| `/init` | AGENTS/bd scaffold only |
+| `/code-review` | Local/diff multi-angle — **dynamic-workflows** exact command (not goal-harness) |
+| `/pr-reviewer` | Local freeze dual review (Grok+Sol+Terra); single publish; immutable freeze |
+| `/workflows …` | dynamic-workflows |
+| `/bg` `/jobs` `/logs` `/fusion` | background-tasks |
+
+Every command above is owned by exactly one extension. There is no `prompts/`
+directory: pi registers prompt templates *alongside* extension commands rather
+than as a fallback, so a same-named template appears as a duplicate entry.
+
+## Local skills
+
+`intent-router`, `gh-stack`, `goal-harness`, `design-flow`, `architect`, `stack-{rust,ios,android,gcp}`, `adapters/*` under `~/.pi/agent/skills/`.
+
+All except `intent-router` and `gh-stack` are excluded from the cold catalog by the `skills` denylist in `settings.json`; path-load them on demand.
+
+Path-load **Bigpowers** from the npm package path above; **ponytail** from `~/.agents/skills/…`. Never Superpowers.
+
+## MCP
+
+Cold keep-alive MCP: tokensave, headroom, context-mode (`lifecycle: keep-alive` in `mcp.json`). context7 disabled until `/mcp enable context7`. Pi extension package: `npm:context-mode` (hooks). Headroom is MCP-only here — the proxy-wrap launcher was removed, so providers are not routed through `:8787`.
+
+## Auth
+
+`~/.pi/agent/auth.json` separate from OMP. **`/login`** if needed.
+
+## Migration
+
+### Not migrated (honest — not OMP internals claims)
+
+- Hard OMP `createAgentSession` gate machine / skill-guard SHA attestation
+- OMP `pr_review_snapshot` / `pr_review_publish` tools (Pi uses **local git freeze** instead)
+- OMP auth-broker, collab, advisor, shake compaction, native LSP

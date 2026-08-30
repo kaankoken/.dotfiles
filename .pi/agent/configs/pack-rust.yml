@@ -1,0 +1,21 @@
+# Optional overlay: Rust domain pack.
+# Reference only — nothing reads this file. Pi has no OMP `--config` schema; to
+# apply an overlay, add these patterns to the session settings `skills` list.
+#
+# Domain skills only. The cold core (Bigpowers, adapters, architect, design-flow,
+# goal-harness, the stack-* routers) is path-load-only by design — see the
+# `skills` denylist in settings.json — so it is not repeated here.
+#
+# Pack roots are not installed on this machine; path-load via /stack-rust.
+# The unprefixed globs below match on name alone: narrow them if a non-Rust
+# pack ever ships a `core-*`, `domain-*`, or `m0*` skill.
+skills:
+  includeSkills:
+    - rust-*
+    - coding-guidelines
+    - core-*
+    - domain-*
+    - m0*
+    - m1*
+    - meta-cognition-parallel
+    - unsafe-checker

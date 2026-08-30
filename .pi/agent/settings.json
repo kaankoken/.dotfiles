@@ -9,7 +9,11 @@
       "prompts": []
     },
     "npm:pi-hashline-edit-pro",
-    "npm:bigpowers",
+    {
+      "source": "npm:bigpowers",
+      "skills": [],
+      "prompts": []
+    },
     "npm:pi-zentui",
     {
       "source": "npm:mitsupi",
@@ -50,5 +54,18 @@
   "editorPaddingX": 1,
   "outputPad": 1,
   "steeringMode": "one-at-a-time",
-  "treeFilterMode": "default"
+  "treeFilterMode": "default",
+  "skills": [
+    "!skills/superpowers/**",
+    "!skills/stack-*/**",
+    "!skills/architect/**",
+    "!skills/design-flow/**",
+    "!skills/goal-harness/**",
+    "!skills/adapters/**"
+  ],
+  "extensions": [
+    "extensions/rtk.ts",
+    "extensions/goal-harness.ts",
+    "extensions/pr-reviewer.ts"
+  ]
 }
