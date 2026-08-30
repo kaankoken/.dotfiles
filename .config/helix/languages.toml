@@ -1,0 +1,212 @@
+# ---------------------------------------------------------------------------
+# Language servers
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Rust — rust-analyzer + clippy + Apple lldb-dap
+# ---------------------------------------------------------------------------
+
+[language-server.rust-analyzer.config.check]
+command = "clippy"
+
+[[language]]
+name = "rust"
+auto-format = true
+language-servers = ["rust-analyzer"]
+formatter = { command = "rustfmt", args = ["--edition", "2024"] }
+
+[language.debugger]
+name = "lldb-dap"
+transport = "stdio"
+# Apple Command Line Tools (com.apple.lldb-dap), not llvm/Homebrew
+command = "/Library/Developer/CommandLineTools/usr/bin/lldb-dap"
+
+[[language.debugger.templates]]
+name = "binary"
+request = "launch"
+completion = [{ name = "binary", completion = "filename" }]
+args = { console = "internalConsole", program = "{0}" }
+
+[[language.debugger.templates]]
+name = "attach"
+request = "attach"
+completion = ["pid"]
+args = { console = "internalConsole", pid = "{0}" }
+
+[[language.debugger.templates]]
+name = "gdbserver attach"
+request = "attach"
+completion = [{ name = "lldb connect url", default = "connect://localhost:3333" }, { name = "file", completion = "filename" }, "pid"]
+args = { console = "internalConsole", attachCommands = ["platform select remote-gdb-server", "platform connect {0}", "file {1}", "attach {2}"] }
+
+# ---------------------------------------------------------------------------
+# Python (uv) — Astral: ty (types/LSP) + ruff (lint/format)
+# ---------------------------------------------------------------------------
+
+[[language]]
+name = "python"
+auto-format = true
+language-servers = [
+  { name = "ty", except-features = ["format"] },
+  "ruff",
+]
+formatter = { command = "ruff", args = ["format", "--stdin-filename", "%{buffer_name}"] }
+
+# ---------------------------------------------------------------------------
+# TypeScript / JavaScript — bun global biome + tsserver
+# biome on PATH is #!/usr/bin/env node; use bunx like tsserver
+# ---------------------------------------------------------------------------
+
+[language-server.biome]
+command = "bunx"
+args = ["biome", "lsp-proxy"]
+
+[language-server.typescript-language-server]
+# bun shim is #!/usr/bin/env node; no node on PATH
+command = "bunx"
+args = ["typescript-language-server", "--stdio"]
+
+[[language]]
+name = "typescript"
+auto-format = true
+language-servers = [
+  { name = "typescript-language-server", except-features = ["format"] },
+  "biome",
+]
+formatter = { command = "bunx", args = ["biome", "format", "--stdin-file-path", "%{buffer_name}"] }
+
+[[language]]
+name = "javascript"
+auto-format = true
+language-servers = [
+  { name = "typescript-language-server", except-features = ["format"] },
+  "biome",
+]
+formatter = { command = "bunx", args = ["biome", "format", "--stdin-file-path", "%{buffer_name}"] }
+
+[[language]]
+name = "tsx"
+auto-format = true
+language-servers = [
+  { name = "typescript-language-server", except-features = ["format"] },
+  "biome",
+]
+formatter = { command = "bunx", args = ["biome", "format", "--stdin-file-path", "%{buffer_name}"] }
+
+[[language]]
+name = "jsx"
+auto-format = true
+language-servers = [
+  { name = "typescript-language-server", except-features = ["format"] },
+  "biome",
+]
+formatter = { command = "bunx", args = ["biome", "format", "--stdin-file-path", "%{buffer_name}"] }
+
+# ---------------------------------------------------------------------------
+# YAML
+# ---------------------------------------------------------------------------
+
+[language-server.yaml-language-server]
+command = "bunx"
+args = ["yaml-language-server", "--stdio"]
+
+[[language]]
+name = "yaml"
+auto-format = true
+language-servers = ["yaml-language-server"]
+formatter = { command = "yamlfmt", args = ["-"] }
+
+# ---------------------------------------------------------------------------
+# JSON / JSONC — vscode-json schema + biome format
+# ---------------------------------------------------------------------------
+
+[language-server.vscode-json-language-server]
+command = "bunx"
+args = ["vscode-json-language-server", "--stdio"]
+
+[[language]]
+name = "json"
+auto-format = true
+language-servers = [
+  { name = "vscode-json-language-server", except-features = ["format"] },
+]
+formatter = { command = "bunx", args = ["biome", "format", "--stdin-file-path", "%{buffer_name}"] }
+
+[[language]]
+name = "jsonc"
+auto-format = true
+language-servers = [
+  { name = "vscode-json-language-server", except-features = ["format"] },
+]
+formatter = { command = "bunx", args = ["biome", "format", "--stdin-file-path", "%{buffer_name}"] }
+
+# ---------------------------------------------------------------------------
+# TOML — taplo LSP + format
+# ---------------------------------------------------------------------------
+
+[[language]]
+name = "toml"
+auto-format = true
+language-servers = ["taplo"]
+formatter = { command = "taplo", args = ["format", "-"] }
+
+# ---------------------------------------------------------------------------
+# Nushell — built-in `nu --lsp`
+# ---------------------------------------------------------------------------
+
+[[language]]
+name = "nu"
+language-servers = ["nu-lsp"]
+
+# ---------------------------------------------------------------------------
+# SQL — sqlfluff format (ansi; override dialect in .sqlfluff)
+# ---------------------------------------------------------------------------
+
+[[language]]
+name = "sql"
+auto-format = true
+formatter = { command = "sqlfluff", args = ["format", "--dialect", "ansi", "--nocolor", "-"] }
+
+# ---------------------------------------------------------------------------
+# Markdown — marksman (links/toc) + mpls (browser preview via Space m)
+# ---------------------------------------------------------------------------
+
+[language-server.mpls]
+command = "mpls"
+args = ["--no-auto", "--theme", "dark"]
+
+[[language]]
+name = "markdown"
+language-servers = [
+  { name = "mpls", only-features = ["workspace-command"] },
+  "marksman",
+]
+
+# ---------------------------------------------------------------------------
+# Mermaid / Make — tree-sitter only (no mainstream LSP)
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Git — commit subject 50 / body 72; rest is Helix tree-sitter
+# ---------------------------------------------------------------------------
+
+[[language]]
+name = "git-commit"
+rulers = [50, 72]
+text-width = 72
+
+# ---------------------------------------------------------------------------
+# Terraform
+# ---------------------------------------------------------------------------
+
+[[language]]
+name = "hcl"
+auto-format = true
+language-servers = ["terraform-ls"]
+formatter = { command = "terraform", args = ["fmt", "-"] }
+
+[[language]]
+name = "tfvars"
+auto-format = true
+language-servers = ["terraform-ls"]
+formatter = { command = "terraform", args = ["fmt", "-"] }

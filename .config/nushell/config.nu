@@ -3,7 +3,7 @@ $env.config.history.file_format = "sqlite"
 $env.config.buffer_editor = "nvim"
 
 # --- Aliases ---
-alias vim = nvim
+alias vim = hx
 alias nu-open = open
 alias open = ^open
 alias update-tools = ^update-tools.nu

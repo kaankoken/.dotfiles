@@ -1,0 +1,82 @@
+theme = "rose_pine"
+
+[editor]
+line-number = "relative"
+cursorline = true
+mouse = true
+scrolloff = 8
+color-modes = true
+auto-format = true
+auto-completion = true
+completion-trigger-len = 2
+idle-timeout = 200
+bufferline = "multiple"
+true-color = true
+undercurl = true
+rulers = [100]
+end-of-line-diagnostics = "hint"
+# OSC-52 so yank works over SSH / Zellij → Ghostty (same idea as nvim polish.lua)
+clipboard-provider = "pasteboard"
+
+[editor.cursor-shape]
+insert = "bar"
+normal = "block"
+select = "underline"
+
+[editor.lsp]
+enable = true
+display-messages = true
+display-progress-messages = true
+display-inlay-hints = true
+auto-signature-help = true
+display-color-swatches = true
+
+[editor.inline-diagnostics]
+cursor-line = "hint"
+
+[editor.soft-wrap]
+enable = true
+wrap-at-text-width = false
+
+[editor.indent-guides]
+render = true
+character = "│"
+
+[editor.file-picker]
+hidden = false
+git-ignore = true
+
+[editor.statusline]
+left = ["mode", "spinner", "file-name", "read-only-indicator", "file-modification-indicator"]
+center = ["version-control"]
+right = ["diagnostics", "selections", "register", "position", "file-encoding", "file-type"]
+separator = "│"
+mode.normal = "NOR"
+mode.insert = "INS"
+mode.select = "SEL"
+
+[editor.gutters]
+layout = ["diagnostics", "spacer", "line-numbers", "spacer", "diff"]
+
+[editor.search]
+smart-case = true
+wrap-around = true
+
+# Markdown preview (mpls). Must be in a .md buffer with mpls attached.
+[keys.normal.space]
+m = ":lsp-workspace-command open-preview"
+
+[keys.select.space]
+m = ":lsp-workspace-command open-preview"
+
+[keys.normal.space.M]
+g = ":sh glow --pager %{buffer_name}"
+t = ":toggle soft-wrap.enable"
+i = ":toggle lsp.display-inlay-hints"
+
+[keys.normal.space.t]
+t = ":sh zellij action toggle-floating-panes"
+f = ":sh zellij action new-pane --floating --name term --cwd %{buffer_directory}"
+h = ":sh zellij action new-pane --direction down --name term --cwd %{buffer_directory}"
+v = ":sh zellij action new-pane --direction right --name term --cwd %{buffer_directory}"
+g = ":sh zellij run --floating --close-on-exit --name lazygit -- lazygit"
