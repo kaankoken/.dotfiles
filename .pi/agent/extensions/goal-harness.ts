@@ -27,15 +27,20 @@ const PI_ADAPTERS = "~/.pi/agent/skills/adapters"
 const PI_AGENTS = "~/.pi/agent/agents"
 const PI_SCHEMAS = "~/.pi/agent/schemas"
 const PI_TEMPLATES = "~/.pi/agent/templates"
-const PONYTAIL = "~/.agents/skills/ponytail"
-const PONYTAIL_REVIEW = "~/.agents/skills/ponytail-review"
+const PONYTAIL =
+  "~/.pi/agent/npm/node_modules/@dietrichgebert/ponytail/skills/ponytail"
+const PONYTAIL_REVIEW =
+  "~/.pi/agent/npm/node_modules/@dietrichgebert/ponytail/skills/ponytail-review"
+const GRAPHIFY = "~/.pi/agent/skills/graphify"
+const CONTEXT_MODE =
+  "~/.pi/agent/npm/node_modules/context-mode/skills/context-mode"
 
 /** Empty-/harness default quality goal (8 lines). */
 const DEFAULT_HARNESS_GOAL = [
   "1. No errors, no warnings, no test failures.",
   "2. No warning suppressions in production (test-only OK with reason).",
   "3. Everything wired — no stubs, TODO/TBD/FIXME, unfinished work.",
-  "4. Mandated skills: using-bigpowers + project stack skills + ponytail (load by path).",
+  "4. Mandated skills: using-bigpowers + stack packs + ponytail + caveman + tokensave + graphify + context-mode (path-load).",
   "5. Latest dependencies — verify on the web (not training data alone).",
   "6. Complete all bd-tracked spec/plan tasks (Bigpowers discipline; every bite has verify:).",
   "7. Specs, plans, goals, updates tracked in bd (SoT). Optional specs/ cockpit via bp-bd-bridge only.",
@@ -84,6 +89,12 @@ function packageContractsBlock(): string[] {
     "",
     "**Bigpowers**: methodology only. Do not run stock `orchestrate-project` as a second harness.",
     "",
+    "**In use (required):** ponytail (minimal code), caveman (terse prose — npm:pi-caveman), tokensave (live symbols), graphify (architecture/corpus graph), context-mode (flood control).",
+    "- tokensave = callers/impact/edits. graphify = structure Q&A when graphify-out/ exists or after `/graphify .`. Not substitutes.",
+    "- File **edits** stay hashline `read`/`replace` (built-in `edit` disabled).",
+    "- Large/unknown output → `ctx_execute`. File analysis (not edit) → `ctx_execute_file`. 3+ related commands → `ctx_batch_execute`.",
+    "- Shell CLIs (git, rg, fd, bun test) → bash. Do not wrap those in ctx_execute.",
+    "",
   ]
 }
 
@@ -113,35 +124,40 @@ function buildHarnessStart(goal: string, usedDefault: boolean, cwd: string): str
     `   - ${BIGPOWERS}/using-bigpowers/SKILL.md (once per session/project onboarding — then stop re-reading every turn)`,
     `   - ${BIGPOWERS}/survey-context/SKILL.md (resume / next-step if specs/ or prior bd epic exists)`,
     `   - ${PONYTAIL}/SKILL.md`,
+    "   - caveman: already loaded as npm:pi-caveman (terse prose; not a SKILL.md)",
+    `   - ${GRAPHIFY}/SKILL.md`,
+    `   - ${CONTEXT_MODE}/SKILL.md`,
     `   - ${PI_SKILLS}/goal-harness/SKILL.md`,
-    `   - ${PI_SKILLS}/intent-router/SKILL.md (only if freeform re-route needed — usually not mid-harness)`,
     "3. Stack packs on demand (Cargo/Xcode/Android/GCP markers):",
     `   - ${PI_SKILLS}/stack-rust/SKILL.md | stack-ios | stack-android | stack-gcp`,
     "",
     ...packageContractsBlock(),
     "### Process (ordered)",
-    "1. **Research** (Grok high; Sol medium only as explicit fallback): use DW `tier: 'small'` for research agents, then path-load",
+    "1. **Research** — DW `tier: 'small'` then path-load",
+    `   - ${PI_AGENTS}/research-orchestrator.md (required; commissions scouts)`,
     `   - ${BIGPOWERS}/research-first/SKILL.md`,
-    `   - ${BIGPOWERS}/map-codebase/SKILL.md (tokensave remains the code graph)`,
-    "2. **Spec** — short design/spec in session + bd issue(s). Path-load",
+    `   - ${BIGPOWERS}/map-codebase/SKILL.md`,
+    "   - tokensave MCP for live symbols; graphify for architecture/corpus",
+    `   path-load ${PI_AGENTS}/code-graph-scout.md / code-search-scout / docs-scout / web-scout (then web-browse → webwright → browser-use).`,
+    "2. **Architect → design** (if the bound goal needs design):",
+    `   - ${PI_AGENTS}/assumption-griller.md (required gate; ${BIGPOWERS}/grill-me/SKILL.md)`,
+    `   - then /design or ${PI_SKILLS}/design-flow/SKILL.md — consume architecture-handoff`,
+    "3. **Spec** — short design/spec in session + bd. Path-load",
     `   - ${BIGPOWERS}/elaborate-spec/SKILL.md`,
-    `   - optional ${BIGPOWERS}/grill-me/SKILL.md before gate`,
     `   - ${PI_AGENTS}/spec-writer.md when using DW agentType`,
-    "   Human confirm before large implementation.",
-    "3. **Plan** — ordered bite-sized **bd** tasks; every task body includes `verify: <cmd>`. Path-load",
+    "   Consume design-handoff. Human confirm before large implementation.",
+    "4. **Plan** — ordered bite-sized **bd** tasks; every task body includes `verify: <cmd>`. Path-load",
+    `   - ${PI_AGENTS}/impact-assessor.md (required when touching existing modules; ${BIGPOWERS}/assess-impact/SKILL.md)`,
     `   - ${BIGPOWERS}/scope-work/SKILL.md → ${BIGPOWERS}/slice-tasks/SKILL.md → ${BIGPOWERS}/plan-work/SKILL.md`,
     `   - ${PI_ADAPTERS}/bp-plan-to-bd/SKILL.md (bd output contract)`,
-    `   - optional ${BIGPOWERS}/assess-impact/SKILL.md when touching existing modules`,
-    "4. **Implement** — one task at a time; TDD evidence; hashline `read`/`replace` only. Path-load",
+    "5. **Implement** — one task at a time; TDD evidence; hashline `read`/`replace` only. Path-load",
     `   - ${BIGPOWERS}/kickoff-branch/SKILL.md (worktree/branch; harness still owns assignment policy)`,
     `   - ${BIGPOWERS}/develop-tdd/SKILL.md`,
     `   - ${PI_ADAPTERS}/dispatch-via-dw/SKILL.md when parallel/delegate`,
     `   - ${BIGPOWERS}/delegate-task/SKILL.md and/or ${BIGPOWERS}/dispatch-agents/SKILL.md (policy only — execute via DW)`,
     `   - Implementer role: ${PI_AGENTS}/implementer.md`,
     `   - Evidence shape: ${PI_SCHEMAS}/implementer-evidence.schema.json`,
-    "5. **Long checks** — `bg_run` / `/bg` (typecheck, tests, servers).",
-    "6. **Research scouts** — `bg_delegate` inspect OR DW agents OR",
-    `   path-load ${PI_AGENTS}/code-graph-scout.md / code-search-scout / docs-scout / web-scout.`,
+    "6. **Long checks** — `bg_run` / `/bg` (typecheck, tests, servers).",
     "7. **Review** (quality:normal default — ADR-0003) — path-load:",
     `   - ${BIGPOWERS}/audit-code/SKILL.md`,
     `   - ${PI_ADAPTERS}/bp-review-to-json/SKILL.md`,
@@ -150,8 +166,8 @@ function buildHarnessStart(goal: string, usedDefault: boolean, cwd: string): str
     "   - ~/.pi/agent/policy/REVIEW-POLICY.md",
     `   - ${PONYTAIL_REVIEW}/SKILL.md`,
     "   Emit JSON { ok, feedback, blocking }. Optional DW `/code-review` or fusion_validate (advisory).",
-    "8. **Milestone** — fresh command evidence in bd; path-load",
-    `   - ${BIGPOWERS}/verify-work/SKILL.md`,
+    "8. **Milestone** — `verify-gate` then organizer; fresh command evidence in bd; path-load",
+    `   - ${PI_AGENTS}/verify-gate.md (required; ${BIGPOWERS}/verify-work/SKILL.md + validate-fix)`,
     `   - ${PI_AGENTS}/milestone-organizer.md when closing a multi-task epic.`,
     "9. **PR** — only if user asked: path-load",
     `   - ${BIGPOWERS}/commit-message/SKILL.md`,

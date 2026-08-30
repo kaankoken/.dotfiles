@@ -43,7 +43,7 @@ Named roles: `~/.pi/agent/agents/*.md` (parity-manifest). One harness chain only
 1. No errors, no warnings, no test failures.
 2. No warning suppressions in production (test-only OK with reason).
 3. Everything wired — no stubs, TODO/TBD/FIXME, unfinished work.
-4. Mandated skills: using-bigpowers + project stack skills + ponytail (load by **path** under cold catalog; never empty skill://; skill:// only for intent-router/beads).
+4. Mandated skills: using-bigpowers + stack packs + ponytail + caveman + tokensave + graphify + context-mode (path-load).
 5. Latest dependencies — verify on the web (not training data alone).
 6. Complete all bd-tracked spec/plan tasks (Bigpowers discipline; every bite has `verify:`).
 7. Specs, plans, goals, updates tracked in **bd** (SoT). Optional `specs/` cockpit only via `bp-bd-bridge`.

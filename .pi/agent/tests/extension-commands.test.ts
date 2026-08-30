@@ -174,6 +174,12 @@ describe("goal-harness handler start messages", () => {
     expect(msg).toContain("Never path-load `~/.agents/skills/superpowers/**`")
     expect(msg).toContain("Never load `~/.omp/agent/*`")
     expect(msg).toContain("The parent session is the research controller only")
+    expect(msg).toContain("research-orchestrator.md")
+    expect(msg).toContain("ctx_batch_execute")
+    expect(msg).toContain("tokensave")
+    expect(msg).toContain("graphify")
+    expect(msg).toContain("caveman")
+    expect(msg).toContain("context-mode")
     expect(msg).not.toMatch(/using-superpowers|requiredSuperpowers|~\/\.omp\/agent\/(?:skills|extensions)/)
     const defaultGoal = msg
       .match(
@@ -184,7 +190,7 @@ describe("goal-harness handler start messages", () => {
       "1. No errors, no warnings, no test failures.",
       "2. No warning suppressions in production (test-only OK with reason).",
       "3. Everything wired — no stubs, TODO/TBD/FIXME, unfinished work.",
-      "4. Mandated skills: using-bigpowers + project stack skills + ponytail (load by path).",
+      "4. Mandated skills: using-bigpowers + stack packs + ponytail + caveman + tokensave + graphify + context-mode (path-load).",
       "5. Latest dependencies — verify on the web (not training data alone).",
       "6. Complete all bd-tracked spec/plan tasks (Bigpowers discipline; every bite has verify:).",
       "7. Specs, plans, goals, updates tracked in bd (SoT). Optional specs/ cockpit via bp-bd-bridge only.",
