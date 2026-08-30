@@ -23,7 +23,9 @@
     "npm:@quintinshaw/pi-dynamic-workflows",
     "npm:@narumitw/pi-lsp",
     "npm:pi-web-access",
-    "npm:pi-mcp-adapter"
+    "npm:pi-mcp-adapter",
+    "npm:pi-caveman",
+    "npm:@dietrichgebert/ponytail"
   ],
   "lastChangelogVersion": "0.84.4",
   "theme": "rose-pine-moon",
