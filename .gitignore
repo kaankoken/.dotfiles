@@ -14,6 +14,10 @@
 /.pi/workflows
 /specs/
 
+# Third-party skill clones (stow → ~/.agents/…)
+/.agents/google-skills/
+/.agents/google-cloud-storage/
+
 # gh — per-machine accounts (auth switch dirties this)
 /.config/gh/hosts.yml
 
