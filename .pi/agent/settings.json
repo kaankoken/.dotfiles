@@ -19,7 +19,6 @@
       "source": "npm:mitsupi",
       "extensions": [
         "extensions/answer.ts",
-        "extensions/btw.ts",
         "extensions/context.ts",
         "extensions/go-to-bed.ts",
         "extensions/loop.ts"
@@ -67,6 +66,7 @@
   "extensions": [
     "extensions/rtk.ts",
     "extensions/goal-harness.ts",
-    "extensions/pr-reviewer.ts"
+    "extensions/pr-reviewer.ts",
+    "extensions/btw.ts"
   ]
 }

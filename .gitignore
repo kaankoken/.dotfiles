@@ -11,11 +11,11 @@
 /.pi/agent/models-store.json
 /.pi/agent/mcp-cache.json
 /.config/pi/web-search-cache
+/.pi/workflows
 /specs/
 
 # gh — per-machine accounts (auth switch dirties this)
 /.config/gh/hosts.yml
-
 
 # SSH — deny by default so private keys can never be added
 /.ssh/*
@@ -27,3 +27,8 @@
 
 # Helix
 /.config/helix/runtime/
+
+# git
+
+.worktrees
+worktrees
