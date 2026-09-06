@@ -29,6 +29,9 @@
 *.sqlite3*
 *.sqlite*
 
+# cargo-dist installer state (rewritten on self-update)
+**/*-receipt.json
+
 # Helix
 /.config/helix/runtime/
 
