@@ -36,7 +36,7 @@
     "npm:@narumitw/pi-goal",
     "npm:pi-cursor-sdk"
   ],
-  "lastChangelogVersion": "0.84.4",
+  "lastChangelogVersion": "0.85.1",
   "theme": "rose-pine-moon",
   "defaultProvider": "xai",
   "defaultModel": "grok-4.6",
