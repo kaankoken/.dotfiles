@@ -9,11 +9,10 @@ Upstream **Pi** host (`pi` / [pi.dev](https://pi.dev)).
 - **Live:** `~/.pi/agent/` is the same directory: `~/.pi` is a stow tree-fold symlink to `~/.dotfiles/.pi`.
 - **Apply:** edits are live immediately. Clean-machine setup is `stow .` + two symlinks — see [README](README.md#clean-machine-order).
 - **Runtime state** (gitignored, never edit as config): `auth.json`, `sessions/`, `npm/`, `git/`, `mcp-cache.json`, `bin/{fd,rg}`.
-- **OMP:** emergency only for hard SessionManager gates / shake / collab — **no OMP tree symlinks**. Behavioral Pi flow (harness, design, local PR freeze) is complete on Pi.
 
 ## Non-negotiables
 
-1. No `~/.omp` ↔ `~/.pi` symlinks for skills/agents/extensions.
+1. Do not symlink other agent trees into `~/.pi`.
 2. Load flow assets only from `~/.pi/agent/{skills,agents,schemas,templates,policy}`.
 3. Edits: **hashline-edit-pro** only (`read`/`replace`; built-in `edit` disabled).
 4. Long jobs / inspect scouts: **pi-background-tasks**; multi-step parallel: **dynamic-workflows** + **bd**.
@@ -60,7 +59,7 @@ Harness path-loads the same files for soft `/harness` / `/design`. Exact `/code-
 
 Policy (not an agent): `~/.pi/agent/policy/REVIEW-POLICY.md`
 
-PR review roles on Pi (local freeze, not OMP snapshot tools):
+PR review roles on Pi (local freeze):
 
 | agentType | model pin | role |
 |-----------|-----------|------|
@@ -102,12 +101,4 @@ Cold keep-alive MCP: tokensave, headroom, context-mode (`lifecycle: keep-alive` 
 
 ## Auth
 
-`~/.pi/agent/auth.json` separate from OMP. **`/login`** if needed.
-
-## Migration
-
-### Not migrated (honest — not OMP internals claims)
-
-- Hard OMP `createAgentSession` gate machine / skill-guard SHA attestation
-- OMP `pr_review_snapshot` / `pr_review_publish` tools (Pi uses **local git freeze** instead)
-- OMP auth-broker, collab, advisor, shake compaction, native LSP
+`~/.pi/agent/auth.json`. **`/login`** if needed.

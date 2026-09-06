@@ -4,7 +4,6 @@ model: xai/grok-4.6:xhigh
 route: implementer
 description: SDD implementer in git worktree. TDD, ponytail, stack skills. No self-review ownership.
 tools: [bash, read, replace, insert, write]
-isolation: worktree
 ---
 
 # implementer

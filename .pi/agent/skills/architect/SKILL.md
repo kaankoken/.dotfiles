@@ -8,7 +8,7 @@ description: >
   doctrines (Clean/onion/hex) only via /architect-layered optional pack.
 ---
 
-# Architect — OMP software architecture skill
+# Architect
 
 System-level design: boundaries, patterns, data, ops. Not single-service
 implementation detail (stack packs cover that), not code review
@@ -24,18 +24,18 @@ implementation detail (stack packs cover that), not code review
 | Migration / modernization planning | Building the thing → `/harness` |
 | Explicit Clean/onion/hex discussion | `/architect-layered` (not this default path) |
 
-## OMP load contract
+## Load contract
 
 | | |
 |--|--|
-| **Path** | `~/.pi/agent/skills/architect/SKILL.md` (repo: `omp/skills/architect/`) |
+| **Path** | `~/.pi/agent/skills/architect/SKILL.md` |
 | **Cold catalog** | Never cold-listed (cold is intent-router+beads only) |
 | **Tracker** | **bd** is SoT. No markdown task board. Never Superpowers. |
 | **Standalone** | `/architect <question>` runs the workflow below in-session |
 | **Layered opt-in** | `/architect-layered` loads this skill **plus** `optional/layered-doctrines.md` |
 | **Embedded** | `/design`: **required** on `pdr-writer` + `arc42-writer`; `adr-writer` stays architect-free; **never** layered doctrines |
 | **References** | Read on demand under this directory; never paste bodies into agent prompts |
-| **Ships via** | `stow .` package `.omp/agent/skills` → `~/.pi/agent/skills/architect/` |
+| **Ships via** | `stow .` → `~/.pi/agent/skills/architect/` |
 
 Default `/architect` and `/design` **must not** load `optional/layered-doctrines.md`.
 
@@ -44,7 +44,7 @@ Default `/architect` and `/design` **must not** load `optional/layered-doctrines
 - **Produces:** architecture-handoff (bd + session). `/design` consumes it. Do not skip to `/harness`.
 - **Bigpowers:** path-load `~/.pi/agent/npm/node_modules/bigpowers/skills/` (`deepen-architecture`). Never Superpowers.
 - **Intermediaries:** `research-orchestrator` before consult; `assumption-griller` before `/design`.
-## OMP flow map
+## Flow map
 
 | Surface | This skill contributes |
 |---------|------------------------|
@@ -72,7 +72,7 @@ Default `/architect` and `/design` **must not** load `optional/layered-doctrines
 Augments Bigpowers `elaborate-spec`; never replaces it. Never auto-starts
 `/design` or `/harness`.
 
-## ADR contract (OMP — MADR-lite)
+## ADR contract (MADR-lite)
 
 Fields: `title`, `status` ∈ proposed|accepted|deprecated|superseded, `context`,
 `decision`, `consequences`, optional `date`. Files live only at
@@ -122,7 +122,7 @@ Reversibility labels on candidates: **Easy / Medium / Hard**.
 | Rust crates | Workspace boundaries | `references/rust-workspace-boundaries.md` |
 | Local-first | Sync topology, LWW vs CRDT | `references/local-first-sync.md` |
 | Agent systems | Control plane invariants | `references/agent-control-plane.md` |
-| ADR (OMP) | MADR-lite; session writes `docs/adr/` | ADR contract above |
+| ADR | MADR-lite; session writes `docs/adr/` | ADR contract above |
 | Blueprint | Consult deliverable shape | `assets/planning/architecture-blueprint.md` |
 | Handoff | For `/design` (bd + session) | `assets/planning/architecture-handoff.md` |
 | QA scenarios | ATAM-lite | `assets/planning/qa-scenarios.md` |
@@ -202,7 +202,7 @@ Read **at most 2–3** references per question.
 - Team/ownership implications when relevant.
 - Success metrics (deploy frequency, lead time, error rate, MTTR).
 - Depth on 3–5 decisions that matter — not exhaustive essays.
-- OMP ADR path: JSON from `adr-writer` in `/design`; session owns `docs/adr/NNNN-slug.md` for `/architect`.
+- ADR path: JSON from `adr-writer` in `/design`; session owns `docs/adr/NNNN-slug.md` for `/architect`.
 
 ## Navigation
 
@@ -233,7 +233,7 @@ Templates: `assets/planning/architecture-blueprint.md`,
 `assets/operations/failure-modes-checklist.md`,
 `assets/operations/security-checklist.md`.
 
-## Related OMP surfaces
+## Related surfaces
 
 - `/architect-layered` — same consult + Clean/onion/hex optional pack
 - `/design` — gated multi-agent pipeline (reviewed PDR + Arc42 + ADR)
@@ -244,8 +244,8 @@ Templates: `assets/planning/architecture-blueprint.md`,
 <!-- provenance: vendored from https://github.com/vasilyu1983/AI-Agents-public
      frameworks/shared-skills/skills/software-architecture-design
      @ 6a223ba13c311c09b41c1dc09c14ab75e703894b (fetched 2026-08-01).
-     Adapted for OMP: intentional fork, not a mirror. MADR-lite ADR contract,
-     OMP flow map, root-relative links; dropped upstream trends digest,
+     Adapted for Pi: intentional fork, not a mirror. MADR-lite ADR contract,
+     flow map, root-relative links; dropped upstream trends digest,
      data/sources dump, upstream ADR form. Extended 2026-08-09: security,
      observability, tenancy, integration, domain packs, handoff, opt-in layered.
      Refresh manually if ever needed. -->

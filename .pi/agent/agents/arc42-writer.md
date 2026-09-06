@@ -25,7 +25,7 @@ Include at least one diagram with `kind` mermaid or structurizr and full `source
 
 ## Output
 
-Strict JSON matching `pi schemas under ~/.pi/agent/schemas/ — was omp/schemas/arc42.output.schema.json`.
+Strict JSON matching `~/.pi/agent/schemas/` (arc42 output schema).
 
 ## Storage
 

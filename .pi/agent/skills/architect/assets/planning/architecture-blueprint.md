@@ -2,7 +2,7 @@
 
 Use this when drafting a new service or major redesign.
 
-> **OMP storage:** deliver this blueprint in session / bd notes by default. The only files written are ADRs under `docs/adr/` — and only after user confirmation.
+> Deliver this blueprint in session / bd notes by default. The only files written are ADRs under `docs/adr/` — and only after user confirmation.
 
 - **Service name / domain:** Bounded context, upstream/downstream dependencies  
 - **Non-negotiable requirements:** Latency/throughput targets, availability %, data retention, compliance  

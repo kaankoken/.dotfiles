@@ -62,6 +62,9 @@ function createFakePi(options: FakePiOptions = {}) {
     setThinkingLevel(level: string) {
       thinkingLevels.push(level)
     },
+    on(_event: string, handler: (event: unknown) => void) {
+      listeners.push({ event: _event, handler })
+    },
   } as unknown as ExtensionAPI
 
   const ctx: FakeCommandContext = {
@@ -201,7 +204,7 @@ describe("goal-harness handler start messages", () => {
     expect(msg).toContain("Bound goal: DEFAULT quality requirements")
     expect(msg).toContain("bigpowers")
     expect(msg).toContain("Never path-load `~/.agents/skills/superpowers/**`")
-    expect(msg).toContain("Never load `~/.omp/agent/*`")
+    expect(msg).toContain("Never load agent trees outside `~/.pi/agent/*`")
     expect(msg).toContain("The parent session is the research controller only")
     expect(msg).toContain("research-orchestrator.md")
     expect(msg).toContain("ctx_batch_execute")
@@ -210,7 +213,12 @@ describe("goal-harness handler start messages", () => {
     expect(msg).toContain("caveman")
     expect(msg).toContain("context-mode")
     expect(msg).toContain("Max 3 review rounds")
-    expect(msg).not.toMatch(/using-superpowers|requiredSuperpowers|~\/\.omp\/agent\/(?:skills|extensions)/)
+    expect(msg).toContain("GREEN is not done")
+    expect(msg).toContain("IS user opt-in to the `workflow` tool")
+    expect(msg).toContain("background: false")
+    expect(msg).toContain("Do not stop after GREEN")
+    expect(msg).toContain("Stop only when the bound goal has evidence")
+    expect(msg).not.toMatch(/using-superpowers|requiredSuperpowers/)
     const defaultGoal = msg
       .match(
         /Bound goal: DEFAULT quality requirements \(empty \/harness args\):\n([\s\S]*?)\n\n## Controller instructions/,

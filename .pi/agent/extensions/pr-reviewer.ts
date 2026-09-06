@@ -1,5 +1,5 @@
 /**
- * Pi PR reviewer — local git freeze (no OMP pr_review_snapshot).
+ * Pi PR reviewer — local git freeze.
  *
  * /pr-review (alias /pr-reviewer) <PR-URL | owner/repo#n | n> [--dry-run] [--publish]
  *

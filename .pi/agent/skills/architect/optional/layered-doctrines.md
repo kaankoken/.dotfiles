@@ -53,7 +53,7 @@ They are **cousins**, not three different religions. Pick one vocabulary per cod
 5. Frameworks outward; domain does not import web/DB frameworks
 6. Pair with real boundaries (contexts), not only technical layers
 
-## Mapping to OMP default architect
+## Mapping to default architect
 
 Still run default steps 0–8 (repo-fit, QA scenarios, diagrams, handoff). Layered doctrines only change **how you name candidates** in step 3–4 — they do not replace security, tenancy, observability, or integration refs.
 

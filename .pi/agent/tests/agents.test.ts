@@ -48,13 +48,13 @@ describe("agent registry", () => {
     }
   })
 
-  test("implementer is worktree + hashline write tools", () => {
+  test("implementer has hashline write tools and optional isolation", () => {
     const def = parseAgentDefinition(
       readFileSync(join(AGENTS_DIR, "implementer.md"), "utf8"),
       "user",
       "implementer.md",
     )!
-    expect(def.isolation).toBe("worktree")
+    expect(def.isolation).toBeUndefined()
     expect(def.tools).toEqual(["bash", "read", "replace", "insert", "write"])
   })
 

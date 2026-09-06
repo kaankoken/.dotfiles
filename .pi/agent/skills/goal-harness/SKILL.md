@@ -66,9 +66,9 @@ With arguments: replace 1–8 completely with that text.
 
 ### Dynamic workflows (`@quintinshaw/pi-dynamic-workflows`)
 
-- Parallel multi-step: `/workflows run …` or keyword `workflow`.
-- `agent(prompt, { tier, isolation: 'worktree' })` with registered `agentType`
-  under `~/.pi/agent/agents/*.md`.
+- Parallel multi-step: `/harness` **is** `workflow` opt-in. Call the tool; `background: false` for implementer + gates. `/workflows run` / keyword still work.
+- isolation optional: `agent(prompt, { agentType, isolation: 'worktree' })`. `isolation: false` opts out of a def.
+  Default **keep** the worktree. Test runs may pass `keepWorktree: false` to delete.
 - Model tiers: `~/.pi/workflows/model-tiers.json`.
 - Fusion is advisory opinion only — not a bd gate substitute.
 
@@ -102,6 +102,15 @@ Load: `~/.pi/agent/skills/adapters/<name>/SKILL.md`.
 | 4 | Implement | `kickoff-branch`, `develop-tdd`, `delegate-task`/`dispatch-agents` (policy) | `dispatch-via-dw`; hashline edits | `implementer` | optional light | — |
 | 5 | Milestone | `audit-code`, `request-review` (guidance; Santa if `quality:strict`), `verify-work` | `bp-review-to-json`, ponytail-review(/audit) | multi `code-reviewer` | `milestone-organizer` | 3 |
 | 6 | PR | `commit-message`, `release-branch` | — | `pr-opener` | — | — |
+
+
+## After each bite
+
+Implementer GREEN is a checkpoint, not done. `/harness` **is** `workflow` opt-in — call it; `background: false` for implementer + gates. Do not wait for the keyword.
+
+Order: tests (`bg_run`) → `verify-gate` → review JSON `{ok,feedback,blocking}` → bd `verify:` evidence → close bite → next bite.
+
+Stop only when the bound goal has evidence (empty `/harness` = all 8 quality lines + all bd bites closed).
 
 **Max attempts = ceiling, not a quota (max 3).** First reviewer `ok: true` ends the gate.
 Producer rewrite runs **only** when the reviewer returns `ok: false` (blocking items).

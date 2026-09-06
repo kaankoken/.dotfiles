@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "pi schemas under ~/.pi/agent/schemas/ — was omp/schemas/review-result.schema.json",
+  "$id": "https://pi.local/schemas/review-result.schema.json",
   "type": "object",
   "additionalProperties": false,
   "required": ["ok", "feedback", "blocking"],

@@ -1,12 +1,12 @@
 ---
 name: design-flow
 description: >
-  Orchestrate the OMP pre-harness design flow via /design. Produces PDR + Arc42
+  Orchestrate the pre-harness design flow via /design. Produces PDR + Arc42
   (bd/session) and ADRs (docs/adr only). Design only — never build or auto-start
   /harness. Architect skill loads here.
 ---
 
-# OMP Design flow
+# Design flow
 
 Pre-`/harness` system design. **Not** a phase inside goal-harness `PHASE_ORDER`.
 
@@ -46,7 +46,7 @@ Cold catalog is intent-router+beads only.
 
 ## Models
 
-SoT: `~/.pi/agent/workflows/model-routes.json`. Writers = `writer` chain; reviewers = `reviewer` (max 3, first ok:true ends). Provider failover applies. No OMP `resolveModelRoute`.
+SoT: `~/.pi/agent/workflows/model-routes.json`. Writers = `writer` chain; reviewers = `reviewer` (max 3, first ok:true ends). Provider failover applies.
 
 ## Artifacts
 

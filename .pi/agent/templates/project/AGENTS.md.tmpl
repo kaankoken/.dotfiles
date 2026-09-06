@@ -1,6 +1,6 @@
 # {{DESCRIPTION}}
 
-Project-local agent instructions for the **shared agent stack** (Claude / Codex / Cursor / Grok / Oh My Pi). Do **not** invent a parallel workflow. **Never** wire or use codebase-memory.
+Project-local agent instructions for the **shared agent stack** (Claude / Codex / Cursor / Grok / Pi). Do **not** invent a parallel workflow. **Never** wire or use codebase-memory.
 
 > Scaffold rule: if an `AGENTS.md` or `CLAUDE.md` already exists, **preserve** it — do not overwrite without explicit user approval. Prefer merge notes or nested files.
 
@@ -57,12 +57,12 @@ Used when `/harness` runs without override text:
 - **bigpowers** (process, Pi package)
 - **ponytail**
 - Stack skills under Stack tools
-- OMP: **goal-harness** when using `/harness` / `/init` under Oh My Pi
+- **goal-harness** when using `/harness` / `/init`
 
-## OMP harness (when using omp)
+## Harness
 
 | Command | Behavior |
 |---------|----------|
-| `/harness [text]` | Full harness; default 7 goals if empty |
+| `/harness [text]` | Full harness; default quality lines if empty |
 | `/init` | Project scaffold only |
-| `/goal`, `/guided-goal` | Native OMP — unchanged |
+| `/goal`, `/guided-goal` | Native Pi — unchanged |

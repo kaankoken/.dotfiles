@@ -1,5 +1,5 @@
 # Optional overlay: Axiom/iOS domain pack.
-# Reference only — nothing reads this file. Pi has no OMP `--config` schema; to
+# Reference only — nothing reads this file. Pi has no overlay `--config` schema; to
 # apply an overlay, add these patterns to the session settings `skills` list.
 #
 # Domain skills only. The cold core (Bigpowers, adapters, architect, design-flow,

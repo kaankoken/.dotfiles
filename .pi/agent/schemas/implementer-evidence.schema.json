@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "pi schemas under ~/.pi/agent/schemas/ — was omp/schemas/implementer-evidence.schema.json",
+  "$id": "https://pi.local/schemas/implementer-evidence.schema.json",
   "type": "object",
   "additionalProperties": false,
   "required": [

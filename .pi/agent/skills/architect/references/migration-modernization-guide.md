@@ -557,4 +557,4 @@ Score each module (1-5 per criterion), extract in descending total order:
 - [references/data-architecture-patterns.md](references/data-architecture-patterns.md) — CQRS, event sourcing, saga patterns for distributed data
 - [references/scalability-reliability-guide.md](references/scalability-reliability-guide.md) — Scaling strategies post-migration
 - [references/api-gateway-service-mesh.md](references/api-gateway-service-mesh.md) — Service mesh and gateway patterns for microservices
-- Service-level implementation and CI/CD depth: OMP `stack-*` packs
+- Service-level implementation and CI/CD depth: `stack-*` packs

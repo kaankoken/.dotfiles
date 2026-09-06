@@ -39,4 +39,4 @@ For multi-agent harnesses, skill routers, and tool gateways — system shape onl
 
 ## Related
 
-- OMP flows stay in AGENTS.md / design-flow / goal-harness — this ref does not replace them
+- Flows stay in AGENTS.md / design-flow / goal-harness — this ref does not replace them

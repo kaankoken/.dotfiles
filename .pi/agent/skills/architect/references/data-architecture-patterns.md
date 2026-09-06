@@ -605,5 +605,5 @@ Process involves:
 
 - [references/modern-patterns.md](references/modern-patterns.md) — Architecture pattern overview including CQRS and event-driven
 - [references/scalability-reliability-guide.md](references/scalability-reliability-guide.md) — CAP theorem, database scaling, caching strategies
-- Database/queue implementation specifics (PostgreSQL, Kafka, BullMQ…): OMP `stack-*` packs, or live `web_search`
+- Database/queue implementation specifics (PostgreSQL, Kafka, BullMQ…): `stack-*` packs, or live `web_search`
 - [assets/patterns/event-driven-template.md](assets/patterns/event-driven-template.md) — Event-driven architecture template with saga patterns

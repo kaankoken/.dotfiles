@@ -1,5 +1,5 @@
 /**
- * Pi goal-harness controller (standalone — no ~/.omp path loads).
+ * Pi goal-harness controller.
  *
  * Methodology: Bigpowers (npm:bigpowers) — Superpowers removed (ADR-0001).
  * Task SoT: bd primary; specs/ optional bridge (ADR-0002).
@@ -9,7 +9,7 @@
  * Exact /code-review is owned by dynamic-workflows (not registered here).
  * Exact /pr-reviewer is owned by extensions/pr-reviewer.ts (local freeze).
  *
- * Hard OMP createAgentSession gates are NOT ported. Structured soft process:
+ * Structured process:
  *   - hashline-edit-pro (read/replace)
  *   - pi-background-tasks (bg_run / bg_delegate)
  *   - dynamic-workflows (parallel agents)
@@ -75,8 +75,8 @@ function packageContractsBlock(): string[] {
     "- Inspect scout: `bg_delegate` capability=inspect → later `bg_result` (hash-verified).",
     "- Not sandboxed (host perms/network).",
     "",
-    "**Parallel multi-step**: dynamic-workflows `/workflows run …` or keyword `workflow`.",
-    "- `agent(prompt, { agentType, isolation: 'worktree' })` — implementer uses isolation worktree.",
+    "**Parallel multi-step**: dynamic-workflows. `/harness` counts as `workflow` opt-in — call the tool; `background: false` for implementer + gates.",
+    "- isolation optional: `agent(prompt, { agentType, isolation: 'worktree' })`. `isolation: false` opts out. Default keep worktree; tests may pass `keepWorktree: false` to delete.",
     "- Prefer registered `agentType` under `~/.pi/agent/agents/*.md`.",
     "- Agent `route:` names a chain in `~/.pi/agent/workflows/model-routes.json`. Pin = first hop. Failover = providerFailover + remaining hops (openai-codex→cursor, xai→xai-oauth→cursor). No native anthropic.",
     "- If `agentType` model is missing, retry the next hop. Never run that role on the parent model.",
@@ -99,7 +99,7 @@ function buildHarnessStart(goal: string, usedDefault: boolean, cwd: string): str
   return [
     "kind: goal-harness-start",
     "host: pi",
-    "mode: structured-soft (hard OMP SessionManager gates NOT ported)",
+    "mode: structured-soft",
     "methodology: bigpowers (ADR-0001); bd primary SoT (ADR-0002); review adapter (ADR-0003)",
     `repository root (authoritative): ${cwd}`,
     "",
@@ -111,8 +111,18 @@ function buildHarnessStart(goal: string, usedDefault: boolean, cwd: string): str
     "## Controller instructions",
     "",
     "You are the **Pi harness controller**. Drive the bound goal end-to-end using Pi packages + bd + Bigpowers skills.",
-    "Do not invent a second goal. Do not claim OMP-hard dual-review Milestone PASS without evidence.",
+    "Do not invent a second goal. Do not claim Milestone PASS without evidence.",
     "The parent session is the research controller only. Delegate writer/reviewer/implementer work to routed agents; never execute those phases on the parent model.",
+    "",
+    "### After each bite (required — GREEN is not done)",
+    "This `/harness` invocation IS user opt-in to the `workflow` tool. Call it. Do not wait for the keyword. Pass `background: false` for implementer + gates so this turn sees results.",
+    "Implementer GREEN is a checkpoint, not completion. Immediately:",
+    "1. Long checks (`bg_run` / tests).",
+    "2. `verify-gate` (verify-work + validate-fix) with fresh command evidence.",
+    "3. Review → JSON { ok, feedback, blocking } (code-reviewer; max 3; first ok:true ends).",
+    "4. Record `verify:` evidence in bd; close the bite; claim the next bd task.",
+    "5. Repeat until every bd bite is closed AND the bound goal (default: 8 quality lines) has evidence.",
+    "Do not stop after GREEN. Do not skip verify-gate or review. Bound goal ≠ one task.",
     "",
     "### Setup (do first)",
     "1. Run `bd -C <repository-root> where`. STOP unless path is `<repository-root>/.beads` and prefix matches repository basename.",
@@ -179,10 +189,10 @@ function buildHarnessStart(goal: string, usedDefault: boolean, cwd: string): str
     "### Hard boundaries",
     "- Prefer bd over markdown TODOs. Never dual unlinked specs/ epic + bd epic.",
     "- Never use codebase-memory MCP.",
-    "- Never load `~/.omp/agent/*` — assets live under `~/.pi/agent/*`.",
+    "- Never load agent trees outside `~/.pi/agent/*`.",
     "- Never path-load `~/.agents/skills/superpowers/**`.",
     "- Browser automation is opt-in CLI only — not required.",
-    "- Stop when the bound goal is done; summarize remaining manual steps honestly (hard OMP SessionManager gates are not on Pi).",
+    "- Stop only when the bound goal has evidence (default: all 8 quality lines + all bd bites closed). Implementer GREEN is not that. Then summarize remaining manual steps honestly.",
     "",
     "Start now: confirm beads, load bp-bd-bridge + using-bigpowers + survey-context, produce Spec outline for the bound goal.",
   ].join("\n")
@@ -258,11 +268,54 @@ async function fireUserMessage(
   ctx: { isIdle: () => boolean; ui: { notify: Notify } },
   text: string,
 ): Promise<void> {
+  activeHarness = null
   if (!ctx.isIdle()) {
     ctx.ui.notify("Agent busy — try again when idle.", "warning")
     return
   }
   await pi.sendUserMessage(text)
+}
+
+type HarnessRun = { goal: string; injects: number }
+let activeHarness: HarnessRun | null = null
+
+export function needsAfterBiteGate(text: string): boolean {
+  if (/skipped verify-gate|stopped after implementer/i.test(text)) return true
+  if (!/implementer GREEN/i.test(text)) return false
+  if (/GREEN is not done/i.test(text) && !/skipped verify-gate/i.test(text)) return false
+  return !(/verify-gate/i.test(text) && /"ok"\s*:/.test(text))
+}
+
+export function buildAfterBiteContinue(goal: string): string {
+  return [
+    "kind: harness-after-bite-gate",
+    "Implementer GREEN is not done. Bound goal still open:",
+    goal,
+    "",
+    "Call the `workflow` tool now with `background: false`:",
+    "1. Long checks (tests).",
+    "2. verify-gate (verify-work + validate-fix) + fresh command evidence.",
+    "3. Review JSON { ok, feedback, blocking }.",
+    "4. bd verify: evidence; close bite; next bite.",
+    "Do not stop. Do not skip verify-gate or review.",
+  ].join("\n")
+}
+
+function assistantText(message: unknown): string {
+  if (!message || typeof message !== "object") return ""
+  const content = (message as { content?: unknown }).content
+  if (typeof content === "string") return content
+  if (!Array.isArray(content)) return ""
+  return content
+    .map((part) => {
+      if (typeof part === "string") return part
+      if (part && typeof part === "object" && "text" in part) {
+        const text = (part as { text?: unknown }).text
+        return typeof text === "string" ? text : ""
+      }
+      return ""
+    })
+    .join("\n")
 }
 
 export default function (pi: ExtensionAPI) {
@@ -307,6 +360,7 @@ export default function (pi: ExtensionAPI) {
         `Harness research route: ${selectedRoute.provider}/${selectedRoute.modelId}:${selectedRoute.effort}`,
         selectedRoute.provider === "openai-codex" ? "warning" : "info",
       )
+      activeHarness = { goal, injects: 0 }
       await pi.sendUserMessage(buildHarnessStart(goal, usedDefault, ctx.cwd))
     },
   }
@@ -350,4 +404,16 @@ export default function (pi: ExtensionAPI) {
     },
   })
 
+  pi.on("session_shutdown", () => {
+    activeHarness = null
+  })
+  pi.on("turn_end", (event) => {
+    const run = activeHarness
+    if (!run || run.injects >= 3) return
+    const message = (event as { message?: unknown }).message
+    const text = assistantText(message)
+    if (!needsAfterBiteGate(text)) return
+    run.injects += 1
+    pi.sendUserMessage(buildAfterBiteContinue(run.goal), { deliverAs: "followUp" })
+  })
 }

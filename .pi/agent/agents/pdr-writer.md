@@ -22,7 +22,7 @@ Produce a **PDR** for the bound design goal. No code, no implementation plan tas
 - `~/.pi/agent/npm/node_modules/bigpowers/skills/respond-review/SKILL.md` (`respond-review`) only when applying a failed reviewer’s blocking feedback
 ## Output
 
-Strict JSON matching `pi schemas under ~/.pi/agent/schemas/ — was omp/schemas/pdr.output.schema.json` via task `outputSchema`.
+Strict JSON matching `~/.pi/agent/schemas/` via task `outputSchema`.
 
 ## Storage
 

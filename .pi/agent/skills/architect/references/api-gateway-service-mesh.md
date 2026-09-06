@@ -592,5 +592,5 @@ Choosing a gateway:
 - [references/scalability-reliability-guide.md](references/scalability-reliability-guide.md) — Load balancing, circuit breakers, resilience
 - [references/migration-modernization-guide.md](references/migration-modernization-guide.md) — Strangler fig pattern with gateway routing
 - [references/data-architecture-patterns.md](references/data-architecture-patterns.md) — Service-to-service data patterns
-- Platform, deploy, and service implementation depth: OMP `stack-*` packs (load `~/.pi/agent/skills/stack-*/SKILL.md` on demand)
+- Platform, deploy, and service implementation depth: `stack-*` packs (load `~/.pi/agent/skills/stack-*/SKILL.md` on demand)
 - Zero-trust / mTLS checklist: [references/operational-playbook.md](references/operational-playbook.md) security section
