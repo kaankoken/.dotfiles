@@ -2,7 +2,7 @@
   "components": {
     "editor": {
       "enabled": true,
-      "style": "opencode",
+      "style": "opencode-copy-friendly",
       "colorSource": "theme",
       "borderColorMode": "static",
       "modelLabel": "id",
@@ -38,7 +38,7 @@
     },
     "userMessages": {
       "enabled": true,
-      "style": "framed",
+      "style": "framed-copy-friendly",
       "colorSource": "theme",
       "styles": {
         "framed": {},
