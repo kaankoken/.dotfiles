@@ -23,6 +23,16 @@
       { "provider": "xai", "modelId": "grok-4.6", "effort": "xhigh" },
       { "provider": "cursor", "modelId": "composer-2.5:fast", "effort": "high" }
     ],
+    "plan-writer": [
+      { "provider": "openai-codex", "modelId": "gpt-5.6-sol", "effort": "max" },
+      { "provider": "cursor", "modelId": "claude-opus-5@1m", "effort": "max" },
+      { "provider": "openai-codex", "modelId": "gpt-5.6-sol", "effort": "xhigh" },
+      { "provider": "cursor", "modelId": "claude-opus-5@1m", "effort": "xhigh" }
+    ],
+    "implementer": [
+      { "provider": "xai", "modelId": "grok-4.6", "effort": "xhigh" },
+      { "provider": "cursor", "modelId": "composer-2.5:fast", "effort": "high" }
+    ],
     "reviewer": [
       { "provider": "cursor", "modelId": "claude-opus-5@1m", "effort": "max" },
       { "provider": "openai-codex", "modelId": "gpt-5.6-sol", "effort": "max" },
