@@ -80,7 +80,7 @@ function packageContractsBlock(): string[] {
     "- Prefer registered `agentType` under `~/.pi/agent/agents/*.md`.",
     "- Agent `route:` names a chain in `~/.pi/agent/workflows/model-routes.json`. Pin = first hop. Failover = providerFailover + remaining hops (openai-codex→cursor, xai→xai-oauth→cursor). No native anthropic.",
     "- If `agentType` model is missing, retry the next hop. Never run that role on the parent model.",
-    "- tiers: `~/.pi/workflows/model-tiers.json` (small=scout grok, medium=reviewer opus@1m max, big=writer sol)",
+    "- tiers: `~/.pi/workflows/model-tiers.json` (small=scout grok, medium=reviewer opus@1m, big=writer sol)",
     "",
     "**Fusion** (`fusion_*` / `/fusion`): multi-model opinion only — not a bd gate substitute.",
     "",
@@ -287,24 +287,24 @@ const NEXT_ROLE: Record<RunKind, string> = {
   "architect-layered": "research-orchestrator",
 }
 
-const HARNESS_RESTRICTED = ["implementer", "pr-opener", "milestone-organizer", "verify-gate"] as const
-
-const PHASE_NEXT_ROLE: Record<string, string> = {
-  research: "research-orchestrator",
-  spec: "spec-reviewer",
-  plan: "plan-reviewer",
-  bitesize: "bite-size-reviewer",
-  implement: "implementer",
-  verify: "verify-gate",
-  milestone: "milestone-organizer",
-  pr: "pr-opener",
-  intake: "pdr-writer",
-  pdr: "pdr-reviewer",
-  arc42: "arc42-reviewer",
-  adr: "adr-writer",
-  handoff: "pdr-writer",
-  consult: "research-orchestrator",
+const PHASE_ALLOWED: Record<string, readonly string[]> = {
+  research: ["research-orchestrator"],
+  spec: ["spec-writer", "spec-reviewer"],
+  plan: ["plan-writer", "plan-reviewer"],
+  bitesize: ["bite-size-writer", "bite-size-reviewer"],
+  implement: ["implementer", "kickoff-branch"],
+  verify: ["verify-gate"],
+  milestone: ["milestone-organizer"],
+  pr: ["pr-opener"],
+  intake: ["pdr-writer", "research-orchestrator"],
+  pdr: ["pdr-writer", "pdr-reviewer"],
+  arc42: ["arc42-writer", "arc42-reviewer"],
+  adr: ["adr-writer"],
+  handoff: [],
+  consult: ["research-orchestrator"],
 }
+
+const ALL_ROLES: readonly string[] = [...new Set(Object.values(PHASE_ALLOWED).flat())]
 
 const REVIEW_NEXT: Record<string, { role: string; next: string; max: number }> = {
   spec: { role: "spec-reviewer", next: "plan", max: 3 },
@@ -331,15 +331,14 @@ function startRun(kind: RunKind, goal: string): void {
 }
 
 function allowedNext(run: ActiveRun): string {
-  return PHASE_NEXT_ROLE[run.phase] ?? NEXT_ROLE[run.kind]
+  const roles = PHASE_ALLOWED[run.phase]
+  if (roles?.length) return roles.join(", ")
+  return NEXT_ROLE[run.kind]
 }
 
 function gatedRoles(run: ActiveRun): readonly string[] {
-  if (run.kind === "design" || run.kind === "architect" || run.kind === "architect-layered") {
-    return ["implementer", "pr-opener", "kickoff-branch"]
-  }
-  const allowed = PHASE_NEXT_ROLE[run.phase]
-  return HARNESS_RESTRICTED.filter((role) => role !== allowed)
+  const allowed = new Set(PHASE_ALLOWED[run.phase] ?? [])
+  return ALL_ROLES.filter((role) => !allowed.has(role))
 }
 
 function firstGatedRole(
@@ -351,8 +350,11 @@ function firstGatedRole(
   for (const m of input.script.matchAll(
     /\bagentType\s*:\s*(?:["']([A-Za-z0-9_-]+)["']|([A-Za-z0-9_-]+))/g,
   )) {
-    if (m[2]) return m[2]
-    if (m[1] && blocked.includes(m[1])) return m[1]
+    const quoted = m[1]
+    const unquoted = m[2]
+    if (unquoted && !ALL_ROLES.includes(unquoted)) return unquoted
+    const ident = quoted ?? unquoted
+    if (ident && blocked.includes(ident)) return ident
   }
 }
 
@@ -427,6 +429,23 @@ function evidenceRoles(input: Record<string, unknown>): string[] {
   }
   return roles
 }
+function hasTrueFlag(objs: unknown[], key: string): boolean {
+  for (const obj of objs) {
+    if (!obj || typeof obj !== "object" || Array.isArray(obj)) continue
+    if ((obj as Record<string, unknown>)[key] === true) return true
+  }
+  return false
+}
+
+function isResearchEvidence(text: string, objs: unknown[]): boolean {
+  return hasTrueFlag(objs, "researchComplete") || /research-handoff/i.test(text)
+}
+
+function isPdrEvidence(text: string, objs: unknown[]): boolean {
+  if (/\bPDR\s*:/i.test(text)) return true
+  return objs.some((obj) => obj && typeof obj === "object" && !Array.isArray(obj) && "pdr" in obj)
+}
+
 
 function applyReviewGate(run: ActiveRun, roles: string[], objs: unknown[]): boolean {
   const gate = REVIEW_NEXT[run.phase]
@@ -451,7 +470,12 @@ function applyWorkflowResult(
 ): void {
   const objs = extractJsonObjects(text)
   if (run.kind === "harness") {
-    if (run.phase === "research" && roles.includes("research-orchestrator") && !isError) {
+    if (
+      run.phase === "research" &&
+      roles.includes("research-orchestrator") &&
+      !isError &&
+      isResearchEvidence(text, objs)
+    ) {
       setPhase(run, "spec")
       return
     }
@@ -484,7 +508,8 @@ function applyWorkflowResult(
   if (
     run.phase === "intake" &&
     !isError &&
-    (roles.includes("pdr-writer") || roles.includes("research-orchestrator"))
+    roles.includes("pdr-writer") &&
+    isPdrEvidence(text, objs)
   ) {
     setPhase(run, "pdr")
     return
@@ -539,6 +564,12 @@ export function needsAfterBiteGate(text: string): boolean {
   return !(/verify-gate/i.test(text) && /"ok"\s*:/.test(text))
 }
 
+
+export function looksStopped(text: string): boolean {
+  if (needsAfterBiteGate(text)) return true
+  return /\b(stopped|i(?:'?m| am) done|task complete|that'?s all|no further(?: work)?|skip(?:ped)? (?:the )?workflow)\b/i.test(text)
+}
+
 export function buildAfterBiteContinue(goal: string): string {
   return [
     "kind: harness-after-bite-gate",
@@ -584,6 +615,33 @@ function buildArchitectContinue(question: string): string {
     "Fill architecture-handoff fields in session.",
     "Do not auto-start /design or /harness.",
   ].join("\n")
+}
+
+
+function buildPhaseContinue(run: ActiveRun): string {
+  if (run.kind === "harness" && (run.phase === "implement" || run.phase === "verify")) {
+    return buildAfterBiteContinue(run.goal)
+  }
+  if (run.kind === "harness") {
+    return [
+      "kind: harness-phase-gate",
+      `phase: ${run.phase}`,
+      `allowed: ${allowedNext(run)}`,
+      run.goal,
+      "Do not skip. Call workflow with an allowed agentType.",
+    ].join("\n")
+  }
+  if (run.kind === "design" && run.phase === "handoff") return buildDesignHandoffContinue(run.goal)
+  if (run.kind === "design") {
+    return [
+      "kind: design-phase-gate",
+      `phase: ${run.phase}`,
+      `allowed: ${allowedNext(run)}`,
+      run.goal,
+      "Do not skip. Do not auto-start /harness.",
+    ].join("\n")
+  }
+  return buildArchitectContinue(run.goal)
 }
 
 function assistantText(message: unknown): string {
@@ -701,15 +759,27 @@ export default function (pi: ExtensionAPI) {
     const message = (event as { message?: unknown }).message
     const text = assistantText(message)
     if (run.kind === "harness") {
-      if (run.injects >= 3 || !needsAfterBiteGate(text)) return
+      if (run.injects >= 3) return
+      if (needsAfterBiteGate(text)) {
+        run.injects += 1
+        pi.sendUserMessage(buildAfterBiteContinue(run.goal), { deliverAs: "followUp" })
+        return
+      }
+      if (!looksStopped(text)) return
       run.injects += 1
-      pi.sendUserMessage(buildAfterBiteContinue(run.goal), { deliverAs: "followUp" })
+      pi.sendUserMessage(buildPhaseContinue(run), { deliverAs: "followUp" })
       return
     }
-    if (run.kind === "design" && run.phase === "handoff") {
-      if (hasDesignHandoffFields(text) || run.injects >= 3) return
+    if (run.kind === "design") {
+      if (run.phase === "handoff") {
+        if (hasDesignHandoffFields(text) || run.injects >= 3) return
+        run.injects += 1
+        pi.sendUserMessage(buildDesignHandoffContinue(run.goal), { deliverAs: "followUp" })
+        return
+      }
+      if (run.injects >= 3 || !looksStopped(text)) return
       run.injects += 1
-      pi.sendUserMessage(buildDesignHandoffContinue(run.goal), { deliverAs: "followUp" })
+      pi.sendUserMessage(buildPhaseContinue(run), { deliverAs: "followUp" })
       return
     }
     if (run.kind !== "architect" && run.kind !== "architect-layered") return
@@ -723,6 +793,7 @@ export default function (pi: ExtensionAPI) {
       return
     }
     if (run.injects >= 3) return
+    if (!looksStopped(text) && !/architecture-handoff/i.test(text)) return
     run.injects += 1
     pi.sendUserMessage(buildArchitectContinue(run.goal), { deliverAs: "followUp" })
   })

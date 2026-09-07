@@ -8,7 +8,7 @@ description: >
 
 # Design flow
 
-Pre-`/harness` system design. **Not** a phase inside goal-harness `PHASE_ORDER`.
+Pre-`/harness` system design. Runtime FSM in `extensions/goal-harness.ts` (`intake→pdr→arc42→adr→handoff`). **Not** a phase inside harness `research→…→pr`.
 
 ## Entry
 

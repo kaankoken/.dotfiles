@@ -65,8 +65,8 @@ PR review roles on Pi (local freeze):
 |-----------|-----------|------|
 | `pr-grok-reviewer` | `xai/grok-4.6:xhigh` | initial + rebuttal |
 | `pr-sol-reviewer` | `openai-codex/gpt-5.6-sol:xhigh` | initial + rebuttal |
-| `pr-opus-reviewer` | `cursor/claude-opus-5@1m:max` | initial + rebuttal |
-| `pr-terra-judge` | `cursor/claude-opus-5@1m:max` | sole adjudication |
+| `pr-opus-reviewer` | `cursor/claude-opus-5@1m` | initial + rebuttal |
+| `pr-terra-judge` | `cursor/claude-opus-5@1m` | sole adjudication |
 
 Agent `route:` = chain in `workflows/model-routes.json`. Pin = first hop. Failover = `providerFailover` + remaining hops. DW binds only `name`/`model`/`tools`/`isolation`/body — `route` is our chain key, not a DW field.
 
@@ -74,9 +74,9 @@ Agent `route:` = chain in `workflows/model-routes.json`. Pin = first hop. Failov
 
 | Command | Behavior |
 |---------|----------|
-| **`/harness [goal]`** | Main process. Empty args → 8 quality lines. Hard gates: pin workflow `background:false`; `turn_end` follow-up if GREEN skipped verify/review (max 3). |
-| `/design <goal>` | PDR/Arc42/ADR only (`elaborate-spec` + design-flow) |
-| `/architect` / `/architect-layered` | In-session architecture consult |
+| **`/harness [goal]`** | FSM `research→spec→plan→bitesize→implement→verify→milestone→pr`. Blocks later `agentType`s. Pins `workflow` `background:false`. `turn_end` follow-up on skip/stop (max 3). |
+| `/design <goal>` | FSM `intake→pdr→arc42→adr→handoff`. Blocks implement/PR. Handoff follow-up until PDR/Arc42/ADR/nextStep. |
+| `/architect` / `/architect-layered` | FSM `consult→handoff`. Follow-up only if stopped incomplete (not every turn). |
 | `/init` | AGENTS/bd scaffold only |
 | `/code-review` | Local/diff multi-angle — **dynamic-workflows** exact command (not goal-harness) |
 | `/pr-review` | Local freeze review (Grok+Sol+Opus+Terra); single publish; immutable freeze |

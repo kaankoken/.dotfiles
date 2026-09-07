@@ -112,7 +112,7 @@ Order: tests (`bg_run`) → `verify-gate` → review JSON `{ok,feedback,blocking
 
 Stop only when the bound goal has evidence (empty `/harness` = all 8 quality lines + all bd bites closed).
 
-Hard gates (Pi): `/harness` pins `workflow` `background: false`. If a turn ends on implementer GREEN without verify-gate/review, injects a follow-up (max 3). Not prompt-only.
+Runtime FSM (extension, not prompt-only): `/harness` `/design` `/architect` share one `activeRun`. Later producers/reviewers are **blocked** on `workflow` `tool_call` until that phase. Research advances only with `researchComplete: true` or `research-handoff`; design intake needs `pdr-writer` + `PDR:`. `/harness` pins `workflow` `background: false`. `turn_end` follow-up on skip/stop (max 3/phase); architect does **not** nag every turn.
 
 **Max attempts = ceiling, not a quota (max 3).** First reviewer `ok: true` ends the gate.
 Producer rewrite runs **only** when the reviewer returns `ok: false` (blocking items).

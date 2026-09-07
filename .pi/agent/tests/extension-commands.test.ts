@@ -158,7 +158,7 @@ describe("local extension slash command registration", () => {
     expect(JSON.stringify(judge)).toContain("grok|sol|opus")
     const md = await Bun.file(new URL("../agents/pr-opus-reviewer.md", import.meta.url)).text()
     expect(md).toMatch(/^name: pr-opus-reviewer$/m)
-    expect(md).toContain("cursor/claude-opus-5@1m:max")
+    expect(md).toContain("cursor/claude-opus-5@1m")
     expect(md).toContain("freeze paths + worktree")
     const ext = await Bun.file(new URL("../extensions/pr-reviewer.ts", import.meta.url)).text()
     expect(ext).toContain("pr-opus-reviewer")
@@ -406,7 +406,7 @@ describe("pr-reviewer command surface", () => {
     expect(script).toContain("pr-sol-reviewer")
     expect(script).toContain("pr-opus-reviewer")
     expect(script).toContain("pr-terra-judge")
-    expect(script).toContain("cursor/claude-opus-5@1m:max")
+    expect(script).toContain("cursor/claude-opus-5@1m")
     expect(script).toContain("OPUS_MODELS")
     expect(script).not.toContain("Math.random")
     expect(script).not.toContain("Date.now")
@@ -559,7 +559,9 @@ describe("exclusive activeRun and workflow role gates", () => {
     expect(workflow(fake, { script: `agent("do it", { agentType: "implementer" })` })?.block).toBe(true)
     expect(workflow(fake, { script: `agent("do it", { agentType: 'pr-opener' })` })?.block).toBe(true)
     expect(workflow(fake, { script: `agent("do it", { agentType: milestone-organizer })` })?.block).toBe(true)
+    expect(workflow(fake, { script: `agent("do it", { agentType: "spec-writer" })` })?.block).toBe(true)
     expect(workflow(fake, { name: "implementer" })?.block).toBe(true)
+    expect(workflow(fake, { name: "spec-writer" })?.block).toBe(true)
 
     expect(workflow(fake, { script: `agentType: "not-implementer"` })?.block).toBeFalsy()
     expect(workflow(fake, { script: `agentType: "implementer-helper"` })?.block).toBeFalsy()
@@ -578,6 +580,9 @@ describe("exclusive activeRun and workflow role gates", () => {
     expect(result?.block).toBe(true)
     expect(workflow(fake, {
       script: `await agent("review", { agentType: "research-orchestrator" })`,
+    })?.block).toBeFalsy()
+    expect(workflow(fake, {
+      script: `await agent("review", { agentType: research-orchestrator })`,
     })?.block).toBeFalsy()
   })
 
@@ -722,7 +727,7 @@ describe("phase evidence, attempts, and bounded follow-ups", () => {
   }
 
   const harnessPath: Array<{ from: string; role: string; text: string }> = [
-    { from: "research", role: "research-orchestrator", text: "research done" },
+    { from: "research", role: "research-orchestrator", text: '{"researchComplete":true}' },
     { from: "spec", role: "spec-reviewer", text: `noise\n${OK}\nkind: harness-after-bite-gate` },
     { from: "plan", role: "plan-reviewer", text: OK },
     { from: "bitesize", role: "bite-size-reviewer", text: OK },
@@ -764,8 +769,10 @@ describe("phase evidence, attempts, and bounded follow-ups", () => {
     expect(getActiveRun()?.phase).toBe("research")
     fire(fake, "research-orchestrator", "research done", { isError: true })
     expect(getActiveRun()?.phase).toBe("research")
-
     fire(fake, "research-orchestrator", "kind: ignored\nresearch done", { via: "name" })
+    expect(getActiveRun()?.phase).toBe("research")
+
+    fire(fake, "research-orchestrator", '{"researchComplete":true}', { via: "name" })
     expect(getActiveRun()).toMatchObject({ phase: "spec", attempts: 0, injects: 0 })
     fire(fake, "spec-reviewer", `preamble\n${OK}\ntrailer`, { via: "script" })
     expect(getActiveRun()?.phase).toBe("plan")
@@ -790,57 +797,59 @@ describe("phase evidence, attempts, and bounded follow-ups", () => {
   test("gatedRoles match phase after each predecessor gate", async () => {
     const fake = setup()
     await startHarness(fake)
-    const table: Array<{ phase: string; allow: string; block: string[] }> = [
+    const table: Array<{ phase: string; allow: string[]; block: string[] }> = [
       {
         phase: "research",
-        allow: "research-orchestrator",
-        block: ["implementer", "pr-opener", "milestone-organizer", "verify-gate"],
+        allow: ["research-orchestrator"],
+        block: ["implementer", "pr-opener", "milestone-organizer", "verify-gate", "spec-writer", "plan-writer"],
       },
       {
         phase: "spec",
-        allow: "spec-reviewer",
-        block: ["implementer", "pr-opener", "milestone-organizer", "verify-gate"],
+        allow: ["spec-writer", "spec-reviewer"],
+        block: ["implementer", "pr-opener", "milestone-organizer", "verify-gate", "plan-writer"],
       },
       {
         phase: "plan",
-        allow: "plan-reviewer",
-        block: ["implementer", "pr-opener", "milestone-organizer", "verify-gate"],
+        allow: ["plan-writer", "plan-reviewer"],
+        block: ["implementer", "pr-opener", "milestone-organizer", "verify-gate", "spec-writer", "bite-size-writer"],
       },
       {
         phase: "bitesize",
-        allow: "bite-size-reviewer",
-        block: ["implementer", "pr-opener", "milestone-organizer", "verify-gate"],
+        allow: ["bite-size-writer", "bite-size-reviewer"],
+        block: ["implementer", "pr-opener", "milestone-organizer", "verify-gate", "plan-writer"],
       },
       {
         phase: "implement",
-        allow: "implementer",
-        block: ["pr-opener", "milestone-organizer", "verify-gate"],
+        allow: ["implementer", "kickoff-branch"],
+        block: ["pr-opener", "milestone-organizer", "verify-gate", "spec-writer"],
       },
       {
         phase: "verify",
-        allow: "verify-gate",
+        allow: ["verify-gate"],
         block: ["implementer", "pr-opener", "milestone-organizer"],
       },
       {
         phase: "milestone",
-        allow: "milestone-organizer",
+        allow: ["milestone-organizer"],
         block: ["implementer", "pr-opener", "verify-gate"],
       },
       {
         phase: "pr",
-        allow: "pr-opener",
+        allow: ["pr-opener"],
         block: ["implementer", "milestone-organizer", "verify-gate"],
       },
     ]
     for (const row of table) {
       advanceHarnessTo(fake, row.phase)
       expect(getActiveRun()?.phase).toBe(row.phase)
-      expect(workflow(fake, { name: row.allow })?.block).toBeFalsy()
+      for (const role of row.allow) {
+        expect(workflow(fake, { name: role })?.block).toBeFalsy()
+      }
       for (const role of row.block) {
         const result = workflow(fake, { name: role })
         expect(result?.block).toBe(true)
         expect(result?.reason).toContain(row.phase)
-        expect(result?.reason).toContain(row.allow)
+        expect(result?.reason).toContain(row.allow[0])
       }
     }
   })
@@ -849,7 +858,7 @@ describe("phase evidence, attempts, and bounded follow-ups", () => {
     const design = setup()
     await design.commands.get("design")!.handler("auth", design.ctx)
     expect(getActiveRun()?.phase).toBe("intake")
-    fire(design, "pdr-writer", "wrote pdr")
+    fire(design, "pdr-writer", "PDR: session/pdr.json")
     expect(getActiveRun()?.phase).toBe("pdr")
     fire(design, "pdr-reviewer", OK)
     expect(getActiveRun()?.phase).toBe("arc42")
@@ -997,7 +1006,7 @@ describe("phase evidence, attempts, and bounded follow-ups", () => {
     expect(
       harness.userMessages.filter((m) => m.includes("kind: harness-after-bite-gate")),
     ).toHaveLength(3)
-    fire(harness, "research-orchestrator", "done")
+    fire(harness, "research-orchestrator", '{"researchComplete":true}')
     expect(getActiveRun()).toMatchObject({ phase: "spec", injects: 0, attempts: 0 })
     turn(harness, GREEN_SKIP)
     expect(getActiveRun()?.injects).toBe(1)
@@ -1005,6 +1014,8 @@ describe("phase evidence, attempts, and bounded follow-ups", () => {
     const design = setup()
     await design.commands.get("design")!.handler("auth", design.ctx)
     fire(design, "research-orchestrator", "intake done")
+    expect(getActiveRun()?.phase).toBe("intake")
+    fire(design, "pdr-writer", "PDR: session/pdr.json")
     fire(design, "pdr-reviewer", FAIL)
     expect(getActiveRun()).toMatchObject({ phase: "pdr", attempts: 1 })
     fire(design, "pdr-reviewer", FAIL)
@@ -1031,6 +1042,8 @@ describe("phase evidence, attempts, and bounded follow-ups", () => {
     const architect = setup()
     await architect.commands.get("architect-layered")!.handler("hex?", architect.ctx)
     for (let i = 0; i < 4; i++) turn(architect, "kind: architect-consult\nstill thinking")
+    expect(getActiveRun()).toMatchObject({ phase: "consult", injects: 0 })
+    for (let i = 0; i < 4; i++) turn(architect, "that's all")
     expect(getActiveRun()).toMatchObject({ phase: "consult", injects: 3 })
     const stepFollows = architect.userMessages.filter((m) => m.includes("step-0:"))
     expect(stepFollows).toHaveLength(3)
@@ -1058,12 +1071,25 @@ describe("phase evidence, attempts, and bounded follow-ups", () => {
 
     const design = setup()
     await design.commands.get("design")!.handler("x", design.ctx)
-    fire(design, "pdr-writer", "p")
+    fire(design, "pdr-writer", "PDR: session/pdr.json")
     fire(design, "pdr-reviewer", OK)
     fire(design, "arc42-reviewer", OK)
     fire(design, "adr-writer", JSON.stringify({ adrs: [] }))
     expect(getActiveRun()?.phase).toBe("adr")
     fire(design, "adr-writer", MADR)
     expect(getActiveRun()?.phase).toBe("handoff")
+  })
+
+
+  test("research stall without GREEN injects phase-gate; chatter does not", async () => {
+    const fake = setup()
+    await startHarness(fake)
+    turn(fake, "still researching")
+    expect(getActiveRun()?.injects).toBe(0)
+    turn(fake, "that's all")
+    expect(getActiveRun()?.injects).toBe(1)
+    expect(
+      fake.userMessages.some((m) => m.includes("kind: harness-phase-gate") && m.includes("phase: research")),
+    ).toBe(true)
   })
 })
