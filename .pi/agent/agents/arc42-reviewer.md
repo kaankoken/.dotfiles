@@ -1,6 +1,7 @@
 ---
 name: arc42-reviewer
-model: cursor/claude-opus-5@1m:max
+model: cursor/claude-opus-5@1m
+thinking: max
 route: reviewer
 description: Gate Arc42 for /design against PDR. REVIEW-POLICY default PASS.
 tools: [bash, read]

@@ -80,7 +80,7 @@ function packageContractsBlock(): string[] {
     "- Prefer registered `agentType` under `~/.pi/agent/agents/*.md`.",
     "- Agent `route:` names a chain in `~/.pi/agent/workflows/model-routes.json`. Pin = first hop. Failover = providerFailover + remaining hops (openai-codex→cursor, xai→xai-oauth→cursor). No native anthropic.",
     "- If `agentType` model is missing, retry the next hop. Never run that role on the parent model.",
-    "- tiers: `~/.pi/workflows/model-tiers.json` (small=scout grok, medium=reviewer opus@1m, big=writer sol)",
+    "- tiers: `~/.pi/workflows/model-tiers.json` (small=scout grok, medium=reviewer opus@1m max, big=writer sol)",
     "",
     "**Fusion** (`fusion_*` / `/fusion`): multi-model opinion only — not a bd gate substitute.",
     "",
@@ -776,6 +776,13 @@ export default function (pi: ExtensionAPI) {
         run.injects += 1
         pi.sendUserMessage(buildDesignHandoffContinue(run.goal), { deliverAs: "followUp" })
         return
+      }
+      // /design authors PDR/Arc42/ADR in-session (DW optional), so session text
+      // is evidence too — tool_result-only re-injects the same gate forever.
+      const phase = run.phase
+      if (!isKindInjection(text)) {
+        applyWorkflowResult(run, [...(PHASE_ALLOWED[phase] ?? [])], text, false)
+        if (run.phase !== phase) return
       }
       if (run.injects >= 3 || !looksStopped(text)) return
       run.injects += 1

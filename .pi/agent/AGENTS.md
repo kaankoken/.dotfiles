@@ -39,7 +39,7 @@ non-negotiables above. The ADR and design-plan documents are not in this repo.
 |---------|------|
 | `pi-hashline-edit-pro` | `read`/`replace`/`undo_last_replace` |
 | `pi-background-tasks` | `/bg`, `bg_run`, `bg_delegate`, fusion |
-| `@quintinshaw/pi-dynamic-workflows` | parallel agents / workflows; exact `/code-review` |
+| `git:github.com/kaankoken/pi-dynamic-workflows` | parallel agents / workflows; exact `/code-review`. Fork of `@quintinshaw/pi-dynamic-workflows`, pinned for `thinking:` frontmatter |
 | `vendor/smart-approve` | high-risk approval gate |
 | `npm:bigpowers@2.87.5` | methodology skills (replaces Superpowers) |
 | `extensions/rtk.ts` | RTK bash rewrite |
@@ -65,10 +65,10 @@ PR review roles on Pi (local freeze):
 |-----------|-----------|------|
 | `pr-grok-reviewer` | `xai/grok-4.6:xhigh` | initial + rebuttal |
 | `pr-sol-reviewer` | `openai-codex/gpt-5.6-sol:xhigh` | initial + rebuttal |
-| `pr-opus-reviewer` | `cursor/claude-opus-5@1m` | initial + rebuttal |
-| `pr-terra-judge` | `cursor/claude-opus-5@1m` | sole adjudication |
+| `pr-opus-reviewer` | `cursor/claude-opus-5@1m` + `thinking: max` | initial + rebuttal |
+| `pr-terra-judge` | `cursor/claude-opus-5@1m` + `thinking: max` | sole adjudication |
 
-Agent `route:` = chain in `workflows/model-routes.json`. Pin = first hop. Failover = `providerFailover` + remaining hops. DW binds only `name`/`model`/`tools`/`isolation`/body — `route` is our chain key, not a DW field.
+Agent `route:` = chain in `workflows/model-routes.json`. Pin = first hop. Failover = `providerFailover` + remaining hops. DW binds `name`/`model`/`thinking`/`tools`/`isolation`/body — `route` is our chain key, not a DW field.
 
 ## Commands
 

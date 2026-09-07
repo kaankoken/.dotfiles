@@ -1,6 +1,7 @@
 ---
 name: code-reviewer
-model: cursor/claude-opus-5@1m:max
+model: cursor/claude-opus-5@1m
+thinking: max
 route: reviewer
 description: Multi-angle code review — correctness, tests, ponytail, stack. JSON review result.
 tools: [bash, read]

@@ -27,14 +27,14 @@
       "prompts": [],
       "themes": []
     },
-    "npm:@quintinshaw/pi-dynamic-workflows",
     "npm:@narumitw/pi-lsp",
     "npm:pi-web-access",
     "npm:pi-mcp-adapter",
     "npm:pi-caveman",
     "npm:@dietrichgebert/ponytail",
     "npm:@narumitw/pi-goal",
-    "npm:pi-cursor-sdk"
+    "npm:pi-cursor-sdk",
+    "git:github.com/kaankoken/pi-dynamic-workflows@15a1361"
   ],
   "lastChangelogVersion": "0.85.1",
   "theme": "rose-pine-moon",

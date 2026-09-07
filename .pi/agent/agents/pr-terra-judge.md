@@ -1,6 +1,7 @@
 ---
 name: pr-terra-judge
-model: cursor/claude-opus-5@1m:max
+model: cursor/claude-opus-5@1m
+thinking: max
 route: judge
 description: Terra judge for PR freeze — sole final adjudication JSON.
 tools: [read, find, ls]

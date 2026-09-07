@@ -1,6 +1,7 @@
 ---
 name: pr-opus-reviewer
-model: cursor/claude-opus-5@1m:max
+model: cursor/claude-opus-5@1m
+thinking: max
 route: judge
 description: Opus PR reviewer against a local freeze bundle (initial + rebuttal).
 tools: [read, find, ls]

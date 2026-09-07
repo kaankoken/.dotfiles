@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import { readdirSync, readFileSync } from "node:fs"
 import { join } from "node:path"
-import { parseAgentDefinition } from "../npm/node_modules/@quintinshaw/pi-dynamic-workflows/src/agent-registry.ts"
+import { parseAgentDefinition } from "../git/github.com/kaankoken/pi-dynamic-workflows/src/agent-registry.ts"
 import { loadRouteDoc } from "../workflows/model-routes.ts"
 
 const AGENTS_DIR = join(import.meta.dir, "../agents")
@@ -66,8 +66,14 @@ describe("agent registry", () => {
       expect(route, file).toBeTruthy()
       expect(chains[route!], file).toBeTruthy()
       const first = chains[route!]![0]!
-      const pin = `${first.provider}/${first.modelId}:${first.effort}`
-      expect(def.model, file).toBe(pin)
+      const id = `${first.provider}/${first.modelId}`
+      const pin = `${id}:${first.effort}`
+      if (first.provider === "cursor") {
+        expect(def.model, file).toBe(id)
+        expect(raw, file).toMatch(new RegExp(`^thinking: ${first.effort}$`, "m"))
+      } else {
+        expect(def.model, file).toBe(pin)
+      }
       expect(def.model?.startsWith("anthropic/"), file).toBe(false)
     }
   })

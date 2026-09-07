@@ -1,6 +1,7 @@
 ---
 name: bite-size-reviewer
-model: cursor/claude-opus-5@1m:max
+model: cursor/claude-opus-5@1m
+thinking: max
 route: reviewer
 description: Size gate for bite-sized tasks. JSON only. Max 2 attempts (rewrite only on FAIL).
 tools: [bash, read]

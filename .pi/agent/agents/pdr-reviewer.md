@@ -1,6 +1,7 @@
 ---
 name: pdr-reviewer
-model: cursor/claude-opus-5@1m:max
+model: cursor/claude-opus-5@1m
+thinking: max
 route: reviewer
 description: Gate PDR for /design. REVIEW-POLICY default PASS. JSON review result.
 tools: [bash, read]

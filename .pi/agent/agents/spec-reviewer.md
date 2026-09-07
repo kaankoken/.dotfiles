@@ -1,6 +1,7 @@
 ---
 name: spec-reviewer
-model: cursor/claude-opus-5@1m:max
+model: cursor/claude-opus-5@1m
+thinking: max
 route: reviewer
 description: Adversarial review of design/spec. Returns JSON only. Different agent from spec-writer.
 tools: [bash, read]
