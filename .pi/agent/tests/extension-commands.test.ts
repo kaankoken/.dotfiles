@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent"
-import goalHarness from "../extensions/goal-harness.ts"
+import goalHarness, { needsAfterBiteGate, buildAfterBiteContinue, getActiveRun } from "../extensions/goal-harness.ts"
 import prReviewer, { buildPrReviewWorkflowScript } from "../extensions/pr-reviewer.ts"
 
 type RegisteredCommand = {
@@ -30,6 +30,7 @@ type FakeCommandContext = {
 function createFakePi(options: FakePiOptions = {}) {
   const commands = new Map<string, RegisteredCommand>()
   const userMessages: string[] = []
+  const userMessageOptions: unknown[] = []
   const notifications: Array<{ message: string; kind?: string }> = []
   const availableModels = options.models ?? [
     { provider: "xai", id: "grok-4.6" },
@@ -37,6 +38,7 @@ function createFakePi(options: FakePiOptions = {}) {
   ]
   const selectedModels: FakeModel[] = []
   const thinkingLevels: string[] = []
+  const listeners: Array<{ event: string; handler: (event: unknown) => unknown }> = []
 
   const pi = {
     registerCommand(
@@ -52,8 +54,9 @@ function createFakePi(options: FakePiOptions = {}) {
         handler: options.handler,
       })
     },
-    sendUserMessage(content: string | unknown) {
+    sendUserMessage(content: string | unknown, options?: unknown) {
       userMessages.push(typeof content === "string" ? content : JSON.stringify(content))
+      userMessageOptions.push(options)
     },
     async setModel(model: FakeModel) {
       selectedModels.push(model)
@@ -62,7 +65,7 @@ function createFakePi(options: FakePiOptions = {}) {
     setThinkingLevel(level: string) {
       thinkingLevels.push(level)
     },
-    on(_event: string, handler: (event: unknown) => void) {
+    on(_event: string, handler: (event: unknown) => unknown) {
       listeners.push({ event: _event, handler })
     },
   } as unknown as ExtensionAPI
@@ -89,9 +92,11 @@ function createFakePi(options: FakePiOptions = {}) {
     pi,
     commands,
     userMessages,
+    userMessageOptions,
     notifications,
     selectedModels,
     thinkingLevels,
+    listeners,
     ctx,
   }
 }
@@ -214,6 +219,7 @@ describe("goal-harness handler start messages", () => {
     expect(msg).toContain("context-mode")
     expect(msg).toContain("Max 3 review rounds")
     expect(msg).toContain("GREEN is not done")
+    expect(msg).toContain("emit JSON {ok, feedback, blocking}")
     expect(msg).toContain("IS user opt-in to the `workflow` tool")
     expect(msg).toContain("background: false")
     expect(msg).toContain("Do not stop after GREEN")
@@ -404,5 +410,660 @@ describe("pr-reviewer command surface", () => {
     expect(script).toContain("OPUS_MODELS")
     expect(script).not.toContain("Math.random")
     expect(script).not.toContain("Date.now")
+  })
+})
+
+
+describe("harness after-bite hard gate", () => {
+  test("needsAfterBiteGate catches skipped verify-gate", () => {
+    expect(needsAfterBiteGate("Stopped after implementer GREEN — skipped verify-gate, review")).toBe(true)
+    expect(needsAfterBiteGate("Implementer GREEN. verify-gate ran. {\"ok\": true}")).toBe(false)
+    expect(needsAfterBiteGate("researching the API")).toBe(false)
+    expect(needsAfterBiteGate(buildAfterBiteContinue("x"))).toBe(false)
+    expect(buildAfterBiteContinue("x")).toContain("emit JSON {ok, feedback, blocking}")
+  })
+
+  test("verify-gate.md output is review JSON", async () => {
+    const md = await Bun.file(new URL("../agents/verify-gate.md", import.meta.url)).text()
+    expect(md).toContain("Emit JSON {ok, feedback, blocking}")
+  })
+
+  test("/harness turn_end follow-up when GREEN skipped gates", async () => {
+    const { pi, commands, ctx, listeners, userMessages, userMessageOptions } = createFakePi()
+    goalHarness(pi)
+    await commands.get("harness")!.handler("", ctx)
+    const turnEnd = listeners.find((l) => l.event === "turn_end")
+    expect(turnEnd).toBeTruthy()
+    turnEnd!.handler({
+      message: { content: "Stopped after implementer GREEN — skipped verify-gate" },
+    })
+    expect(userMessages.some((m) => m.includes("kind: harness-after-bite-gate"))).toBe(true)
+    expect(userMessageOptions.at(-1)).toEqual({ deliverAs: "followUp" })
+  })
+
+
+  test("/harness pins workflow background:false", async () => {
+    const { pi, commands, ctx, listeners } = createFakePi()
+    goalHarness(pi)
+    await commands.get("harness")!.handler("", ctx)
+    const toolCall = listeners.find((l) => l.event === "tool_call")
+    expect(toolCall).toBeTruthy()
+    const event = { toolName: "workflow", input: { script: "export const meta = { name: 'x', description: 'x' }", background: true } }
+    toolCall!.handler(event)
+    expect(event.input.background).toBe(false)
+  })
+
+  test("workflow pin skips resumeFromRunId and idle sessions", async () => {
+    const { pi, commands, ctx, listeners } = createFakePi()
+    goalHarness(pi)
+    listeners.find((l) => l.event === "session_shutdown")!.handler({})
+    const toolCall = listeners.find((l) => l.event === "tool_call")!
+    const idle = { toolName: "workflow", input: { background: true } }
+    toolCall.handler(idle)
+    expect(idle.input.background).toBe(true)
+    await commands.get("harness")!.handler("", ctx)
+    const resume = { toolName: "workflow", input: { resumeFromRunId: "abc", background: true } }
+    toolCall.handler(resume)
+    expect(resume.input.background).toBe(true)
+    const already = { toolName: "workflow", input: { background: false } }
+    toolCall.handler(already)
+    expect(already.input.background).toBe(false)
+    const bash = { toolName: "bash", input: { command: "true", background: true } }
+    toolCall.handler(bash)
+    expect(bash.input.background).toBe(true)
+  })
+})
+
+describe("exclusive activeRun and workflow role gates", () => {
+  function setup() {
+    const fake = createFakePi()
+    goalHarness(fake.pi)
+    fake.listeners.find((l) => l.event === "session_shutdown")!.handler({})
+    return fake
+  }
+
+  function workflow(
+    fake: ReturnType<typeof setup>,
+    input: Record<string, unknown>,
+  ) {
+    return fake.listeners.find((l) => l.event === "tool_call")!.handler({
+      toolName: "workflow",
+      input,
+    }) as { block?: boolean; reason?: string } | undefined
+  }
+
+  test("/harness starts phase research", async () => {
+    const { commands, ctx } = setup()
+    await commands.get("harness")!.handler("bound", ctx)
+    expect(getActiveRun()).toMatchObject({
+      kind: "harness",
+      goal: "bound",
+      phase: "research",
+      attempts: 0,
+      injects: 0,
+    })
+  })
+
+  test("four commands replace active kind", async () => {
+    const { commands, ctx } = setup()
+    await commands.get("harness")!.handler("h", ctx)
+    expect(getActiveRun()?.kind).toBe("harness")
+    await commands.get("design")!.handler("d", ctx)
+    expect(getActiveRun()).toMatchObject({ kind: "design", phase: "intake", goal: "d" })
+    await commands.get("architect")!.handler("a", ctx)
+    expect(getActiveRun()).toMatchObject({ kind: "architect", phase: "consult", goal: "a" })
+    await commands.get("architect-layered")!.handler("al", ctx)
+    expect(getActiveRun()).toMatchObject({
+      kind: "architect-layered",
+      phase: "consult",
+      goal: "al",
+    })
+    await commands.get("harness")!.handler("h2", ctx)
+    expect(getActiveRun()).toMatchObject({ kind: "harness", phase: "research", goal: "h2" })
+  })
+
+  test("fireUserMessage does not clear the run", async () => {
+    const { commands, ctx } = setup()
+    await commands.get("harness")!.handler("stay", ctx)
+    const run = getActiveRun()
+    expect(run).not.toBeNull()
+    await commands.get("init")!.handler("apps/api", ctx)
+    expect(getActiveRun()).toBe(run)
+  })
+
+  test("/init neither joins nor clears the machine", async () => {
+    const { commands, ctx, userMessages } = setup()
+    expect(getActiveRun()).toBeNull()
+    await commands.get("init")!.handler("apps/api", ctx)
+    expect(getActiveRun()).toBeNull()
+    expect(userMessages.some((m) => m.includes("kind: project-init"))).toBe(true)
+    await commands.get("harness")!.handler("stay", ctx)
+    const run = getActiveRun()
+    await commands.get("init")!.handler("", ctx)
+    expect(getActiveRun()).toBe(run)
+    expect(getActiveRun()?.kind).toBe("harness")
+  })
+
+  test("session_shutdown clears", async () => {
+    const fake = setup()
+    await fake.commands.get("harness")!.handler("x", fake.ctx)
+    expect(getActiveRun()).not.toBeNull()
+    fake.listeners.find((l) => l.event === "session_shutdown")!.handler({})
+    expect(getActiveRun()).toBeNull()
+  })
+
+  test("extract exact agentType from script and name (no free substring)", async () => {
+    const fake = setup()
+    await fake.commands.get("harness")!.handler("g", fake.ctx)
+
+    expect(workflow(fake, { script: `agent("do it", { agentType: "implementer" })` })?.block).toBe(true)
+    expect(workflow(fake, { script: `agent("do it", { agentType: 'pr-opener' })` })?.block).toBe(true)
+    expect(workflow(fake, { script: `agent("do it", { agentType: milestone-organizer })` })?.block).toBe(true)
+    expect(workflow(fake, { name: "implementer" })?.block).toBe(true)
+
+    expect(workflow(fake, { script: `agentType: "not-implementer"` })?.block).toBeFalsy()
+    expect(workflow(fake, { script: `agentType: "implementer-helper"` })?.block).toBeFalsy()
+    expect(workflow(fake, { script: `const note = "implementer"` })?.block).toBeFalsy()
+    expect(workflow(fake, { name: "implementer-helper" })?.block).toBeFalsy()
+    expect(workflow(fake, { name: "pre-implementer" })?.block).toBeFalsy()
+    expect(workflow(fake, { name: "deep-research" })?.block).toBeFalsy()
+  })
+
+  test("unquoted agentType identifier is fail-closed", async () => {
+    const fake = setup()
+    await fake.commands.get("harness")!.handler("g", fake.ctx)
+    const result = workflow(fake, {
+      script: `const role = "milestone-organizer"; await agent("review", { agentType: role })`,
+    })
+    expect(result?.block).toBe(true)
+    expect(workflow(fake, {
+      script: `await agent("review", { agentType: "research-orchestrator" })`,
+    })?.block).toBeFalsy()
+  })
+
+  test("harness-only background:false pin; skip resumeFromRunId", async () => {
+    const fake = setup()
+    await fake.commands.get("design")!.handler("d", fake.ctx)
+    const designEvent = { toolName: "workflow", input: { background: true } }
+    fake.listeners.find((l) => l.event === "tool_call")!.handler(designEvent)
+    expect(designEvent.input.background).toBe(true)
+
+    await fake.commands.get("harness")!.handler("h", fake.ctx)
+    const pinEvent = { toolName: "workflow", input: { background: true } }
+    fake.listeners.find((l) => l.event === "tool_call")!.handler(pinEvent)
+    expect(pinEvent.input.background).toBe(false)
+
+    const resume = {
+      toolName: "workflow",
+      input: { resumeFromRunId: "abc", background: true },
+    }
+    fake.listeners.find((l) => l.event === "tool_call")!.handler(resume)
+    expect(resume.input.background).toBe(true)
+  })
+
+  test("design and architect block implementer, pr-opener, kickoff-branch", async () => {
+    const fake = setup()
+    const cases = [
+      ["design", "d", "intake"],
+      ["architect", "a", "consult"],
+      ["architect-layered", "al", "consult"],
+    ] as const
+    const roles = ["implementer", "pr-opener", "kickoff-branch"] as const
+    for (const [cmd, args, phase] of cases) {
+      await fake.commands.get(cmd)!.handler(args, fake.ctx)
+      for (const role of roles) {
+        const result = workflow(fake, {
+          script: `agent("x", { agentType: "${role}" })`,
+        })
+        expect(result?.block).toBe(true)
+        expect(result?.reason).toContain(phase)
+        expect(result?.reason).toMatch(/pdr-writer|research-orchestrator/)
+      }
+    }
+  })
+
+  test("harness research blocks implementer, pr-opener, milestone-organizer", async () => {
+    const fake = setup()
+    await fake.commands.get("harness")!.handler("g", fake.ctx)
+    for (const role of ["implementer", "pr-opener", "milestone-organizer"] as const) {
+      const viaScript = workflow(fake, {
+        script: `agent("x", { agentType: "${role}" })`,
+      })
+      expect(viaScript?.block).toBe(true)
+      expect(viaScript?.reason).toContain("research")
+      expect(viaScript?.reason).toContain("research-orchestrator")
+
+      const viaName = workflow(fake, { name: role })
+      expect(viaName?.block).toBe(true)
+      expect(viaName?.reason).toContain("research")
+      expect(viaName?.reason).toContain("research-orchestrator")
+    }
+  })
+})
+
+describe("phase evidence, attempts, and bounded follow-ups", () => {
+  const OK = JSON.stringify({ ok: true, feedback: "pass", blocking: [] })
+  const FAIL = JSON.stringify({ ok: false, feedback: "nope", blocking: ["fix it"] })
+  const MADR = JSON.stringify({
+    adrs: [{
+      title: "Use X",
+      status: "accepted",
+      context: "c",
+      decision: "d",
+      consequences: "q",
+    }],
+  })
+  const GREEN_SKIP = "Stopped after implementer GREEN — skipped verify-gate"
+  const ARCHITECT_DONE = [
+    "step-0: repo",
+    "step-1: problem",
+    "step-2: qa",
+    "step-3: candidates",
+    "step-4: boundaries",
+    "step-5: data",
+    "step-6: ops",
+    "step-7: limits",
+    "step-8: adrs",
+    "architecture-handoff",
+    "Goal: ship it",
+  ].join("\n")
+  const DESIGN_HANDOFF = [
+    "PDR: session/pdr.json",
+    "Arc42: session/arc42.md",
+    "ADR: docs/adr/0001-x.md",
+    "nextStep: user may run /harness",
+  ].join("\n")
+
+  function setup() {
+    const fake = createFakePi()
+    goalHarness(fake.pi)
+    fake.listeners.find((l) => l.event === "session_shutdown")!.handler({})
+    return fake
+  }
+
+  function workflow(
+    fake: ReturnType<typeof setup>,
+    input: Record<string, unknown>,
+  ) {
+    return fake.listeners.find((l) => l.event === "tool_call")!.handler({
+      toolName: "workflow",
+      input,
+    }) as { block?: boolean; reason?: string } | undefined
+  }
+
+  function fire(
+    fake: ReturnType<typeof setup>,
+    role: string,
+    text: string,
+    extra?: { isError?: boolean; via?: "name" | "script"; toolName?: string },
+  ) {
+    const via = extra?.via ?? "name"
+    const input = via === "name"
+      ? { name: role }
+      : { script: `agent("x", { agentType: "${role}" })` }
+    const handler = fake.listeners.find((l) => l.event === "tool_result")
+    expect(handler).toBeTruthy()
+    handler!.handler({
+      toolName: extra?.toolName ?? "workflow",
+      isError: extra?.isError ?? false,
+      input,
+      content: [{ type: "text", text }],
+    })
+  }
+
+  function turn(fake: ReturnType<typeof setup>, text: string) {
+    fake.listeners.find((l) => l.event === "turn_end")!.handler({
+      message: { content: text },
+    })
+  }
+
+  function evidence(issueId: string, exitCode: number) {
+    return JSON.stringify({ issueId, green: { exitCode } })
+  }
+
+  const harnessPath: Array<{ from: string; role: string; text: string }> = [
+    { from: "research", role: "research-orchestrator", text: "research done" },
+    { from: "spec", role: "spec-reviewer", text: `noise\n${OK}\nkind: harness-after-bite-gate` },
+    { from: "plan", role: "plan-reviewer", text: OK },
+    { from: "bitesize", role: "bite-size-reviewer", text: OK },
+    { from: "implement", role: "implementer", text: `prose GREEN\n${evidence("dotfiles-x", 0)}` },
+    { from: "verify", role: "verify-gate", text: OK },
+    {
+      from: "milestone",
+      role: "milestone-organizer",
+      text: `${OK}\n${JSON.stringify({ goalComplete: true })}`,
+    },
+  ]
+
+  async function startHarness(fake: ReturnType<typeof setup>, goal = "g") {
+    await fake.commands.get("harness")!.handler(goal, fake.ctx)
+  }
+
+  function advanceHarnessTo(fake: ReturnType<typeof setup>, target: string) {
+    for (const step of harnessPath) {
+      if (getActiveRun()?.phase === target) return
+      if (getActiveRun()?.phase !== step.from) continue
+      fire(fake, step.role, step.text, { via: step.from === "spec" ? "script" : "name" })
+    }
+    expect(getActiveRun()?.phase).toBe(target)
+  }
+
+  function noAutoCommands(fake: ReturnType<typeof setup>) {
+    expect(fake.userMessages.filter((m) => /^\/(harness|design)\b/.test(m.trim()))).toEqual([])
+  }
+
+  test("harness walks research→pr from mixed tool_result JSON; kind: headers are not evidence", async () => {
+    const fake = setup()
+    await startHarness(fake)
+    expect(getActiveRun()?.phase).toBe("research")
+    turn(fake, "kind: goal-harness-start\nkind: harness-after-bite-gate")
+    expect(getActiveRun()?.phase).toBe("research")
+    fire(fake, "spec-reviewer", OK)
+    expect(getActiveRun()?.phase).toBe("research")
+    fire(fake, "research-orchestrator", "kind: goal-harness-start", { toolName: "bash" })
+    expect(getActiveRun()?.phase).toBe("research")
+    fire(fake, "research-orchestrator", "research done", { isError: true })
+    expect(getActiveRun()?.phase).toBe("research")
+
+    fire(fake, "research-orchestrator", "kind: ignored\nresearch done", { via: "name" })
+    expect(getActiveRun()).toMatchObject({ phase: "spec", attempts: 0, injects: 0 })
+    fire(fake, "spec-reviewer", `preamble\n${OK}\ntrailer`, { via: "script" })
+    expect(getActiveRun()?.phase).toBe("plan")
+    fire(fake, "plan-reviewer", OK, { via: "name" })
+    expect(getActiveRun()?.phase).toBe("bitesize")
+    fire(fake, "bite-size-reviewer", OK, { via: "script" })
+    expect(getActiveRun()?.phase).toBe("implement")
+    fire(fake, "implementer", evidence("dotfiles-x", 0))
+    expect(getActiveRun()?.phase).toBe("verify")
+    fire(fake, "verify-gate", OK)
+    expect(getActiveRun()?.phase).toBe("milestone")
+    fire(
+      fake,
+      "milestone-organizer",
+      `${OK}\n${JSON.stringify({ goalComplete: true })}`,
+    )
+    expect(getActiveRun()?.phase).toBe("pr")
+    fire(fake, "pr-opener", "Opened https://github.com/acme/dotfiles/pull/42")
+    expect(getActiveRun()).toBeNull()
+  })
+
+  test("gatedRoles match phase after each predecessor gate", async () => {
+    const fake = setup()
+    await startHarness(fake)
+    const table: Array<{ phase: string; allow: string; block: string[] }> = [
+      {
+        phase: "research",
+        allow: "research-orchestrator",
+        block: ["implementer", "pr-opener", "milestone-organizer", "verify-gate"],
+      },
+      {
+        phase: "spec",
+        allow: "spec-reviewer",
+        block: ["implementer", "pr-opener", "milestone-organizer", "verify-gate"],
+      },
+      {
+        phase: "plan",
+        allow: "plan-reviewer",
+        block: ["implementer", "pr-opener", "milestone-organizer", "verify-gate"],
+      },
+      {
+        phase: "bitesize",
+        allow: "bite-size-reviewer",
+        block: ["implementer", "pr-opener", "milestone-organizer", "verify-gate"],
+      },
+      {
+        phase: "implement",
+        allow: "implementer",
+        block: ["pr-opener", "milestone-organizer", "verify-gate"],
+      },
+      {
+        phase: "verify",
+        allow: "verify-gate",
+        block: ["implementer", "pr-opener", "milestone-organizer"],
+      },
+      {
+        phase: "milestone",
+        allow: "milestone-organizer",
+        block: ["implementer", "pr-opener", "verify-gate"],
+      },
+      {
+        phase: "pr",
+        allow: "pr-opener",
+        block: ["implementer", "milestone-organizer", "verify-gate"],
+      },
+    ]
+    for (const row of table) {
+      advanceHarnessTo(fake, row.phase)
+      expect(getActiveRun()?.phase).toBe(row.phase)
+      expect(workflow(fake, { name: row.allow })?.block).toBeFalsy()
+      for (const role of row.block) {
+        const result = workflow(fake, { name: role })
+        expect(result?.block).toBe(true)
+        expect(result?.reason).toContain(row.phase)
+        expect(result?.reason).toContain(row.allow)
+      }
+    }
+  })
+
+  test("design walks intake→handoff; architect consult→handoff", async () => {
+    const design = setup()
+    await design.commands.get("design")!.handler("auth", design.ctx)
+    expect(getActiveRun()?.phase).toBe("intake")
+    fire(design, "pdr-writer", "wrote pdr")
+    expect(getActiveRun()?.phase).toBe("pdr")
+    fire(design, "pdr-reviewer", OK)
+    expect(getActiveRun()?.phase).toBe("arc42")
+    fire(design, "arc42-reviewer", OK)
+    expect(getActiveRun()?.phase).toBe("adr")
+    fire(design, "adr-writer", MADR)
+    expect(getActiveRun()?.phase).toBe("handoff")
+    turn(design, DESIGN_HANDOFF)
+    expect(getActiveRun()?.phase).toBe("handoff")
+    noAutoCommands(design)
+
+    const architect = setup()
+    await architect.commands.get("architect")!.handler("boundaries?", architect.ctx)
+    expect(getActiveRun()?.phase).toBe("consult")
+    turn(architect, ARCHITECT_DONE)
+    expect(getActiveRun()?.phase).toBe("handoff")
+    turn(architect, ARCHITECT_DONE)
+    expect(getActiveRun()).toBeNull()
+    noAutoCommands(architect)
+  })
+
+  test("only implementer-evidence with issueId and green.exitCode 0 advances; prose GREEN only follow-ups", async () => {
+    const fake = setup()
+    await startHarness(fake)
+    advanceHarnessTo(fake, "implement")
+    const before = getActiveRun()
+    fire(fake, "implementer", evidence("", 0))
+    expect(getActiveRun()?.phase).toBe("implement")
+    fire(fake, "implementer", evidence("dotfiles-x", 1))
+    expect(getActiveRun()?.phase).toBe("implement")
+    fire(fake, "implementer", JSON.stringify({ issueId: "dotfiles-x" }))
+    expect(getActiveRun()?.phase).toBe("implement")
+    fire(fake, "implementer", GREEN_SKIP)
+    expect(getActiveRun()?.phase).toBe("implement")
+    expect(getActiveRun()?.attempts).toBe(0)
+    const followUpsBefore = fake.userMessages.filter((m) =>
+      m.includes("kind: harness-after-bite-gate"),
+    ).length
+    turn(fake, GREEN_SKIP)
+    expect(getActiveRun()?.phase).toBe("implement")
+    expect(getActiveRun()).toBe(before)
+    expect(
+      fake.userMessages.filter((m) => m.includes("kind: harness-after-bite-gate")).length,
+    ).toBe(followUpsBefore + 1)
+    expect(fake.userMessageOptions.at(-1)).toEqual({ deliverAs: "followUp" })
+    fire(fake, "implementer", `Implementer GREEN\n${evidence("dotfiles-x", 0)}`)
+    expect(getActiveRun()?.phase).toBe("verify")
+  })
+
+  test("verify-gate review ok:false stays in verify", async () => {
+    const fake = setup()
+    await startHarness(fake)
+    advanceHarnessTo(fake, "verify")
+    fire(fake, "verify-gate", JSON.stringify({ ok: false, feedback: "nope", blocking: ["x"] }))
+    expect(getActiveRun()).toMatchObject({ phase: "verify", attempts: 0 })
+  })
+
+  test("verify mixed reviews: ok:true then ok:false stays in verify", async () => {
+    const fake = setup()
+    await startHarness(fake)
+    advanceHarnessTo(fake, "verify")
+    fake.listeners.find((l) => l.event === "tool_result")!.handler({
+      toolName: "workflow",
+      isError: false,
+      input: {
+        script: `agent("v", { agentType: "verify-gate" }); agent("c", { agentType: "code-reviewer" })`,
+      },
+      content: [{ type: "text", text: `${OK}\n${FAIL}` }],
+    })
+    expect(getActiveRun()?.phase).toBe("verify")
+  })
+
+  test("verify-gate prose without review JSON stays in verify", async () => {
+    const fake = setup()
+    await startHarness(fake)
+    advanceHarnessTo(fake, "verify")
+    fire(fake, "verify-gate", "")
+    expect(getActiveRun()?.phase).toBe("verify")
+    fire(fake, "verify-gate", "{}")
+    expect(getActiveRun()?.phase).toBe("verify")
+    fire(fake, "verify-gate", "verified")
+    expect(getActiveRun()?.phase).toBe("verify")
+    fire(fake, "verify-gate", "ok")
+    expect(getActiveRun()?.phase).toBe("verify")
+    fire(fake, "verify-gate", "verification failed: terminal command exited 1", { isError: false })
+    expect(getActiveRun()?.phase).toBe("verify")
+  })
+
+  test("goalComplete is a sibling object; review ok:false stays and caps attempts", async () => {
+    const fake = setup()
+    await startHarness(fake)
+    advanceHarnessTo(fake, "spec")
+    fire(fake, "spec-reviewer", "{}")
+    fire(fake, "spec-reviewer", JSON.stringify({ ok: true }))
+    fire(fake, "spec-reviewer", JSON.stringify({ ok: "true", feedback: "x", blocking: [] }))
+    expect(getActiveRun()).toMatchObject({ phase: "spec", attempts: 0 })
+    fire(fake, "spec-reviewer", FAIL)
+    expect(getActiveRun()).toMatchObject({ phase: "spec", attempts: 1 })
+    fire(fake, "spec-reviewer", FAIL)
+    fire(fake, "spec-reviewer", FAIL)
+    expect(getActiveRun()).toMatchObject({ phase: "spec", attempts: 3 })
+    fire(fake, "spec-reviewer", FAIL)
+    expect(getActiveRun()).toMatchObject({ phase: "spec", attempts: 3 })
+    fire(fake, "spec-reviewer", OK)
+    expect(getActiveRun()).toMatchObject({ phase: "plan", attempts: 0, injects: 0 })
+
+    advanceHarnessTo(fake, "bitesize")
+    fire(fake, "bite-size-reviewer", FAIL)
+    fire(fake, "bite-size-reviewer", FAIL)
+    expect(getActiveRun()).toMatchObject({ phase: "bitesize", attempts: 2 })
+    fire(fake, "bite-size-reviewer", FAIL)
+    expect(getActiveRun()).toMatchObject({ phase: "bitesize", attempts: 2 })
+    fire(fake, "bite-size-reviewer", OK)
+    expect(getActiveRun()?.phase).toBe("implement")
+
+    advanceHarnessTo(fake, "milestone")
+    fire(
+      fake,
+      "milestone-organizer",
+      JSON.stringify({ ok: true, feedback: "p", blocking: [], goalComplete: true }),
+    )
+    expect(getActiveRun()?.phase).toBe("pr")
+    await startHarness(fake)
+    advanceHarnessTo(fake, "milestone")
+    fire(fake, "milestone-organizer", OK)
+    expect(getActiveRun()?.phase).toBe("pr")
+    await startHarness(fake)
+    advanceHarnessTo(fake, "milestone")
+    fire(fake, "milestone-organizer", `${OK}\n${JSON.stringify({ goalComplete: false })}`)
+    expect(getActiveRun()).toMatchObject({ phase: "bitesize", attempts: 0 })
+    advanceHarnessTo(fake, "milestone")
+    fire(
+      fake,
+      "milestone-organizer",
+      JSON.stringify({ ok: true, feedback: "p", blocking: [], goalComplete: false }),
+    )
+    expect(getActiveRun()).toMatchObject({ phase: "bitesize", attempts: 0 })
+  })
+
+  test("injects cap at 3 per phase and reset on phase change; design/architect cannot inject forever", async () => {
+    const harness = setup()
+    await startHarness(harness, "bound")
+    for (let i = 0; i < 4; i++) turn(harness, GREEN_SKIP)
+    expect(getActiveRun()?.injects).toBe(3)
+    expect(
+      harness.userMessages.filter((m) => m.includes("kind: harness-after-bite-gate")),
+    ).toHaveLength(3)
+    fire(harness, "research-orchestrator", "done")
+    expect(getActiveRun()).toMatchObject({ phase: "spec", injects: 0, attempts: 0 })
+    turn(harness, GREEN_SKIP)
+    expect(getActiveRun()?.injects).toBe(1)
+
+    const design = setup()
+    await design.commands.get("design")!.handler("auth", design.ctx)
+    fire(design, "research-orchestrator", "intake done")
+    fire(design, "pdr-reviewer", FAIL)
+    expect(getActiveRun()).toMatchObject({ phase: "pdr", attempts: 1 })
+    fire(design, "pdr-reviewer", FAIL)
+    expect(getActiveRun()).toMatchObject({ phase: "pdr", attempts: 2 })
+    fire(design, "pdr-reviewer", FAIL)
+    expect(getActiveRun()).toMatchObject({ phase: "pdr", attempts: 2 })
+    fire(design, "pdr-reviewer", OK)
+    fire(design, "arc42-reviewer", OK)
+    fire(design, "adr-writer", MADR)
+    expect(getActiveRun()?.phase).toBe("handoff")
+    for (let i = 0; i < 4; i++) turn(design, "still designing")
+    expect(getActiveRun()?.injects).toBe(3)
+    expect(getActiveRun()?.phase).toBe("handoff")
+    const designFollows = design.userMessages.filter((m) =>
+      m.includes("kind: design-handoff-gate"),
+    )
+    expect(designFollows).toHaveLength(3)
+    expect(designFollows.every((m) => m.includes("PDR") && m.includes("nextStep"))).toBe(true)
+    noAutoCommands(design)
+    turn(design, DESIGN_HANDOFF)
+    expect(getActiveRun()?.phase).toBe("handoff")
+    noAutoCommands(design)
+
+    const architect = setup()
+    await architect.commands.get("architect-layered")!.handler("hex?", architect.ctx)
+    for (let i = 0; i < 4; i++) turn(architect, "kind: architect-consult\nstill thinking")
+    expect(getActiveRun()).toMatchObject({ phase: "consult", injects: 3 })
+    const stepFollows = architect.userMessages.filter((m) => m.includes("step-0:"))
+    expect(stepFollows).toHaveLength(3)
+    for (const msg of stepFollows) {
+      for (let n = 0; n <= 8; n++) expect(msg).toContain(`step-${n}:`)
+      expect(msg).not.toMatch(/^\/(harness|design)\b/m)
+    }
+    noAutoCommands(architect)
+    turn(architect, ARCHITECT_DONE)
+    expect(getActiveRun()?.phase).toBe("handoff")
+    expect(getActiveRun()?.injects).toBe(0)
+    noAutoCommands(architect)
+  })
+
+  test("pr-opener without PR URL or with error does not clear; empty MADR does not leave adr", async () => {
+    const fake = setup()
+    await startHarness(fake)
+    advanceHarnessTo(fake, "pr")
+    fire(fake, "pr-opener", "opened a PR", { isError: false })
+    expect(getActiveRun()?.phase).toBe("pr")
+    fire(fake, "pr-opener", "https://github.com/acme/dotfiles/pull/9", { isError: true })
+    expect(getActiveRun()?.phase).toBe("pr")
+    fire(fake, "pr-opener", "https://github.com/acme/dotfiles/pull/9")
+    expect(getActiveRun()).toBeNull()
+
+    const design = setup()
+    await design.commands.get("design")!.handler("x", design.ctx)
+    fire(design, "pdr-writer", "p")
+    fire(design, "pdr-reviewer", OK)
+    fire(design, "arc42-reviewer", OK)
+    fire(design, "adr-writer", JSON.stringify({ adrs: [] }))
+    expect(getActiveRun()?.phase).toBe("adr")
+    fire(design, "adr-writer", MADR)
+    expect(getActiveRun()?.phase).toBe("handoff")
   })
 })

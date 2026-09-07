@@ -74,7 +74,7 @@ Agent `route:` = chain in `workflows/model-routes.json`. Pin = first hop. Failov
 
 | Command | Behavior |
 |---------|----------|
-| **`/harness [goal]`** | Main process. Empty args → 8 default quality lines. Bigpowers + bd + adapters. |
+| **`/harness [goal]`** | Main process. Empty args → 8 quality lines. Hard gates: pin workflow `background:false`; `turn_end` follow-up if GREEN skipped verify/review (max 3). |
 | `/design <goal>` | PDR/Arc42/ADR only (`elaborate-spec` + design-flow) |
 | `/architect` / `/architect-layered` | In-session architecture consult |
 | `/init` | AGENTS/bd scaffold only |

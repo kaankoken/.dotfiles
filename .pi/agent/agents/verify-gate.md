@@ -25,4 +25,5 @@ Required gate: implementer → this agent → `milestone-organizer`.
 
 ## Output
 
+Emit JSON {ok, feedback, blocking} (REVIEW-POLICY shape).
 Fresh command evidence on bd. Do not open PRs (`pr-opener`). Do not declare product done without verify evidence.

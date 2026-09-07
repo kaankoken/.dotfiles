@@ -118,7 +118,7 @@ function buildHarnessStart(goal: string, usedDefault: boolean, cwd: string): str
     "This `/harness` invocation IS user opt-in to the `workflow` tool. Call it. Do not wait for the keyword. Pass `background: false` for implementer + gates so this turn sees results.",
     "Implementer GREEN is a checkpoint, not completion. Immediately:",
     "1. Long checks (`bg_run` / tests).",
-    "2. `verify-gate` (verify-work + validate-fix) with fresh command evidence.",
+    "2. `verify-gate` (verify-work + validate-fix) with fresh command evidence; emit JSON {ok, feedback, blocking}.",
     "3. Review → JSON { ok, feedback, blocking } (code-reviewer; max 3; first ok:true ends).",
     "4. Record `verify:` evidence in bd; close the bite; claim the next bd task.",
     "5. Repeat until every bd bite is closed AND the bound goal (default: 8 quality lines) has evidence.",
@@ -263,21 +263,274 @@ function buildInitStart(scope: string, cwd: string): string {
   ].join("\n")
 }
 
+type RunKind = "harness" | "design" | "architect" | "architect-layered"
+
+type ActiveRun = {
+  kind: RunKind
+  goal: string
+  phase: string
+  attempts: number
+  injects: number
+}
+
+const INITIAL_PHASE: Record<RunKind, string> = {
+  harness: "research",
+  design: "intake",
+  architect: "consult",
+  "architect-layered": "consult",
+}
+
+const NEXT_ROLE: Record<RunKind, string> = {
+  harness: "research-orchestrator",
+  design: "pdr-writer",
+  architect: "research-orchestrator",
+  "architect-layered": "research-orchestrator",
+}
+
+const HARNESS_RESTRICTED = ["implementer", "pr-opener", "milestone-organizer", "verify-gate"] as const
+
+const PHASE_NEXT_ROLE: Record<string, string> = {
+  research: "research-orchestrator",
+  spec: "spec-reviewer",
+  plan: "plan-reviewer",
+  bitesize: "bite-size-reviewer",
+  implement: "implementer",
+  verify: "verify-gate",
+  milestone: "milestone-organizer",
+  pr: "pr-opener",
+  intake: "pdr-writer",
+  pdr: "pdr-reviewer",
+  arc42: "arc42-reviewer",
+  adr: "adr-writer",
+  handoff: "pdr-writer",
+  consult: "research-orchestrator",
+}
+
+const REVIEW_NEXT: Record<string, { role: string; next: string; max: number }> = {
+  spec: { role: "spec-reviewer", next: "plan", max: 3 },
+  plan: { role: "plan-reviewer", next: "bitesize", max: 3 },
+  bitesize: { role: "bite-size-reviewer", next: "implement", max: 2 },
+  pdr: { role: "pdr-reviewer", next: "arc42", max: 2 },
+  arc42: { role: "arc42-reviewer", next: "adr", max: 2 },
+}
+
+let activeRun: ActiveRun | null = null
+
+export function getActiveRun(): ActiveRun | null {
+  return activeRun
+}
+
+function startRun(kind: RunKind, goal: string): void {
+  activeRun = {
+    kind,
+    goal,
+    phase: INITIAL_PHASE[kind],
+    attempts: 0,
+    injects: 0,
+  }
+}
+
+function allowedNext(run: ActiveRun): string {
+  return PHASE_NEXT_ROLE[run.phase] ?? NEXT_ROLE[run.kind]
+}
+
+function gatedRoles(run: ActiveRun): readonly string[] {
+  if (run.kind === "design" || run.kind === "architect" || run.kind === "architect-layered") {
+    return ["implementer", "pr-opener", "kickoff-branch"]
+  }
+  const allowed = PHASE_NEXT_ROLE[run.phase]
+  return HARNESS_RESTRICTED.filter((role) => role !== allowed)
+}
+
+function firstGatedRole(
+  input: Record<string, unknown>,
+  blocked: readonly string[],
+): string | undefined {
+  if (typeof input.name === "string" && blocked.includes(input.name)) return input.name
+  if (typeof input.script !== "string") return
+  for (const m of input.script.matchAll(
+    /\bagentType\s*:\s*(?:["']([A-Za-z0-9_-]+)["']|([A-Za-z0-9_-]+))/g,
+  )) {
+    if (m[2]) return m[2]
+    if (m[1] && blocked.includes(m[1])) return m[1]
+  }
+}
+
+function setPhase(run: ActiveRun, phase: string): void {
+  run.phase = phase
+  run.attempts = 0
+  run.injects = 0
+}
+
+function extractJsonObjects(text: string): unknown[] {
+  const out: unknown[] = []
+  for (let i = 0; i < text.length; i++) {
+    if (text[i] !== "{") continue
+    for (let j = i + 1; j < text.length; j++) {
+      if (text[j] !== "}") continue
+      try {
+        out.push(JSON.parse(text.slice(i, j + 1)))
+        i = j
+        break
+      } catch { /* grow */ }
+    }
+  }
+  return out
+}
+
+function asReview(obj: unknown): { ok: boolean; feedback: string; blocking: string[] } | undefined {
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return
+  const o = obj as Record<string, unknown>
+  if (typeof o.ok !== "boolean" || typeof o.feedback !== "string" || !Array.isArray(o.blocking)) return
+  if (o.blocking.some((item) => typeof item !== "string")) return
+  return { ok: o.ok, feedback: o.feedback, blocking: o.blocking as string[] }
+}
+
+function isImplementerEvidence(obj: unknown): boolean {
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return false
+  const o = obj as Record<string, unknown>
+  if (typeof o.issueId !== "string" || o.issueId.length === 0) return false
+  const green = o.green
+  if (!green || typeof green !== "object" || Array.isArray(green)) return false
+  return (green as { exitCode?: unknown }).exitCode === 0
+}
+
+function isMadrLite(obj: unknown): boolean {
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return false
+  const adrs = (obj as { adrs?: unknown }).adrs
+  if (!Array.isArray(adrs) || adrs.length === 0) return false
+  return adrs.every((adr) => {
+    if (!adr || typeof adr !== "object") return false
+    const title = (adr as { title?: unknown }).title
+    return typeof title === "string" && title.length > 0
+  })
+}
+
+function findGoalComplete(objs: unknown[]): boolean | undefined {
+  for (const obj of objs) {
+    if (!obj || typeof obj !== "object" || Array.isArray(obj)) continue
+    if (!("goalComplete" in obj)) continue
+    const value = (obj as { goalComplete: unknown }).goalComplete
+    if (typeof value === "boolean") return value
+  }
+}
+
+function evidenceRoles(input: Record<string, unknown>): string[] {
+  const roles: string[] = []
+  if (typeof input.name === "string" && input.name) roles.push(input.name)
+  if (typeof input.script !== "string") return roles
+  for (const m of input.script.matchAll(
+    /\bagentType\s*:\s*(?:["']([A-Za-z0-9_-]+)["']|([A-Za-z0-9_-]+))/g,
+  )) {
+    const token = m[1] ?? m[2]
+    if (token) roles.push(token)
+  }
+  return roles
+}
+
+function applyReviewGate(run: ActiveRun, roles: string[], objs: unknown[]): boolean {
+  const gate = REVIEW_NEXT[run.phase]
+  if (!gate || !roles.includes(gate.role)) return false
+  const review = objs.map(asReview).find(Boolean)
+  if (!review) return true
+  if (review.ok && review.blocking.length === 0) {
+    setPhase(run, gate.next)
+    return true
+  }
+  if (!review.ok && review.blocking.length > 0 && run.attempts < gate.max) {
+    run.attempts += 1
+  }
+  return true
+}
+
+function applyWorkflowResult(
+  run: ActiveRun,
+  roles: string[],
+  text: string,
+  isError: boolean,
+): void {
+  const objs = extractJsonObjects(text)
+  if (run.kind === "harness") {
+    if (run.phase === "research" && roles.includes("research-orchestrator") && !isError) {
+      setPhase(run, "spec")
+      return
+    }
+    if (applyReviewGate(run, roles, objs)) return
+    if (run.phase === "implement" && roles.includes("implementer") && objs.some(isImplementerEvidence)) {
+      setPhase(run, "verify")
+      return
+    }
+    if (run.phase === "verify" && roles.includes("verify-gate") && !isError) {
+      const reviews = objs.map(asReview).filter(Boolean)
+      if (reviews.length > 0 && reviews.every((r) => r!.ok && r!.blocking.length === 0)) setPhase(run, "milestone")
+      return
+    }
+    if (run.phase === "milestone" && roles.includes("milestone-organizer")) {
+      const review = objs.map(asReview).find(Boolean)
+      if (!review) return
+      if (review.ok && review.blocking.length === 0) {
+        setPhase(run, findGoalComplete(objs) === false ? "bitesize" : "pr")
+        return
+      }
+      if (!review.ok && review.blocking.length > 0 && run.attempts < 3) run.attempts += 1
+      return
+    }
+    if (run.phase === "pr" && roles.includes("pr-opener") && !isError && /https:\/\/github\.com\/[^/\s]+\/[^/\s]+\/pull\/\d+/.test(text)) {
+      activeRun = null
+    }
+    return
+  }
+  if (run.kind !== "design") return
+  if (
+    run.phase === "intake" &&
+    !isError &&
+    (roles.includes("pdr-writer") || roles.includes("research-orchestrator"))
+  ) {
+    setPhase(run, "pdr")
+    return
+  }
+  if (applyReviewGate(run, roles, objs)) return
+  if (run.phase === "adr" && roles.includes("adr-writer") && objs.some(isMadrLite)) {
+    setPhase(run, "handoff")
+  }
+}
+
+function isKindInjection(text: string): boolean {
+  return /^\s*kind:\s+\S+/m.test(text)
+}
+
+function hasArchitectSteps(text: string): boolean {
+  for (let i = 0; i <= 8; i++) {
+    if (!text.includes(`step-${i}:`)) return false
+  }
+  return true
+}
+
+function architectComplete(text: string): boolean {
+  return !isKindInjection(text) && hasArchitectSteps(text) && /architecture-handoff/i.test(text)
+}
+
+function hasDesignHandoffFields(text: string): boolean {
+  return (
+    !isKindInjection(text) &&
+    /PDR\s*:\s+\S+/i.test(text) &&
+    /Arc42\s*:\s+\S+/i.test(text) &&
+    /ADR\s*:\s+\S+/i.test(text) &&
+    /nextStep\s*:\s+\S+/i.test(text)
+  )
+}
+
 async function fireUserMessage(
   pi: ExtensionAPI,
   ctx: { isIdle: () => boolean; ui: { notify: Notify } },
   text: string,
 ): Promise<void> {
-  activeHarness = null
   if (!ctx.isIdle()) {
     ctx.ui.notify("Agent busy — try again when idle.", "warning")
     return
   }
   await pi.sendUserMessage(text)
 }
-
-type HarnessRun = { goal: string; injects: number }
-let activeHarness: HarnessRun | null = null
 
 export function needsAfterBiteGate(text: string): boolean {
   if (/skipped verify-gate|stopped after implementer/i.test(text)) return true
@@ -294,10 +547,42 @@ export function buildAfterBiteContinue(goal: string): string {
     "",
     "Call the `workflow` tool now with `background: false`:",
     "1. Long checks (tests).",
-    "2. verify-gate (verify-work + validate-fix) + fresh command evidence.",
+    "2. verify-gate (verify-work + validate-fix) + fresh command evidence; emit JSON {ok, feedback, blocking}.",
     "3. Review JSON { ok, feedback, blocking }.",
     "4. bd verify: evidence; close bite; next bite.",
     "Do not stop. Do not skip verify-gate or review.",
+  ].join("\n")
+}
+
+function buildDesignHandoffContinue(goal: string): string {
+  return [
+    "kind: design-handoff-gate",
+    "Bound design goal:",
+    goal,
+    "",
+    "Emit handoff with PDR, Arc42, ADR paths, and nextStep.",
+    "Do not auto-start /harness.",
+  ].join("\n")
+}
+
+function buildArchitectContinue(question: string): string {
+  return [
+    "kind: architect-follow-up",
+    "Bound question:",
+    question,
+    "",
+    "step-0: Repo-fit probe",
+    "step-1: Problem, non-goals, constraints, success metrics",
+    "step-2: Quality attributes",
+    "step-3: Candidates + tradeoffs",
+    "step-4: Boundaries",
+    "step-5: Data strategy",
+    "step-6: Ops / failure / observability",
+    "step-7: Scope limits",
+    "step-8: Decisive ADRs",
+    "",
+    "Fill architecture-handoff fields in session.",
+    "Do not auto-start /design or /harness.",
   ].join("\n")
 }
 
@@ -360,7 +645,7 @@ export default function (pi: ExtensionAPI) {
         `Harness research route: ${selectedRoute.provider}/${selectedRoute.modelId}:${selectedRoute.effort}`,
         selectedRoute.provider === "openai-codex" ? "warning" : "info",
       )
-      activeHarness = { goal, injects: 0 }
+      startRun("harness", goal)
       await pi.sendUserMessage(buildHarnessStart(goal, usedDefault, ctx.cwd))
     },
   }
@@ -375,6 +660,7 @@ export default function (pi: ExtensionAPI) {
     handler: async (args, ctx) => {
       const goal = requireArgs(args, "Usage: /design <system goal>", ctx.ui.notify.bind(ctx.ui))
       if (!goal) return
+      startRun("design", goal)
       await fireUserMessage(pi, ctx, buildDesignStart(goal))
     },
   })
@@ -384,6 +670,7 @@ export default function (pi: ExtensionAPI) {
     handler: async (args, ctx) => {
       const q = requireArgs(args, "Usage: /architect <question>", ctx.ui.notify.bind(ctx.ui))
       if (!q) return
+      startRun("architect", q)
       await fireUserMessage(pi, ctx, buildArchitectStart(q, false))
     },
   })
@@ -393,6 +680,7 @@ export default function (pi: ExtensionAPI) {
     handler: async (args, ctx) => {
       const q = requireArgs(args, "Usage: /architect-layered <question>", ctx.ui.notify.bind(ctx.ui))
       if (!q) return
+      startRun("architect-layered", q)
       await fireUserMessage(pi, ctx, buildArchitectStart(q, true))
     },
   })
@@ -405,15 +693,63 @@ export default function (pi: ExtensionAPI) {
   })
 
   pi.on("session_shutdown", () => {
-    activeHarness = null
+    activeRun = null
   })
   pi.on("turn_end", (event) => {
-    const run = activeHarness
-    if (!run || run.injects >= 3) return
+    const run = activeRun
+    if (!run) return
     const message = (event as { message?: unknown }).message
     const text = assistantText(message)
-    if (!needsAfterBiteGate(text)) return
+    if (run.kind === "harness") {
+      if (run.injects >= 3 || !needsAfterBiteGate(text)) return
+      run.injects += 1
+      pi.sendUserMessage(buildAfterBiteContinue(run.goal), { deliverAs: "followUp" })
+      return
+    }
+    if (run.kind === "design" && run.phase === "handoff") {
+      if (hasDesignHandoffFields(text) || run.injects >= 3) return
+      run.injects += 1
+      pi.sendUserMessage(buildDesignHandoffContinue(run.goal), { deliverAs: "followUp" })
+      return
+    }
+    if (run.kind !== "architect" && run.kind !== "architect-layered") return
+    if (run.phase === "handoff") {
+      activeRun = null
+      return
+    }
+    if (run.phase !== "consult") return
+    if (architectComplete(text)) {
+      setPhase(run, "handoff")
+      return
+    }
+    if (run.injects >= 3) return
     run.injects += 1
-    pi.sendUserMessage(buildAfterBiteContinue(run.goal), { deliverAs: "followUp" })
+    pi.sendUserMessage(buildArchitectContinue(run.goal), { deliverAs: "followUp" })
+  })
+  pi.on("tool_result", (event) => {
+    const run = activeRun
+    if (!run) return
+    const e = event as {
+      toolName?: string
+      isError?: boolean
+      input?: Record<string, unknown>
+      content?: unknown
+    }
+    if (e.toolName !== "workflow") return
+    applyWorkflowResult(run, evidenceRoles(e.input ?? {}), assistantText({ content: e.content }), e.isError === true)
+  })
+  pi.on("tool_call", (event) => {
+    const run = activeRun
+    if (!run) return
+    if (event.toolName !== "workflow") return
+    const input = event.input as Record<string, unknown>
+    const role = firstGatedRole(input, gatedRoles(run))
+    if (role) {
+      return { block: true, reason: `Blocked ${role} during ${run.phase}; allowed next: ${allowedNext(run)}` }
+    }
+    if (run.kind !== "harness") return
+    if (input.resumeFromRunId) return
+    if (input.background === false) return
+    input.background = false
   })
 }
