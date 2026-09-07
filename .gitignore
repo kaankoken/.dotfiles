@@ -13,6 +13,8 @@
 /.config/pi/web-search-cache
 /.pi/workflows
 /specs/
+/.config/pi-hashline-edit-pro/sessions
+
 
 # Third-party skill clones (stow → ~/.agents/…)
 /.agents/google-skills/
@@ -39,3 +41,10 @@
 
 .worktrees
 worktrees
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key
+.beads/proxieddb/
+/.beads
