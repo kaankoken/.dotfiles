@@ -74,7 +74,7 @@ Agent `route:` = chain in `workflows/model-routes.json`. Pin = first hop. Failov
 
 | Command | Behavior |
 |---------|----------|
-| **`/harness [goal]`** | FSM `research→spec→plan→bitesize→implement→verify→milestone→pr`. Blocks later `agentType`s. Pins `workflow` `background:false`. `turn_end` follow-up on skip/stop (max 3). |
+| **`/harness [goal]`** | FSM `research→spec→spec-confirm→plan→bitesize→plan-confirm→implement→verify→milestone→pr`. Human confirm only at spec-confirm + plan-confirm. Build auto until bound goal (empty = 8 quality lines). Blocks later `agentType`s. Pins `workflow` `background:false`. `turn_end` follow-up on skip/stop (max 3). |
 | `/design <goal>` | FSM `intake→pdr→arc42→adr→handoff`. Blocks implement/PR. Handoff follow-up until PDR/Arc42/ADR/nextStep. |
 | `/architect` / `/architect-layered` | FSM `consult→handoff`. Follow-up only if stopped incomplete (not every turn). |
 | `/init` | AGENTS/bd scaffold only |

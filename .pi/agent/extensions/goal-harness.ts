@@ -113,6 +113,16 @@ function buildHarnessStart(goal: string, usedDefault: boolean, cwd: string): str
     "You are the **Pi harness controller**. Drive the bound goal end-to-end using Pi packages + bd + Bigpowers skills.",
     "Do not invent a second goal. Do not claim Milestone PASS without evidence.",
     "The parent session is the research controller only. Delegate writer/reviewer/implementer work to routed agents; never execute those phases on the parent model.",
+    "Do not invent extra human checkpoints.",
+    "",
+    "### Human gates (strict — only two)",
+    "- After Spec reviewer `ok: true`: present the spec and **wait** for the user to reply `go`. Do not start Plan.",
+    "- After Plan+BiteSize reviewer `ok: true`: present the plan/bites and **wait** for `go`. Do not start Implement.",
+    "- Those two waits are the **only** human confirms. Never ask to continue research, bitesize internals, implement bites, verify, milestone, or PR.",
+    "- Empty `/harness` binds **all 8 default quality lines** as the bound goal. Spec/plan/grill-me/elaborate-spec still run against that full goal — do not skip the interview.",
+    "- `/harness` already opted in to build. After plan confirm (`go`), run implement→verify→milestone without asking until the bound goal has evidence (all 8 lines + all bd bites closed).",
+    "- Do **not** use Bigpowers `execute-plan` (it checkpoints every step).",
+    "- `bd where` is yours to run. Do not ask the user to confirm the beads path.",
     "",
     "### After each bite (required — GREEN is not done)",
     "This `/harness` invocation IS user opt-in to the `workflow` tool. Call it. Do not wait for the keyword. Pass `background: false` for implementer + gates so this turn sees results.",
@@ -149,15 +159,15 @@ function buildHarnessStart(goal: string, usedDefault: boolean, cwd: string): str
     "2. **Architect → design** (if the bound goal needs design):",
     `   - ${PI_AGENTS}/assumption-griller.md (required gate; ${BIGPOWERS}/grill-me/SKILL.md)`,
     `   - then /design or ${PI_SKILLS}/design-flow/SKILL.md — consume architecture-handoff`,
-    "3. **Spec** — short design/spec in session + bd. Path-load",
+    "3. **Spec** — short design/spec in session + bd. Then **one** human confirm (spec-confirm). Path-load",
     `   - ${BIGPOWERS}/elaborate-spec/SKILL.md`,
     `   - ${PI_AGENTS}/spec-writer.md when using DW agentType`,
-    "   Consume design-handoff. Human confirm before large implementation.",
-    "4. **Plan** — ordered bite-sized **bd** tasks; every task body includes `verify: <cmd>`. Path-load",
+    "   Consume design-handoff. Do not start Plan until the user approves.",
+    "4. **Plan** — ordered bite-sized **bd** tasks; every task body includes `verify: <cmd>`. Then BiteSize. Then **one** human confirm (plan-confirm). Path-load",
     `   - ${PI_AGENTS}/impact-assessor.md (required when touching existing modules; ${BIGPOWERS}/assess-impact/SKILL.md)`,
     `   - ${BIGPOWERS}/scope-work/SKILL.md → ${BIGPOWERS}/slice-tasks/SKILL.md → ${BIGPOWERS}/plan-work/SKILL.md`,
     `   - ${PI_ADAPTERS}/bp-plan-to-bd/SKILL.md (bd output contract)`,
-    "5. **Implement** — one task at a time; TDD evidence; hashline `read`/`replace` only. Path-load",
+    "5. **Implement** — no human confirm. One task at a time; TDD evidence; hashline `read`/`replace` only. Loop until bound goal. Path-load",
     `   - ${BIGPOWERS}/kickoff-branch/SKILL.md (worktree/branch; harness still owns assignment policy)`,
     `   - ${BIGPOWERS}/develop-tdd/SKILL.md`,
     `   - ${PI_ADAPTERS}/dispatch-via-dw/SKILL.md when parallel/delegate`,
@@ -192,9 +202,11 @@ function buildHarnessStart(goal: string, usedDefault: boolean, cwd: string): str
     "- Never load agent trees outside `~/.pi/agent/*`.",
     "- Never path-load `~/.agents/skills/superpowers/**`.",
     "- Browser automation is opt-in CLI only — not required.",
+    "- Never ask the user to continue implement/verify/milestone. After plan-confirm, build until bound goal evidence.",
+    "- Never use execute-plan (per-step human checkpoint).",
     "- Stop only when the bound goal has evidence (default: all 8 quality lines + all bd bites closed). Implementer GREEN is not that. Then summarize remaining manual steps honestly.",
     "",
-    "Start now: confirm beads, load bp-bd-bridge + using-bigpowers + survey-context, produce Spec outline for the bound goal.",
+    "Start now: verify beads path yourself (do not ask the user), load bp-bd-bridge + using-bigpowers + survey-context, produce Spec for the bound goal.",
   ].join("\n")
 }
 
@@ -290,8 +302,10 @@ const NEXT_ROLE: Record<RunKind, string> = {
 const PHASE_ALLOWED: Record<string, readonly string[]> = {
   research: ["research-orchestrator"],
   spec: ["spec-writer", "spec-reviewer"],
+  "spec-confirm": ["spec-writer", "spec-reviewer"],
   plan: ["plan-writer", "plan-reviewer"],
   bitesize: ["bite-size-writer", "bite-size-reviewer"],
+  "plan-confirm": ["plan-writer", "plan-reviewer", "bite-size-writer", "bite-size-reviewer"],
   implement: ["implementer", "kickoff-branch"],
   verify: ["verify-gate"],
   milestone: ["milestone-organizer"],
@@ -307,9 +321,9 @@ const PHASE_ALLOWED: Record<string, readonly string[]> = {
 const ALL_ROLES: readonly string[] = [...new Set(Object.values(PHASE_ALLOWED).flat())]
 
 const REVIEW_NEXT: Record<string, { role: string; next: string; max: number }> = {
-  spec: { role: "spec-reviewer", next: "plan", max: 3 },
+  spec: { role: "spec-reviewer", next: "spec-confirm", max: 3 },
   plan: { role: "plan-reviewer", next: "bitesize", max: 3 },
-  bitesize: { role: "bite-size-reviewer", next: "implement", max: 2 },
+  bitesize: { role: "bite-size-reviewer", next: "plan-confirm", max: 2 },
   pdr: { role: "pdr-reviewer", next: "arc42", max: 2 },
   arc42: { role: "arc42-reviewer", next: "adr", max: 2 },
 }
@@ -330,10 +344,28 @@ function startRun(kind: RunKind, goal: string): void {
   }
 }
 
+function isHumanGatePhase(phase: string): boolean {
+  return phase === "spec-confirm" || phase === "plan-confirm"
+}
+
+const HUMAN_GATE_NEXT: Record<string, string> = {
+  "spec-confirm": "plan",
+  "plan-confirm": "implement",
+}
+
+export function isHumanApprove(text: string): boolean {
+  const t = text.trim()
+  if (!t || t.length > 80) return false
+  return /^(?:go(?:\s+ahead)?)(?:[.!,\s]+(?:please|thanks|thank\s+you)?)*$/i.test(t)
+}
+
 function allowedNext(run: ActiveRun): string {
+  if (run.phase === "spec-confirm") return "wait for user go; spec-writer, spec-reviewer for revisions"
+  if (run.phase === "plan-confirm") return "wait for user go; plan-writer, bite-size-writer for revisions"
   const roles = PHASE_ALLOWED[run.phase]
   if (roles?.length) return roles.join(", ")
   return NEXT_ROLE[run.kind]
+
 }
 
 function gatedRoles(run: ActiveRun): readonly string[] {
@@ -567,7 +599,7 @@ export function needsAfterBiteGate(text: string): boolean {
 
 export function looksStopped(text: string): boolean {
   if (needsAfterBiteGate(text)) return true
-  return /\b(stopped|i(?:'?m| am) done|task complete|that'?s all|no further(?: work)?|skip(?:ped)? (?:the )?workflow)\b/i.test(text)
+  return /\b(stopped|i(?:'?m| am) done|task complete|that'?s all|no further(?: work)?|skip(?:ped)? (?:the )?workflow|should i (?:continue|proceed|keep going)|please (?:confirm|approve)|confirm the (?:spec|plan)|awaiting (?:your )?(?:confirmation|approval)|ok to (?:continue|proceed)|continue\?|proceed\?)\b/i.test(text)
 }
 
 export function buildAfterBiteContinue(goal: string): string {
@@ -581,7 +613,7 @@ export function buildAfterBiteContinue(goal: string): string {
     "2. verify-gate (verify-work + validate-fix) + fresh command evidence; emit JSON {ok, feedback, blocking}.",
     "3. Review JSON { ok, feedback, blocking }.",
     "4. bd verify: evidence; close bite; next bite.",
-    "Do not stop. Do not skip verify-gate or review.",
+    "Do not stop. Do not skip verify-gate or review. Do not ask the user to continue. Build until the bound goal has evidence.",
   ].join("\n")
 }
 
@@ -628,7 +660,7 @@ function buildPhaseContinue(run: ActiveRun): string {
       `phase: ${run.phase}`,
       `allowed: ${allowedNext(run)}`,
       run.goal,
-      "Do not skip. Call workflow with an allowed agentType.",
+      "Do not skip. Call workflow with an allowed agentType. Do not ask the user to continue.",
     ].join("\n")
   }
   if (run.kind === "design" && run.phase === "handoff") return buildDesignHandoffContinue(run.goal)
@@ -753,12 +785,36 @@ export default function (pi: ExtensionAPI) {
   pi.on("session_shutdown", () => {
     activeRun = null
   })
+  pi.on("input", (event) => {
+    const run = activeRun
+    if (!run || run.kind !== "harness") return
+    const next = HUMAN_GATE_NEXT[run.phase]
+    if (!next) return
+    const e = event as { text?: string; source?: string }
+    if (e.source === "extension") return
+    if (!isHumanApprove(e.text ?? "")) return
+    setPhase(run, next)
+    return {
+      action: "transform",
+      text: next === "plan"
+        ? "User approved the spec. Start Plan then BiteSize now. Do not ask the user until plan-confirm after BiteSize reviewer ok."
+        : "User approved the plan. Start Implement now. Do not ask the user again. Build until the bound goal has evidence.",
+    }
+  })
   pi.on("turn_end", (event) => {
     const run = activeRun
     if (!run) return
     const message = (event as { message?: unknown }).message
     const text = assistantText(message)
     if (run.kind === "harness") {
+      // Session text is evidence too — workflow tool_result is a stub
+      // ("Workflow **name** completed") and never carries reviewer JSON.
+      const phase = run.phase
+      if (!isKindInjection(text)) {
+        applyWorkflowResult(run, [...(PHASE_ALLOWED[phase] ?? [])], text, false)
+        if (run.phase !== phase) return
+      }
+      if (isHumanGatePhase(run.phase)) return
       if (run.injects >= 3) return
       if (needsAfterBiteGate(text)) {
         run.injects += 1

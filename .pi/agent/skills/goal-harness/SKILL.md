@@ -51,6 +51,18 @@ Named roles: `~/.pi/agent/agents/*.md` (parity-manifest). One harness chain only
 
 With arguments: replace 1–8 completely with that text.
 
+## Human gates
+
+Only two user confirms. Reply **`go`** to advance (not `yes`).
+
+1. After Spec reviewer `ok: true` (phase `spec-confirm`). Wait for `go`.
+
+2. After Plan+BiteSize reviewer `ok: true` (phase `plan-confirm`). Wait for `go`.
+
+Then implement→verify→milestone with **no** further asks until the bound goal has evidence.
+
+Empty `/harness` binds **all 8 default quality lines** as the bound goal. Spec, plan, grill-me, and elaborate-spec still run against that full goal — do not skip the interview. Do not use `execute-plan`.
+
 ## Package contracts (required)
 
 ### Hashline (`pi-hashline-edit-pro`)
@@ -110,9 +122,9 @@ Implementer GREEN is a checkpoint, not done. `/harness` **is** `workflow` opt-in
 
 Order: tests (`bg_run`) → `verify-gate` → review JSON `{ok,feedback,blocking}` → bd `verify:` evidence → close bite → next bite.
 
-Stop only when the bound goal has evidence (empty `/harness` = all 8 quality lines + all bd bites closed).
+Stop only when the bound goal has evidence (empty `/harness` = all 8 quality lines + all bd bites closed). Do not ask the user to continue implement/verify/milestone.
 
-Runtime FSM (extension, not prompt-only): `/harness` `/design` `/architect` share one `activeRun`. Later producers/reviewers are **blocked** on `workflow` `tool_call` until that phase. Research advances only with `researchComplete: true` or `research-handoff`; design intake needs `pdr-writer` + `PDR:`. `/harness` pins `workflow` `background: false`. `turn_end` follow-up on skip/stop (max 3/phase); architect does **not** nag every turn.
+Runtime FSM (extension, not prompt-only): `/harness` `/design` `/architect` share one `activeRun`. Later producers/reviewers are **blocked** on `workflow` `tool_call` until that phase. Human confirm only at `spec-confirm` and `plan-confirm` (user `go` advances). Research advances only with `researchComplete: true` or `research-handoff`; design intake needs `pdr-writer` + `PDR:`. `/harness` pins `workflow` `background: false`. `turn_end` follow-up on skip/stop (max 3/phase); architect does **not** nag every turn.
 
 **Max attempts = ceiling, not a quota (max 3).** First reviewer `ok: true` ends the gate.
 Producer rewrite runs **only** when the reviewer returns `ok: false` (blocking items).

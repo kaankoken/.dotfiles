@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent"
-import goalHarness, { needsAfterBiteGate, buildAfterBiteContinue, getActiveRun } from "../extensions/goal-harness.ts"
+import goalHarness, { needsAfterBiteGate, buildAfterBiteContinue, getActiveRun, isHumanApprove, looksStopped } from "../extensions/goal-harness.ts"
 import prReviewer, { buildPrReviewWorkflowScript } from "../extensions/pr-reviewer.ts"
 
 type RegisteredCommand = {
@@ -225,6 +225,15 @@ describe("goal-harness handler start messages", () => {
     expect(msg).toContain("background: false")
     expect(msg).toContain("Do not stop after GREEN")
     expect(msg).toContain("Stop only when the bound goal has evidence")
+    expect(msg).toContain("Human gates (strict — only two)")
+    expect(msg).toContain("spec-confirm")
+    expect(msg).toContain("plan-confirm")
+    expect(msg).toContain("reply `go`")
+    expect(msg).toContain("all 8 default quality lines")
+    expect(msg).toContain("do not skip the interview")
+    expect(msg).toContain("Never ask the user to continue implement/verify/milestone")
+    expect(msg).toContain("verify beads path yourself")
+    expect(msg).not.toContain("Human confirm before large implementation")
     expect(msg).not.toMatch(/using-superpowers|requiredSuperpowers/)
     const defaultGoal = msg
       .match(
@@ -421,7 +430,7 @@ describe("harness after-bite hard gate", () => {
     expect(needsAfterBiteGate("Implementer GREEN. verify-gate ran. {\"ok\": true}")).toBe(false)
     expect(needsAfterBiteGate("researching the API")).toBe(false)
     expect(needsAfterBiteGate(buildAfterBiteContinue("x"))).toBe(false)
-    expect(buildAfterBiteContinue("x")).toContain("emit JSON {ok, feedback, blocking}")
+    expect(buildAfterBiteContinue("x")).toContain("Do not ask the user to continue")
   })
 
   test("verify-gate.md output is review JSON", async () => {
@@ -727,11 +736,23 @@ describe("phase evidence, attempts, and bounded follow-ups", () => {
     return JSON.stringify({ issueId, green: { exitCode } })
   }
 
-  const harnessPath: Array<{ from: string; role: string; text: string }> = [
+  function approve(fake: ReturnType<typeof setup>, text = "go") {
+    const handler = fake.listeners.find((l) => l.event === "input")
+    expect(handler).toBeTruthy()
+    return handler!.handler({ type: "input", text, source: "interactive" })
+  }
+
+  type HarnessStep =
+    | { from: string; role: string; text: string }
+    | { from: string; approve: true }
+
+  const harnessPath: HarnessStep[] = [
     { from: "research", role: "research-orchestrator", text: '{"researchComplete":true}' },
     { from: "spec", role: "spec-reviewer", text: `noise\n${OK}\nkind: harness-after-bite-gate` },
+    { from: "spec-confirm", approve: true },
     { from: "plan", role: "plan-reviewer", text: OK },
     { from: "bitesize", role: "bite-size-reviewer", text: OK },
+    { from: "plan-confirm", approve: true },
     { from: "implement", role: "implementer", text: `prose GREEN\n${evidence("dotfiles-x", 0)}` },
     { from: "verify", role: "verify-gate", text: OK },
     {
@@ -749,7 +770,8 @@ describe("phase evidence, attempts, and bounded follow-ups", () => {
     for (const step of harnessPath) {
       if (getActiveRun()?.phase === target) return
       if (getActiveRun()?.phase !== step.from) continue
-      fire(fake, step.role, step.text, { via: step.from === "spec" ? "script" : "name" })
+      if ("approve" in step) approve(fake)
+      else fire(fake, step.role, step.text, { via: step.from === "spec" ? "script" : "name" })
     }
     expect(getActiveRun()?.phase).toBe(target)
   }
@@ -776,10 +798,14 @@ describe("phase evidence, attempts, and bounded follow-ups", () => {
     fire(fake, "research-orchestrator", '{"researchComplete":true}', { via: "name" })
     expect(getActiveRun()).toMatchObject({ phase: "spec", attempts: 0, injects: 0 })
     fire(fake, "spec-reviewer", `preamble\n${OK}\ntrailer`, { via: "script" })
+    expect(getActiveRun()?.phase).toBe("spec-confirm")
+    approve(fake)
     expect(getActiveRun()?.phase).toBe("plan")
     fire(fake, "plan-reviewer", OK, { via: "name" })
     expect(getActiveRun()?.phase).toBe("bitesize")
     fire(fake, "bite-size-reviewer", OK, { via: "script" })
+    expect(getActiveRun()?.phase).toBe("plan-confirm")
+    approve(fake)
     expect(getActiveRun()?.phase).toBe("implement")
     fire(fake, "implementer", evidence("dotfiles-x", 0))
     expect(getActiveRun()?.phase).toBe("verify")
@@ -793,6 +819,19 @@ describe("phase evidence, attempts, and bounded follow-ups", () => {
     expect(getActiveRun()?.phase).toBe("pr")
     fire(fake, "pr-opener", "Opened https://github.com/acme/dotfiles/pull/42")
     expect(getActiveRun()).toBeNull()
+  })
+
+  test("harness turn_end session JSON advances spec→spec-confirm (workflow stub has no reviewer body)", async () => {
+    const fake = setup()
+    await startHarness(fake)
+    fire(fake, "research-orchestrator", '{"researchComplete":true}')
+    expect(getActiveRun()?.phase).toBe("spec")
+    turn(fake, `noise\n${OK}\n`)
+    expect(getActiveRun()).toMatchObject({ phase: "spec-confirm", injects: 0, attempts: 0 })
+    turn(fake, "kind: harness-phase-gate\nphase: spec")
+    expect(getActiveRun()?.phase).toBe("spec-confirm")
+    turn(fake, "please confirm the spec — that's all")
+    expect(getActiveRun()).toMatchObject({ phase: "spec-confirm", injects: 0 })
   })
 
   test("gatedRoles match phase after each predecessor gate", async () => {
@@ -810,6 +849,11 @@ describe("phase evidence, attempts, and bounded follow-ups", () => {
         block: ["implementer", "pr-opener", "milestone-organizer", "verify-gate", "plan-writer"],
       },
       {
+        phase: "spec-confirm",
+        allow: ["spec-writer", "spec-reviewer"],
+        block: ["implementer", "pr-opener", "plan-writer", "verify-gate"],
+      },
+      {
         phase: "plan",
         allow: ["plan-writer", "plan-reviewer"],
         block: ["implementer", "pr-opener", "milestone-organizer", "verify-gate", "spec-writer", "bite-size-writer"],
@@ -818,6 +862,11 @@ describe("phase evidence, attempts, and bounded follow-ups", () => {
         phase: "bitesize",
         allow: ["bite-size-writer", "bite-size-reviewer"],
         block: ["implementer", "pr-opener", "milestone-organizer", "verify-gate", "plan-writer"],
+      },
+      {
+        phase: "plan-confirm",
+        allow: ["plan-writer", "plan-reviewer", "bite-size-writer", "bite-size-reviewer"],
+        block: ["implementer", "pr-opener", "verify-gate", "spec-writer"],
       },
       {
         phase: "implement",
@@ -982,7 +1031,7 @@ describe("phase evidence, attempts, and bounded follow-ups", () => {
     fire(fake, "spec-reviewer", FAIL)
     expect(getActiveRun()).toMatchObject({ phase: "spec", attempts: 3 })
     fire(fake, "spec-reviewer", OK)
-    expect(getActiveRun()).toMatchObject({ phase: "plan", attempts: 0, injects: 0 })
+    expect(getActiveRun()).toMatchObject({ phase: "spec-confirm", attempts: 0, injects: 0 })
 
     advanceHarnessTo(fake, "bitesize")
     fire(fake, "bite-size-reviewer", FAIL)
@@ -991,7 +1040,7 @@ describe("phase evidence, attempts, and bounded follow-ups", () => {
     fire(fake, "bite-size-reviewer", FAIL)
     expect(getActiveRun()).toMatchObject({ phase: "bitesize", attempts: 2 })
     fire(fake, "bite-size-reviewer", OK)
-    expect(getActiveRun()?.phase).toBe("implement")
+    expect(getActiveRun()?.phase).toBe("plan-confirm")
 
     advanceHarnessTo(fake, "milestone")
     fire(
@@ -1110,5 +1159,50 @@ describe("phase evidence, attempts, and bounded follow-ups", () => {
     expect(
       fake.userMessages.some((m) => m.includes("kind: harness-phase-gate") && m.includes("phase: research")),
     ).toBe(true)
+  })
+
+  test("isHumanApprove accepts go only", () => {
+    expect(isHumanApprove("go")).toBe(true)
+    expect(isHumanApprove("GO")).toBe(true)
+    expect(isHumanApprove("go ahead")).toBe(true)
+    expect(isHumanApprove("yes")).toBe(false)
+    expect(isHumanApprove("OK")).toBe(false)
+    expect(isHumanApprove("change the spec")).toBe(false)
+    expect(isHumanApprove("go but rewrite non-goals")).toBe(false)
+    expect(looksStopped("Should I continue?")).toBe(true)
+    expect(looksStopped("please confirm the spec")).toBe(true)
+    expect(looksStopped("still researching")).toBe(false)
+  })
+
+  test("spec/plan confirm wait for user; implement continue-ask auto-resumes", async () => {
+    const fake = setup()
+    await startHarness(fake)
+    fire(fake, "research-orchestrator", '{"researchComplete":true}')
+    fire(fake, "spec-reviewer", OK)
+    expect(getActiveRun()?.phase).toBe("spec-confirm")
+    turn(fake, "please confirm the spec — that's all")
+    expect(getActiveRun()).toMatchObject({ phase: "spec-confirm", injects: 0 })
+    expect(fake.userMessages.some((m) => m.includes("kind: harness-phase-gate"))).toBe(false)
+
+    const blocked = workflow(fake, { name: "implementer" })
+    expect(blocked?.block).toBe(true)
+
+    expect(approve(fake, "nope")).toBeUndefined()
+    expect(getActiveRun()?.phase).toBe("spec-confirm")
+    approve(fake, "go")
+    expect(getActiveRun()?.phase).toBe("plan")
+
+    fire(fake, "plan-reviewer", OK)
+    fire(fake, "bite-size-reviewer", OK)
+    expect(getActiveRun()?.phase).toBe("plan-confirm")
+    approve(fake)
+    expect(getActiveRun()?.phase).toBe("implement")
+
+    const before = fake.userMessages.length
+    turn(fake, "Should I continue?")
+    expect(getActiveRun()?.phase).toBe("implement")
+    expect(getActiveRun()?.injects).toBe(1)
+    expect(fake.userMessages.length).toBeGreaterThan(before)
+    expect(fake.userMessages.at(-1)).toContain("Do not ask the user to continue")
   })
 })
