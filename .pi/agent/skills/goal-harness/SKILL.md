@@ -38,7 +38,9 @@ prefer tokensave for callers/impact/edits; graphify for structure Q&A when
 
 Named roles: `~/.pi/agent/agents/*.md` (parity-manifest). One harness chain only.
 
-## Default goal (no `/harness` args → exactly these 8 lines)
+## Default goal (always — all 8 quality-gate lines)
+
+These 8 lines **always** run as the bound quality-gate goal.
 
 1. No errors, no warnings, no test failures.
 2. No warning suppressions in production (test-only OK with reason).
@@ -49,7 +51,7 @@ Named roles: `~/.pi/agent/agents/*.md` (parity-manifest). One harness chain only
 7. Specs, plans, goals, updates tracked in **bd** (SoT). Optional `specs/` cockpit only via `bp-bd-bridge`.
 8. Do not add unnecessary docstrings or comments; explanatory comments only where needed.
 
-With arguments: replace 1–8 completely with that text.
+Empty `/harness`: they are the whole goal. With arguments: user text **plus** these 8 (never replace).
 
 ## Human gates
 
@@ -59,9 +61,9 @@ Only two user confirms. Reply **`go`** to advance (not `yes`).
 
 2. After Plan+BiteSize reviewer `ok: true` (phase `plan-confirm`). Wait for `go`.
 
-Then implement→verify→milestone with **no** further asks until the bound goal has evidence.
+Then implement→verify→milestone with **no** further asks until the bound goal has evidence (always includes all 8 quality lines).
 
-Empty `/harness` binds **all 8 default quality lines** as the bound goal. Spec, plan, grill-me, and elaborate-spec still run against that full goal — do not skip the interview. Do not use `execute-plan`.
+Spec, plan, grill-me, and elaborate-spec still run against that full goal — do not skip the interview. Do not use `execute-plan`.
 
 ## Package contracts (required)
 
@@ -122,7 +124,7 @@ Implementer GREEN is a checkpoint, not done. `/harness` **is** `workflow` opt-in
 
 Order: tests (`bg_run`) → `verify-gate` → review JSON `{ok,feedback,blocking}` → bd `verify:` evidence → close bite → next bite.
 
-Stop only when the bound goal has evidence (empty `/harness` = all 8 quality lines + all bd bites closed). Do not ask the user to continue implement/verify/milestone.
+Stop only when the bound goal has evidence (always: all 8 quality lines + all bd bites closed). Do not ask the user to continue implement/verify/milestone.
 
 Runtime FSM (extension, not prompt-only): `/harness` `/design` `/architect` share one `activeRun`. Later producers/reviewers are **blocked** on `workflow` `tool_call` until that phase. Human confirm only at `spec-confirm` and `plan-confirm` (user `go` advances). Research advances only with `researchComplete: true` or `research-handoff`; design intake needs `pdr-writer` + `PDR:`. `/harness` pins `workflow` `background: false`. `turn_end` follow-up on skip/stop (max 3/phase); architect does **not** nag every turn.
 

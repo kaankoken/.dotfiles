@@ -47,6 +47,17 @@ const DEFAULT_HARNESS_GOAL = [
   "8. Do not add unnecessary docstrings or comments; explanatory comments only where needed.",
 ].join("\n")
 
+const QUALITY_GATE_HEADER = "Quality gate (always — all 8 default goals):"
+
+export function bindHarnessGoal(args: string): { goal: string; usedDefault: boolean } {
+  const trimmed = args.trim()
+  if (!trimmed) return { goal: DEFAULT_HARNESS_GOAL, usedDefault: true }
+  return {
+    goal: `${trimmed}\n\n${QUALITY_GATE_HEADER}\n${DEFAULT_HARNESS_GOAL}`,
+    usedDefault: false,
+  }
+
+}
 const RESEARCH_MODEL_ROUTE: ModelHop[] = loadChain("harness-research")
 type Notify = (m: string, k?: "info" | "warning" | "error") => void
 
@@ -105,7 +116,7 @@ function buildHarnessStart(goal: string, usedDefault: boolean, cwd: string): str
     "",
     usedDefault
       ? "Bound goal: DEFAULT quality requirements (empty /harness args):"
-      : "Bound goal (verbatim — only goal):",
+      : "Bound goal (user request + quality gate — both are the goal):",
     goal,
     "",
     "## Controller instructions",
@@ -119,8 +130,8 @@ function buildHarnessStart(goal: string, usedDefault: boolean, cwd: string): str
     "- After Spec reviewer `ok: true`: present the spec and **wait** for the user to reply `go`. Do not start Plan.",
     "- After Plan+BiteSize reviewer `ok: true`: present the plan/bites and **wait** for `go`. Do not start Implement.",
     "- Those two waits are the **only** human confirms. Never ask to continue research, bitesize internals, implement bites, verify, milestone, or PR.",
-    "- Empty `/harness` binds **all 8 default quality lines** as the bound goal. Spec/plan/grill-me/elaborate-spec still run against that full goal — do not skip the interview.",
-    "- `/harness` already opted in to build. After plan confirm (`go`), run implement→verify→milestone without asking until the bound goal has evidence (all 8 lines + all bd bites closed).",
+    "- The 8 default quality lines **always** run as the bound quality-gate goal. Empty `/harness`: they are the whole goal. With args: user text **plus** those 8 (never replace). Spec/plan/grill-me/elaborate-spec still run — do not skip the interview.",
+    "- `/harness` already opted in to build. After plan confirm (`go`), run implement→verify→milestone without asking until the bound goal has evidence (all 8 quality lines + user request if any + all bd bites closed).",
     "- Do **not** use Bigpowers `execute-plan` (it checkpoints every step).",
     "- `bd where` is yours to run. Do not ask the user to confirm the beads path.",
     "",
@@ -131,7 +142,7 @@ function buildHarnessStart(goal: string, usedDefault: boolean, cwd: string): str
     "2. `verify-gate` (verify-work + validate-fix) with fresh command evidence; emit JSON {ok, feedback, blocking}.",
     "3. Review → JSON { ok, feedback, blocking } (code-reviewer; max 3; first ok:true ends).",
     "4. Record `verify:` evidence in bd; close the bite; claim the next bd task.",
-    "5. Repeat until every bd bite is closed AND the bound goal (default: 8 quality lines) has evidence.",
+    "5. Repeat until every bd bite is closed AND the bound goal has evidence (always includes all 8 quality lines).",
     "Do not stop after GREEN. Do not skip verify-gate or review. Bound goal ≠ one task.",
     "",
     "### Setup (do first)",
@@ -204,7 +215,7 @@ function buildHarnessStart(goal: string, usedDefault: boolean, cwd: string): str
     "- Browser automation is opt-in CLI only — not required.",
     "- Never ask the user to continue implement/verify/milestone. After plan-confirm, build until bound goal evidence.",
     "- Never use execute-plan (per-step human checkpoint).",
-    "- Stop only when the bound goal has evidence (default: all 8 quality lines + all bd bites closed). Implementer GREEN is not that. Then summarize remaining manual steps honestly.",
+    "- Stop only when the bound goal has evidence (always: all 8 quality lines + all bd bites closed). Implementer GREEN is not that. Then summarize remaining manual steps honestly.",
     "",
     "Start now: verify beads path yourself (do not ask the user), load bp-bd-bridge + using-bigpowers + survey-context, produce Spec for the bound goal.",
   ].join("\n")
@@ -707,11 +718,11 @@ export default function (pi: ExtensionAPI) {
         ctx.ui.notify("Agent busy — try again when idle.", "warning")
         return
       }
-      const trimmed = args.trim()
-      const usedDefault = !trimmed
-      const goal = trimmed || DEFAULT_HARNESS_GOAL
+      const { goal, usedDefault } = bindHarnessGoal(args)
       if (usedDefault) {
         ctx.ui.notify("Empty /harness → default 8 quality requirements", "info")
+      } else {
+        ctx.ui.notify("Quality gate: 8 default goals still apply", "info")
       }
 
       let selectedRoute: ModelHop | undefined

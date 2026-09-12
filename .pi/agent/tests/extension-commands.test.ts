@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test"
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent"
-import goalHarness, { needsAfterBiteGate, buildAfterBiteContinue, getActiveRun, isHumanApprove, looksStopped } from "../extensions/goal-harness.ts"
+import goalHarness, { needsAfterBiteGate, buildAfterBiteContinue, getActiveRun, isHumanApprove, looksStopped, bindHarnessGoal } from "../extensions/goal-harness.ts"
 import prReviewer, { buildPrReviewWorkflowScript } from "../extensions/pr-reviewer.ts"
 
 type RegisteredCommand = {
@@ -229,7 +229,7 @@ describe("goal-harness handler start messages", () => {
     expect(msg).toContain("spec-confirm")
     expect(msg).toContain("plan-confirm")
     expect(msg).toContain("reply `go`")
-    expect(msg).toContain("all 8 default quality lines")
+    expect(msg).toContain("always** run as the bound quality-gate goal")
     expect(msg).toContain("do not skip the interview")
     expect(msg).toContain("Never ask the user to continue implement/verify/milestone")
     expect(msg).toContain("verify beads path yourself")
@@ -252,12 +252,19 @@ describe("goal-harness handler start messages", () => {
     ])
   })
 
-  test("/harness with args binds verbatim goal", async () => {
-    const { pi, commands, userMessages, ctx } = createFakePi()
+  test("/harness with args keeps 8 quality lines as the goal", async () => {
+    const { pi, commands, userMessages, notifications, ctx } = createFakePi()
     goalHarness(pi)
     await commands.get("harness")!.handler("ship pi cutover tests", ctx)
-    expect(userMessages[0]).toContain("Bound goal (verbatim — only goal):")
-    expect(userMessages[0]).toContain("ship pi cutover tests")
+    const msg = userMessages[0]!
+    expect(msg).toContain("Bound goal (user request + quality gate — both are the goal):")
+    expect(msg).toContain("ship pi cutover tests")
+    expect(msg).toContain("Quality gate (always — all 8 default goals):")
+    expect(msg).toContain("1. No errors, no warnings, no test failures.")
+    expect(msg).toContain("8. Do not add unnecessary docstrings or comments")
+    expect(msg).not.toContain("verbatim — only goal")
+    expect(notifications.some((n) => /8 default goals still apply/i.test(n.message))).toBe(true)
+    expect(getActiveRun()?.goal).toBe(bindHarnessGoal("ship pi cutover tests").goal)
   })
 
   test("/harness falls back to Terra max when Grok is unavailable", async () => {
@@ -507,7 +514,7 @@ describe("exclusive activeRun and workflow role gates", () => {
     await commands.get("harness")!.handler("bound", ctx)
     expect(getActiveRun()).toMatchObject({
       kind: "harness",
-      goal: "bound",
+      goal: bindHarnessGoal("bound").goal,
       phase: "research",
       attempts: 0,
       injects: 0,
@@ -529,7 +536,7 @@ describe("exclusive activeRun and workflow role gates", () => {
       goal: "al",
     })
     await commands.get("harness")!.handler("h2", ctx)
-    expect(getActiveRun()).toMatchObject({ kind: "harness", phase: "research", goal: "h2" })
+    expect(getActiveRun()).toMatchObject({ kind: "harness", phase: "research", goal: bindHarnessGoal("h2").goal })
   })
 
   test("fireUserMessage does not clear the run", async () => {
