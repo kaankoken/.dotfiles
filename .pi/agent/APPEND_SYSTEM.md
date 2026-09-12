@@ -3,6 +3,8 @@ Tool routing (mandatory):
 1. Symbols, callers, impact, "how does this function work":
    mcp__tokensave → tokensave_context, then tokensave_search.
    Not repo-wide grep for symbol lookup.
+   Verify returned paths and index freshness. If graph is stale, empty, or unrelated,
+   report that limit and fall back to scoped `anchor_grep`/`read`; never treat unrelated hits as evidence.
 
 2. Architecture / communities / "what talks to what":
    load graphify skill. If graphify-out/graph.json exists, `graphify query`.

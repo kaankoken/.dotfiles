@@ -12,7 +12,7 @@ Produce a **PDR** for the bound design goal. No code, no implementation plan tas
 
 ## Skills (live)
 
-> Cold catalog is intent-router+beads only. Load Bigpowers/pack skills via **absolute path** `read`, not `skill://`.
+> Load Bigpowers/pack skills via **absolute path** `read`. Use the live catalog; `skill://` is not a filesystem path.
 
 - `~/.pi/agent/npm/node_modules/bigpowers/skills/elaborate-spec/SKILL.md` (`elaborate-spec`)
 - `~/.pi/agent/npm/node_modules/bigpowers/skills/define-language/SKILL.md` (`define-language`)

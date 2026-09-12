@@ -2,6 +2,8 @@ import { describe, expect, test } from "bun:test"
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent"
 import goalHarness, { needsAfterBiteGate, buildAfterBiteContinue, getActiveRun, isHumanApprove, looksStopped, bindHarnessGoal } from "../extensions/goal-harness.ts"
 import prReviewer, { buildPrReviewWorkflowScript } from "../extensions/pr-reviewer.ts"
+import { Script } from "node:vm"
+import { parseWorkflowScript } from "../git/github.com/kaankoken/pi-dynamic-workflows/src/workflow.ts"
 
 type RegisteredCommand = {
   name: string
@@ -179,6 +181,42 @@ describe("local extension slash command registration", () => {
 })
 
 describe("goal-harness handler start messages", () => {
+  test("every flow controller selects Astra xhigh before starting", async () => {
+    for (const name of ["harness", "goal-harness", "design", "architect", "architect-layered"]) {
+      const astra = { provider: "openai-codex", id: "gpt-6-astra" }
+      const fake = createFakePi({ models: [astra, { provider: "xai", id: "grok-4.6" }] })
+      goalHarness(fake.pi)
+      const command = fake.commands.get(name)
+      if (!command) throw new Error(`Missing command ${name}`)
+      await command.handler("controller test", fake.ctx)
+      expect(fake.selectedModels).toEqual([astra])
+      expect(fake.thinkingLevels).toEqual(["xhigh"])
+      expect(fake.userMessages).toHaveLength(1)
+      expect(fake.notifications).toContainEqual({
+        message: `/${name === "goal-harness" ? "harness" : name} controller: openai-codex/gpt-6-astra:xhigh`,
+        kind: "info",
+      })
+    }
+  })
+
+  test("unavailable controller authentication preserves the active run", async () => {
+    const fake = createFakePi()
+    goalHarness(fake.pi)
+    const harness = fake.commands.get("harness")
+    if (!harness) throw new Error("Missing harness command")
+    await harness.handler("keep active run", fake.ctx)
+    const active = getActiveRun()
+    fake.pi.setModel = async () => false
+    for (const name of ["harness", "design", "architect", "architect-layered"]) {
+      const command = fake.commands.get(name)
+      if (!command) throw new Error(`Missing command ${name}`)
+      await command.handler("must not start", fake.ctx)
+      expect(fake.userMessages).toHaveLength(1)
+      expect(getActiveRun()).toBe(active)
+      expect(fake.notifications.at(-1)?.kind).toBe("error")
+    }
+  })
+
   test("/harness empty args emits default quality start with Bigpowers contract", async () => {
     const {
       pi,
@@ -198,7 +236,7 @@ describe("goal-harness handler start messages", () => {
     expect(thinkingLevels).toEqual(["xhigh"])
     expect(
       notifications.some((notification) =>
-        notification.message.includes("Harness research route: xai/grok-4.6:xhigh"),
+        notification.message.includes("/harness controller: xai/grok-4.6:xhigh"),
       ),
     ).toBe(true)
     expect(userMessages).toHaveLength(1)
@@ -214,6 +252,10 @@ describe("goal-harness handler start messages", () => {
     expect(msg).toContain("The parent session is the research controller only")
     expect(msg).toContain("research-orchestrator.md")
     expect(msg).toContain("ctx_batch_execute")
+    expect(msg).toContain("remove_from, remove_to, replacement_lines")
+    expect(msg).toContain("undo_last_change")
+    expect(msg).not.toMatch(/hash_bounds|new_content|undo_last_replace|bg_run|bg_delegate|fusion_/)
+    expect(msg).toContain("Never assume a job runner or approval gate is installed")
     expect(msg).toContain("tokensave")
     expect(msg).toContain("graphify")
     expect(msg).toContain("caveman")
@@ -267,7 +309,23 @@ describe("goal-harness handler start messages", () => {
     expect(getActiveRun()?.goal).toBe(bindHarnessGoal("ship pi cutover tests").goal)
   })
 
-  test("/harness falls back to Terra max when Grok is unavailable", async () => {
+  test("busy design/architect commands preserve the active harness", async () => {
+    const fake = createFakePi()
+    goalHarness(fake.pi)
+    await fake.commands.get("harness")!.handler("keep this run", fake.ctx)
+    const run = getActiveRun()
+    const messages = fake.userMessages.length
+    const selections = fake.selectedModels.length
+    fake.ctx.isIdle = () => false
+    for (const name of ["design", "architect", "architect-layered"]) {
+      await fake.commands.get(name)!.handler("must not replace run", fake.ctx)
+      expect(fake.userMessages).toHaveLength(messages)
+      expect(getActiveRun()).toBe(run)
+      expect(fake.selectedModels).toHaveLength(selections)
+    }
+  })
+
+  test("/harness falls back to Terra max when Astra and Grok are unavailable", async () => {
     const {
       pi,
       commands,
@@ -288,7 +346,7 @@ describe("goal-harness handler start messages", () => {
     ])
     expect(thinkingLevels).toEqual(["max"])
     expect(notifications).toContainEqual({
-      message: "Harness research route: openai-codex/gpt-5.6-terra:max",
+      message: "/harness controller: openai-codex/gpt-5.6-terra:max",
       kind: "warning",
     })
     expect(userMessages).toHaveLength(1)
@@ -313,8 +371,8 @@ describe("goal-harness handler start messages", () => {
     expect(selectedModels).toEqual([{ provider: "cursor", id: "gpt-5.6-terra@1m" }])
     expect(thinkingLevels).toEqual(["max"])
     expect(notifications).toContainEqual({
-      message: "Harness research route: cursor/gpt-5.6-terra@1m:max",
-      kind: "info",
+      message: "/harness controller: cursor/gpt-5.6-terra@1m:max",
+      kind: "warning",
     })
     expect(userMessages).toHaveLength(1)
   })
@@ -329,7 +387,7 @@ describe("goal-harness handler start messages", () => {
 
     expect(userMessages).toHaveLength(0)
     expect(notifications).toContainEqual({
-      message: "Harness stopped: no authenticated research model (Grok 4.6 xhigh → Terra max).",
+      message: expect.stringMatching(/^\/harness stopped: no authenticated controller model \(openai-codex\/gpt-6-astra:xhigh/),
       kind: "error",
     })
   })
@@ -419,6 +477,10 @@ describe("pr-reviewer command surface", () => {
         judge: "7".repeat(32),
       },
     })
+    expect(() => {
+      const { body } = parseWorkflowScript(script)
+      new Script(`(async () => { ${body} })()`)
+    }).not.toThrow()
     expect(script).toContain("pr-grok-reviewer")
     expect(script).toContain("pr-sol-reviewer")
     expect(script).toContain("pr-opus-reviewer")
@@ -740,7 +802,12 @@ describe("phase evidence, attempts, and bounded follow-ups", () => {
   }
 
   function evidence(issueId: string, exitCode: number) {
-    return JSON.stringify({ issueId, green: { exitCode } })
+    return JSON.stringify({
+      issueId, branch: "test/fixture", worktreePath: "/tmp/fixture", headSha: "a".repeat(40),
+      changedFiles: ["src/example.ts"],
+      red: { command: "bun test", exitCode: 1, summary: "failed before fix" },
+      green: { command: "bun test", exitCode, summary: "verification" }, notes: "",
+    })
   }
 
   function approve(fake: ReturnType<typeof setup>, text = "go") {
@@ -786,6 +853,22 @@ describe("phase evidence, attempts, and bounded follow-ups", () => {
   function noAutoCommands(fake: ReturnType<typeof setup>) {
     expect(fake.userMessages.filter((m) => /^\/(harness|design)\b/.test(m.trim()))).toEqual([])
   }
+
+  test("failed workflow results never advance harness gates", async () => {
+    const fake = setup()
+    const cases = [
+      ["spec", "spec-reviewer", OK],
+      ["implement", "implementer", evidence("dotfiles-x", 0)],
+      ["verify", "verify-gate", OK],
+      ["milestone", "milestone-organizer", `${OK}\n{"goalComplete":true}`],
+    ]
+    for (const [phase, role, text] of cases) {
+      await startHarness(fake)
+      advanceHarnessTo(fake, phase)
+      fire(fake, role, text, { isError: true })
+      expect(getActiveRun()?.phase).toBe(phase)
+    }
+  })
 
   test("harness walks research→pr from mixed tool_result JSON; kind: headers are not evidence", async () => {
     const fake = setup()
@@ -960,6 +1043,8 @@ describe("phase evidence, attempts, and bounded follow-ups", () => {
     await startHarness(fake)
     advanceHarnessTo(fake, "implement")
     const before = getActiveRun()
+    fire(fake, "implementer", JSON.stringify({ issueId: "dotfiles-x", green: { exitCode: 0 } }))
+    expect(getActiveRun()?.phase).toBe("implement")
     fire(fake, "implementer", evidence("", 0))
     expect(getActiveRun()?.phase).toBe("implement")
     fire(fake, "implementer", evidence("dotfiles-x", 1))
@@ -1059,7 +1144,7 @@ describe("phase evidence, attempts, and bounded follow-ups", () => {
     await startHarness(fake)
     advanceHarnessTo(fake, "milestone")
     fire(fake, "milestone-organizer", OK)
-    expect(getActiveRun()?.phase).toBe("pr")
+    expect(getActiveRun()?.phase).toBe("milestone")
     await startHarness(fake)
     advanceHarnessTo(fake, "milestone")
     fire(fake, "milestone-organizer", `${OK}\n${JSON.stringify({ goalComplete: false })}`)

@@ -29,9 +29,10 @@ implementation detail (stack packs cover that), not code review
 | | |
 |--|--|
 | **Path** | `~/.pi/agent/skills/architect/SKILL.md` |
-| **Cold catalog** | Never cold-listed (cold is intent-router+beads only) |
+| **Cold catalog** | Excluded in `settings.json`; read this skill by absolute path |
 | **Tracker** | **bd** is SoT. No markdown task board. Never Superpowers. |
 | **Standalone** | `/architect <question>` runs the workflow below in-session |
+| **Controller** | `openai-codex/gpt-6-astra:xhigh`; command selects shared `harness-research` chain, warning on fallback |
 | **Layered opt-in** | `/architect-layered` loads this skill **plus** `optional/layered-doctrines.md` |
 | **Embedded** | `/design`: **required** on `pdr-writer` + `arc42-writer`; `adr-writer` stays architect-free; **never** layered doctrines |
 | **References** | Read on demand under this directory; never paste bodies into agent prompts |

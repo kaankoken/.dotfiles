@@ -434,7 +434,7 @@ export function buildPrReviewWorkflowScript(input: {
     `head_sha=${input.headSha}`,
     `diff_digest=${input.diffDigest}`,
   ].join("\n")
-  return `
+  return String.raw`
 export const meta = {
   name: 'pr_review_freeze',
   description: 'Grok+Sol+Opus initials, rebuttals, Terra judge',

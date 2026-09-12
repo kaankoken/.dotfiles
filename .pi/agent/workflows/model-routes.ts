@@ -1,7 +1,8 @@
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 
-export type ModelHop = { provider: string; modelId: string; effort: string }
+export type ModelHop = { provider: string; modelId: string; effort: Parameters<ExtensionAPI["setThinkingLevel"]>[0] }
 
 export type RouteDoc = {
   providerFailover?: Record<string, string[]>
@@ -46,6 +47,7 @@ export function expandHop(hop: ModelHop, doc: RouteDoc): ModelHop[] {
 }
 
 const FALLBACK_RESEARCH: ModelHop[] = [
+  { provider: "openai-codex", modelId: "gpt-6-astra", effort: "xhigh" },
   { provider: "xai", modelId: "grok-4.6", effort: "xhigh" },
   { provider: "xai-oauth", modelId: "grok-4.6", effort: "xhigh" },
   { provider: "openai-codex", modelId: "gpt-5.6-terra", effort: "max" },

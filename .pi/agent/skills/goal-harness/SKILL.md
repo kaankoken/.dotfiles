@@ -3,7 +3,7 @@ name: goal-harness
 description: >
   Pi structured behavioral process for /harness. Process engine: Bigpowers
   (path-load live SKILL.md under npm package root skills/), owned adapters,
-  bd SoT, DW/bg/hashline contracts. Roles under ~/.pi/agent/agents/. Does not
+  bd SoT, DW/hashline contracts. Roles under ~/.pi/agent/agents/. Does not
   shadow native /goal or /guided-goal. Not a second methodology orchestrator.
 ---
 
@@ -15,22 +15,19 @@ stock Bigpowers `orchestrate-project` as a competing harness.
 
 ## Loading skills (cold catalog)
 
-Cold catalog is **only** `intent-router` + `beads`. `skill://NAME` works for
-those two only.
+Use the live skill catalog; it includes local `gh-stack` and `graphify` plus enabled package skills. `intent-router` is an agent, not an installed skill.
 
-Everything else uses **absolute path** `read` (hashline `read` when editing):
+Path-load excluded flow/methodology skills with absolute `read` paths:
 
 | Kind | Path pattern |
-|------|----------------|
+|------|--------------|
 | Bigpowers | `~/.pi/agent/npm/node_modules/bigpowers/skills/<name>/SKILL.md` |
 | Pi local / adapters | `~/.pi/agent/skills/<name>/SKILL.md` or `…/adapters/<name>/SKILL.md` |
-| ponytail* / caveman* / graphify | `~/.agents/skills/<name>/SKILL.md` |
+| Ponytail | `~/.pi/agent/npm/node_modules/@dietrichgebert/ponytail/skills/<name>/SKILL.md` |
+| Graphify | `~/.pi/agent/skills/graphify/SKILL.md` |
 
-- Prefer **root** `bigpowers/skills/…` for absolute path-loads (not package
-  auto `.pi/skills` cold registration).
-- Never path-load `~/.agents/skills/superpowers/**`.
-- Do **not** `skill://release-branch` (etc.) — fails with "Unknown skill".
-
+Caveman is the `npm:pi-caveman` extension, not a skill file.
+Never path-load `~/.agents/skills/superpowers/**`. Use `/skill:name` only for catalog entries; never use `skill://` as a file path.
 **graphify** (architecture/corpus graph) vs **tokensave** (live symbols):
 prefer tokensave for callers/impact/edits; graphify for structure Q&A when
 `graphify-out/` exists or after `/graphify .`. Path-load only.
@@ -68,23 +65,22 @@ Spec, plan, grill-me, and elaborate-spec still run against that full goal — do
 ## Package contracts (required)
 
 ### Hashline (`pi-hashline-edit-pro`)
+- Built-in `edit` is **disabled**. Use hashline `read` → `replace` or `insert`.
+- `read`: 4-character `anchor│content` rows. `replace`: `remove_from`, `remove_to`, `replacement_lines`; `[]` deletes.
+- `insert`: `anchor`, `direction`, `lines`. `undo_last_change`: `path`. Pass bare anchors and bare replacement lines.
+- On drift, use returned fresh anchors or re-read.
 
-- Built-in `edit` is **disabled**. Only hashline `read` → `replace`.
-- `read` lines: `HASH│content`. `replace` uses inclusive `hash_bounds`.
-- Stale anchors → re-`read`. Never paste `HASH│` rows into `new_content`.
+### Shell checks and scouts
 
-### Background (`pi-background-tasks`)
+- Run checks with `bash`; retain exit codes and summarize large saved output with context-mode.
+- Delegate scouts through dynamic-workflows with user opt-in. Do not assume a background-task package or approval gate is installed.
+- Tools and worktrees use host permissions; neither is a security sandbox.
 
-- Long shell: `bg_run` / `/bg` — wait notify, **do not poll**.
-- Inspect scout: `bg_delegate` capability=inspect → later `bg_result`.
-
-### Dynamic workflows (`@quintinshaw/pi-dynamic-workflows`)
-
+### Dynamic workflows (`git:github.com/kaankoken/pi-dynamic-workflows`)
 - Parallel multi-step: `/harness` **is** `workflow` opt-in. Call the tool; `background: false` for implementer + gates. `/workflows run` / keyword still work.
 - isolation optional: `agent(prompt, { agentType, isolation: 'worktree' })`. `isolation: false` opts out of a def.
   Default **keep** the worktree. Test runs may pass `keepWorktree: false` to delete.
 - Model tiers: `~/.pi/workflows/model-tiers.json`.
-- Fusion is advisory opinion only — not a bd gate substitute.
 
 ### Bigpowers package
 
@@ -100,7 +96,7 @@ Spec, plan, grill-me, and elaborate-spec still run against that full goal — do
 | `adapters/bp-bd-bridge` | Init / resume / any BP skill wanting `specs/state.yaml` | **bd primary**; optional `specs/` + `specs/pi-bridge.yaml`; never dual unlinked trackers |
 | `adapters/bp-plan-to-bd` | Plan + BiteSize after scope/slice/plan-work | bd issues with `verify: <cmd>` per bite |
 | `adapters/bp-review-to-json` | Milestone + `/code-review` | Normalize audit/request-review → REVIEW-POLICY `{ok,feedback,blocking}`; default `quality:normal` |
-| `adapters/dispatch-via-dw` | Parallel / delegate | BP `delegate-task`/`dispatch-agents` **policy**; execute via DW + bg only |
+| `adapters/dispatch-via-dw` | Parallel / delegate | BP `delegate-task`/`dispatch-agents` **policy**; execute via DW |
 
 Load: `~/.pi/agent/skills/adapters/<name>/SKILL.md`.
 
@@ -122,7 +118,7 @@ Load: `~/.pi/agent/skills/adapters/<name>/SKILL.md`.
 
 Implementer GREEN is a checkpoint, not done. `/harness` **is** `workflow` opt-in — call it; `background: false` for implementer + gates. Do not wait for the keyword.
 
-Order: tests (`bg_run`) → `verify-gate` → review JSON `{ok,feedback,blocking}` → bd `verify:` evidence → close bite → next bite.
+Order: tests (`bash`, with exit-code evidence) → `verify-gate` → review JSON `{ok,feedback,blocking}` → bd `verify:` evidence → close bite → next bite.
 
 Stop only when the bound goal has evidence (always: all 8 quality lines + all bd bites closed). Do not ask the user to continue implement/verify/milestone.
 
@@ -176,7 +172,8 @@ SoT: `~/.pi/agent/workflows/model-routes.json`. No native anthropic (third-party
 | Reviewers | cursor opus@1m:max → sol:max → sol:xhigh. **Max 3 rounds; first ok:true ends.** |
 | Judges | cursor opus@1m:max → sol:xhigh |
 | Milestone | terra:max → grok-4.6:xhigh |
-| Scouts + harness research | grok-4.6:xhigh → terra:max |
+| Scouts | grok-4.6:xhigh → terra:max |
+| Flow controllers + research orchestrator | gpt-6-astra:xhigh → grok-4.6:xhigh → terra:max |
 
 ## Agent yields over 50 KiB (`agent://`)
 

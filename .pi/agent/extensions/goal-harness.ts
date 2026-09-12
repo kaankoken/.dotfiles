@@ -11,15 +11,17 @@
  *
  * Structured process:
  *   - hashline-edit-pro (read/replace)
- *   - pi-background-tasks (bg_run / bg_delegate)
+ *   - bash (shell checks; installed tools only)
  *   - dynamic-workflows (parallel agents)
  *   - bd (SoT)
  *   - local skills/agents under ~/.pi/agent
  *   - Bigpowers skills under package install path
  */
 
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent"
-import { loadChain, type ModelHop } from "../workflows/model-routes.ts"
+import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent"
+import { formatHop, loadChain, type ModelHop } from "../workflows/model-routes.ts"
+import { Check } from "../npm/node_modules/typebox/build/value/index.mjs"
+import implementerEvidenceSchema from "../schemas/implementer-evidence.schema.json"
 /** Installed via `pi install npm:bigpowers@…` */
 const BIGPOWERS = "~/.pi/agent/npm/node_modules/bigpowers/skills"
 const PI_SKILLS = "~/.pi/agent/skills"
@@ -58,7 +60,7 @@ export function bindHarnessGoal(args: string): { goal: string; usedDefault: bool
   }
 
 }
-const RESEARCH_MODEL_ROUTE: ModelHop[] = loadChain("harness-research")
+const CONTROLLER_MODEL_ROUTE: ModelHop[] = loadChain("harness-research")
 type Notify = (m: string, k?: "info" | "warning" | "error") => void
 
 function requireArgs(args: string, usage: string, notify: Notify): string | null {
@@ -76,15 +78,15 @@ function packageContractsBlock(): string[] {
     "",
     "**Hashline** ([pi-hashline-edit-pro](https://pi.dev/packages/pi-hashline-edit-pro?name=read)):",
     "- Built-in `edit` is DISABLED. Only `read` → `replace`.",
-    "- `read` lines: `HASH│content` (3-char). Optional offset/limit.",
-    "- `replace`: `{ path, hash_bounds: [start,end], new_content }` inclusive; `\"\"` deletes.",
-    "- `undo_last_replace` for last edit on that file. Stale anchors → re-`read`.",
-    "- Never paste `HASH│` or diff-preview rows into `new_content`.",
+    "- `read` lines: `anchor│content` (4-character anchors). Optional offset/limit.",
+    "- `replace`: `{ remove_from, remove_to, replacement_lines }` inclusive; `[]` deletes. Use bare anchors and bare replacement lines.",
+    "- `insert`: `{ anchor, direction, lines }`. `undo_last_change`: `{ path }` for the last edit on that file.",
+    "- On drift, use returned fresh anchors or re-read. Never paste anchor prefixes into replacement lines.",
     "",
-    "**Background** ([pi-background-tasks](https://pi.dev/packages/pi-background-tasks?name=read)):",
-    "- Long shell: `bg_run` `{ name, command, isAgent:false }` or `/bg` — wait notify, **do not poll**.",
-    "- Inspect scout: `bg_delegate` capability=inspect → later `bg_result` (hash-verified).",
-    "- Not sandboxed (host perms/network).",
+    "**Shell and scouts**:",
+    "- Run checks with `bash`; capture large output to a file, then summarize with context-mode.",
+    "- Delegate scouts through dynamic-workflows when opted in. Never assume a job runner or approval gate is installed.",
+    "- Tools and worktrees are not a security sandbox. Host permissions/network still apply.",
     "",
     "**Parallel multi-step**: dynamic-workflows. `/harness` counts as `workflow` opt-in — call the tool; `background: false` for implementer + gates.",
     "- isolation optional: `agent(prompt, { agentType, isolation: 'worktree' })`. `isolation: false` opts out. Default keep worktree; tests may pass `keepWorktree: false` to delete.",
@@ -92,8 +94,6 @@ function packageContractsBlock(): string[] {
     "- Agent `route:` names a chain in `~/.pi/agent/workflows/model-routes.json`. Pin = first hop. Failover = providerFailover + remaining hops (openai-codex→cursor, xai→xai-oauth→cursor). No native anthropic.",
     "- If `agentType` model is missing, retry the next hop. Never run that role on the parent model.",
     "- tiers: `~/.pi/workflows/model-tiers.json` (small=scout grok, medium=reviewer opus@1m max, big=writer sol)",
-    "",
-    "**Fusion** (`fusion_*` / `/fusion`): multi-model opinion only — not a bd gate substitute.",
     "",
     "**Bigpowers**: methodology only. Do not run stock `orchestrate-project` as a second harness.",
     "",
@@ -138,7 +138,7 @@ function buildHarnessStart(goal: string, usedDefault: boolean, cwd: string): str
     "### After each bite (required — GREEN is not done)",
     "This `/harness` invocation IS user opt-in to the `workflow` tool. Call it. Do not wait for the keyword. Pass `background: false` for implementer + gates so this turn sees results.",
     "Implementer GREEN is a checkpoint, not completion. Immediately:",
-    "1. Long checks (`bg_run` / tests).",
+    "1. Run checks with `bash`; retain test output and exit codes.",
     "2. `verify-gate` (verify-work + validate-fix) with fresh command evidence; emit JSON {ok, feedback, blocking}.",
     "3. Review → JSON { ok, feedback, blocking } (code-reviewer; max 3; first ok:true ends).",
     "4. Record `verify:` evidence in bd; close the bite; claim the next bd task.",
@@ -185,7 +185,7 @@ function buildHarnessStart(goal: string, usedDefault: boolean, cwd: string): str
     `   - ${BIGPOWERS}/delegate-task/SKILL.md and/or ${BIGPOWERS}/dispatch-agents/SKILL.md (policy only — execute via DW)`,
     `   - Implementer role: ${PI_AGENTS}/implementer.md`,
     `   - Evidence shape: ${PI_SCHEMAS}/implementer-evidence.schema.json`,
-    "6. **Long checks** — `bg_run` / `/bg` (typecheck, tests, servers).",
+    "6. **Long checks** — `bash` (typecheck/tests); use only an available, explicitly managed runner for persistent servers.",
     "7. **Review** (quality:normal default — ADR-0003) — path-load:",
     `   - ${BIGPOWERS}/audit-code/SKILL.md`,
     `   - ${PI_ADAPTERS}/bp-review-to-json/SKILL.md`,
@@ -432,12 +432,7 @@ function asReview(obj: unknown): { ok: boolean; feedback: string; blocking: stri
 }
 
 function isImplementerEvidence(obj: unknown): boolean {
-  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return false
-  const o = obj as Record<string, unknown>
-  if (typeof o.issueId !== "string" || o.issueId.length === 0) return false
-  const green = o.green
-  if (!green || typeof green !== "object" || Array.isArray(green)) return false
-  return (green as { exitCode?: unknown }).exitCode === 0
+  return Check(implementerEvidenceSchema, obj)
 }
 
 function isMadrLite(obj: unknown): boolean {
@@ -511,6 +506,7 @@ function applyWorkflowResult(
   text: string,
   isError: boolean,
 ): void {
+  if (isError) return
   const objs = extractJsonObjects(text)
   if (run.kind === "harness") {
     if (
@@ -536,7 +532,9 @@ function applyWorkflowResult(
       const review = objs.map(asReview).find(Boolean)
       if (!review) return
       if (review.ok && review.blocking.length === 0) {
-        setPhase(run, findGoalComplete(objs) === false ? "bitesize" : "pr")
+        const complete = findGoalComplete(objs)
+        if (complete === undefined) return
+        setPhase(run, complete ? "pr" : "bitesize")
         return
       }
       if (!review.ok && review.blocking.length > 0 && run.attempts < 3) run.attempts += 1
@@ -588,14 +586,41 @@ function hasDesignHandoffFields(text: string): boolean {
   )
 }
 
+async function selectControllerModel(
+  pi: ExtensionAPI,
+  ctx: ExtensionCommandContext,
+  kind: RunKind,
+): Promise<boolean> {
+  for (const candidate of CONTROLLER_MODEL_ROUTE) {
+    const model = ctx.modelRegistry.find(candidate.provider, candidate.modelId)
+    if (!model || !(await pi.setModel(model))) continue
+    pi.setThinkingLevel(candidate.effort)
+    ctx.ui.notify(
+      `/${kind} controller: ${formatHop(candidate)}`,
+      candidate === CONTROLLER_MODEL_ROUTE[0] ? "info" : "warning",
+    )
+    return true
+  }
+  ctx.ui.notify(
+    `/${kind} stopped: no authenticated controller model (${CONTROLLER_MODEL_ROUTE.map(formatHop).join(" → ")}).`,
+    "error",
+  )
+  return false
+}
+
 async function fireUserMessage(
   pi: ExtensionAPI,
-  ctx: { isIdle: () => boolean; ui: { notify: Notify } },
+  ctx: ExtensionCommandContext,
   text: string,
+  run?: { kind: RunKind; goal: string },
 ): Promise<void> {
   if (!ctx.isIdle()) {
     ctx.ui.notify("Agent busy — try again when idle.", "warning")
     return
+  }
+  if (run) {
+    if (!(await selectControllerModel(pi, ctx, run.kind))) return
+    startRun(run.kind, run.goal)
   }
   await pi.sendUserMessage(text)
 }
@@ -707,13 +732,8 @@ function assistantText(message: unknown): string {
 export default function (pi: ExtensionAPI) {
   const harnessCommand = {
     description:
-      "Pi harness — empty args = default quality goal; else bind args. bd + Bigpowers + hashline + bg + DW",
-    handler: async (args: string, ctx: Parameters<typeof fireUserMessage>[1] & {
-      cwd: string
-      modelRegistry: {
-        find: (provider: string, modelId: string) => unknown
-      }
-    }) => {
+      "Pi harness — empty args = default quality goal; else bind args. bd + Bigpowers + hashline + DW",
+    handler: async (args: string, ctx: ExtensionCommandContext) => {
       if (!ctx.isIdle()) {
         ctx.ui.notify("Agent busy — try again when idle.", "warning")
         return
@@ -725,29 +745,7 @@ export default function (pi: ExtensionAPI) {
         ctx.ui.notify("Quality gate: 8 default goals still apply", "info")
       }
 
-      let selectedRoute: ModelHop | undefined
-      for (const candidate of RESEARCH_MODEL_ROUTE) {
-        const model = ctx.modelRegistry.find(candidate.provider, candidate.modelId)
-        if (model && await pi.setModel(model)) {
-          selectedRoute = candidate
-          break
-        }
-      }
-      if (!selectedRoute) {
-        ctx.ui.notify(
-          "Harness stopped: no authenticated research model (Grok 4.6 xhigh → Terra max).",
-          "error",
-        )
-        return
-      }
-
-      pi.setThinkingLevel(selectedRoute.effort)
-      ctx.ui.notify(
-        `Harness research route: ${selectedRoute.provider}/${selectedRoute.modelId}:${selectedRoute.effort}`,
-        selectedRoute.provider === "openai-codex" ? "warning" : "info",
-      )
-      startRun("harness", goal)
-      await pi.sendUserMessage(buildHarnessStart(goal, usedDefault, ctx.cwd))
+      await fireUserMessage(pi, ctx, buildHarnessStart(goal, usedDefault, ctx.cwd), { kind: "harness", goal })
     },
   }
   pi.registerCommand("harness", harnessCommand)
@@ -761,8 +759,7 @@ export default function (pi: ExtensionAPI) {
     handler: async (args, ctx) => {
       const goal = requireArgs(args, "Usage: /design <system goal>", ctx.ui.notify.bind(ctx.ui))
       if (!goal) return
-      startRun("design", goal)
-      await fireUserMessage(pi, ctx, buildDesignStart(goal))
+      await fireUserMessage(pi, ctx, buildDesignStart(goal), { kind: "design", goal })
     },
   })
 
@@ -771,8 +768,7 @@ export default function (pi: ExtensionAPI) {
     handler: async (args, ctx) => {
       const q = requireArgs(args, "Usage: /architect <question>", ctx.ui.notify.bind(ctx.ui))
       if (!q) return
-      startRun("architect", q)
-      await fireUserMessage(pi, ctx, buildArchitectStart(q, false))
+      await fireUserMessage(pi, ctx, buildArchitectStart(q, false), { kind: "architect", goal: q })
     },
   })
 
@@ -781,8 +777,7 @@ export default function (pi: ExtensionAPI) {
     handler: async (args, ctx) => {
       const q = requireArgs(args, "Usage: /architect-layered <question>", ctx.ui.notify.bind(ctx.ui))
       if (!q) return
-      startRun("architect-layered", q)
-      await fireUserMessage(pi, ctx, buildArchitectStart(q, true))
+      await fireUserMessage(pi, ctx, buildArchitectStart(q, true), { kind: "architect-layered", goal: q })
     },
   })
 

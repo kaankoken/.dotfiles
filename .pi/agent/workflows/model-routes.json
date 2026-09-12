@@ -51,6 +51,7 @@
       { "provider": "openai-codex", "modelId": "gpt-5.6-terra", "effort": "max" }
     ],
     "harness-research": [
+      { "provider": "openai-codex", "modelId": "gpt-6-astra", "effort": "xhigh" },
       { "provider": "xai", "modelId": "grok-4.6", "effort": "xhigh" },
       { "provider": "openai-codex", "modelId": "gpt-5.6-terra", "effort": "max" }
     ]

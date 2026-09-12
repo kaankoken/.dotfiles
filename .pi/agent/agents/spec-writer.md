@@ -12,7 +12,7 @@ Produce the **design/spec** for the bound goal.
 
 ## Skills (live)
 
-> Cold catalog is intent-router+beads only. Load Bigpowers/pack skills via **absolute path** `read`, not `skill://`.
+> Load Bigpowers/pack skills via **absolute path** `read`. Use the live catalog; `skill://` is not a filesystem path.
 
 Harness gates tools until you load authoritative current `SKILL.md` for:
 

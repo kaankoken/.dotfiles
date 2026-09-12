@@ -12,7 +12,7 @@ Produce **Arc42** structured output from the accepted PDR. Design only.
 
 ## Skills (live)
 
-> Cold catalog is intent-router+beads only. Load Bigpowers/pack skills via **absolute path** `read`, not `skill://`.
+> Load Bigpowers/pack skills via **absolute path** `read`. Use the live catalog; `skill://` is not a filesystem path.
 
 - `~/.pi/agent/npm/node_modules/bigpowers/skills/elaborate-spec/SKILL.md` (`elaborate-spec`)
 - `~/.pi/agent/npm/node_modules/bigpowers/skills/deepen-architecture/SKILL.md` (`deepen-architecture`)

@@ -1,32 +1,28 @@
 ---
 name: dispatch-via-dw
 description: >
-  When Bigpowers delegate-task / dispatch-agents patterns apply, implement them
-  with Pi dynamic-workflows (and bg_delegate for inspect-only).
+  Apply Bigpowers delegate-task / dispatch-agents policy through Pi dynamic-workflows.
 ---
 
 # dispatch-via-dw
 
-**Policy:** one fan-out substrate on Pi — **dynamic-workflows** + **pi-background-tasks**.
-
-## Mapping
+**Policy:** one delegation engine on Pi: **dynamic-workflows**. **bd** owns durable task state.
 
 | Bigpowers intent | Pi mechanism |
-|------------------|--------------|
-| `dispatch-agents` (parallel independent) | DW `agent()` / `parallel()` / `/workflows run` with worktree isolation when editing |
-| `delegate-task` (one complex task + two-stage review) | single DW `agentType` then code-reviewer |
-| inspect-only scout | `bg_delegate` capability=inspect → `bg_result` |
-| long shell | `bg_run` / `/bg` — do not poll |
+|-----------------|--------------|
+| `dispatch-agents` | DW `agent()` / `parallel()` with disjoint ownership; worktree isolation when edits may overlap |
+| `delegate-task` | one registered `agentType`, then a fresh reviewer |
+| inspect-only scout | DW scout role with read-oriented tools; no edits |
+| long shell check | `bash`, retain exit code; summarize large saved output with context-mode |
 
 ## Rules
 
-1. Path-load Bigpowers `delegate-task` / `dispatch-agents` for **policy** — execution is DW/bg.
-2. Prefer registered agent types under `~/.pi/agent/agents/*.md`.
-3. Model tiers: `~/.pi/workflows/model-tiers.json`.
-4. Harness owns phase order; agents do not start a second `/harness`.
-5. Do not install a second subagent framework alongside DW for the same gate.
+1. Load Bigpowers skills for policy, not a second executor.
+2. Require workflow opt-in. `/harness`, workflow commands, or an explicit delegation request qualify.
+3. Prefer registered roles under `~/.pi/agent/agents/*.md`; tiers live in `~/.pi/workflows/model-tiers.json`.
+4. Harness owns phase order. Agents must not start another harness; its work is `background:false`.
+5. Outside harness, background workflows deliver completion events. Use `workflow_control` for status/pause/resume/stop, not tight polling.
+6. Do not assume a background shell tool exists. Do not detach unmanaged checks or install another runner silently.
+7. Worktrees and role tool lists are not sandboxes. Keep one integrator; require fresh verification before accepting agent work.
 
-## Forbidden
-
-- Superpowers subagent path-loads
-- Polling bg jobs instead of wait/notify
+Never path-load `~/.agents/skills/superpowers/**`.

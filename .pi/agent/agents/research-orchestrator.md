@@ -1,7 +1,7 @@
 ---
 name: research-orchestrator
-model: xai/grok-4.6:xhigh
-route: scout
+model: openai-codex/gpt-6-astra:xhigh
+route: harness-research
 description: Discover-phase intermediary. Path-load research-first and map-codebase; commission scouts. Runs before architect, design, and harness spec.
 tools: [bash, read, web_search]
 ---

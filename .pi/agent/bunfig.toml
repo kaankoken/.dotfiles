@@ -1,0 +1,3 @@
+[test]
+# Bare `bun test tests` is a substring filter; do not discover installed package suites.
+root = "tests"

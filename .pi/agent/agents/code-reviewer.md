@@ -23,7 +23,7 @@ wrong or unsafe.
 
 ## Skills (live)
 
-> Cold catalog is intent-router+beads only. Load Bigpowers/pack skills via **absolute path** `read`, not `skill://`.
+> Load Bigpowers/pack skills via **absolute path** `read`. Use the live catalog; `skill://` is not a filesystem path.
 
 - `~/.pi/agent/npm/node_modules/bigpowers/skills/audit-code/SKILL.md` (`audit-code`) — structured self/peer audit checklist
 - `~/.pi/agent/npm/node_modules/bigpowers/skills/security-review/SKILL.md` (`security-review`)

@@ -12,7 +12,7 @@ Scaffold a project for the shared agent stack. Do **not** run Spec → Plan → 
 
 ## Skills (live)
 
-> Cold catalog is intent-router+beads only. Load Bigpowers/pack skills via **absolute path** `read`, not `skill://`.
+> Load Bigpowers/pack skills via **absolute path** `read`. Use the live catalog; `skill://` is not a filesystem path.
 
 Before any task tool is available, the harness verifies you have read the authoritative current `SKILL.md` for:
 

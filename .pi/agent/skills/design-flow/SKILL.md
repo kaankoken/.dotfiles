@@ -35,18 +35,20 @@ Reviewers follow `policy/REVIEW-POLICY.md` (default PASS).
 
 ## Skills (live load by path — not cold `skill://`)
 
-Cold catalog is intent-router+beads only.
+Use the live skill catalog; excluded flow skills must be read by absolute path.
 
 - `~/.pi/agent/npm/node_modules/bigpowers/skills/elaborate-spec/SKILL.md` (required on PDR/Arc42)
-- `~/.agents/skills/ponytail/SKILL.md` on writers
-- `~/.agents/skills/caveman/SKILL.md` on writers (chat prose only; artifact bodies stay normal English)
-- `~/.agents/skills/graphify/SKILL.md` on PDR/Arc42 writers (architecture graph; tokensave remains symbol graph)
+- `~/.pi/agent/npm/node_modules/@dietrichgebert/ponytail/skills/ponytail/SKILL.md` on writers
+- Caveman: already injected by `npm:pi-caveman`; chat prose only, artifact bodies stay normal English
+- `~/.pi/agent/skills/graphify/SKILL.md` on PDR/Arc42 writers (architecture graph; tokensave remains symbol graph)
 - `~/.pi/agent/skills/architect/SKILL.md` (`architect`) — required on PDR/Arc42 writers; never cold-listed; never vendor its body into prompts
 - Never vendor Bigpowers bodies into prompts
 
 ## Models
 
-SoT: `~/.pi/agent/workflows/model-routes.json`. Writers = `writer` chain; reviewers = `reviewer` (max 3, first ok:true ends). Provider failover applies.
+Controller: `openai-codex/gpt-6-astra:xhigh`, explicitly selected by `/design` using the shared `harness-research` chain. Grok → Terra availability/auth fallbacks emit warnings.
+
+SoT: `~/.pi/agent/workflows/model-routes.json`. Writers use the `writer` pin (Sol xhigh); reviewers use the `reviewer` pin (Opus max). Role metadata alone does not execute provider failover; callers must apply it.
 
 ## Artifacts
 
