@@ -38,7 +38,7 @@ From the agent directory:
 cd ~/.pi/agent
 bun test ./tests/*.test.ts
 bash scripts/assert-no-superpowers.sh
-bun ~/.bun/bin/pi --offline --list-models
+pi --offline --list-models
 ```
 
 Local suite includes role contracts, command/FSM behavior, generated PR syntax, and setup regressions. Model listing checks catalog/load availability, not successful authentication or requests against every provider. Biome LSP found no errors in changed production files/new setup tests; style warnings remain in existing code. No full TypeScript build was configured or claimed.

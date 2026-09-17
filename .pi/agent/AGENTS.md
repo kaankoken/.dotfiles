@@ -4,7 +4,7 @@ Upstream **Pi** host (`pi` / [pi.dev](https://pi.dev)).
 
 ## Host
 
-- **Binary:** `@earendil-works/pi-coding-agent`; check `bun ~/.bun/bin/pi --version`. Bun and Node are installed; do not infer runtime from old version notes.
+- **Binary:** npm-global `@earendil-works/pi-coding-agent` (Node runtime); check `pi --version`. Bun remains for tooling/tests, not Pi launch.
 - **SoT:** `~/.dotfiles/.pi/agent/`. `~/.pi` is a stow tree-fold symlink to `~/.dotfiles/.pi`.
 - **Apply:** config edits are live on disk. Use `/reload` for extensions/context; restart for package/MCP changes. See [README](README.md#clean-machine-order).
 - **Runtime state:** never edit `auth.json`, `sessions/`, `npm/`, `git/`, model caches, or `mcp-cache.json` as configuration.
@@ -48,6 +48,7 @@ ADR-0001 and ADR-0002 are policy references; their original documents are not in
 | `extensions/rtk.ts` | RTK/bash rewrites |
 | `extensions/goal-harness.ts` | `/harness`, `/design`, `/architect`, `/architect-layered`, `/init` |
 | `extensions/pr-reviewer.ts` | local freeze PR review |
+| `extensions/typesafe.ts` | TypeSafe Jev `typesafe_judge` + `/typesafe` key |
 
 **Not enabled:** `pi-background-tasks`, `smart-approve`. Do not promise `/bg`, `/jobs`, `/logs`, `/fusion`, or an approval gate. Worktrees and tool allowlists are not security sandboxes. Ask before destructive operations or external publishing.
 

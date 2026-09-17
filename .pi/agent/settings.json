@@ -1,72 +1,71 @@
 {
-  "npmCommand": [
-    "bun"
-  ],
-  "packages": [
-    {
-      "source": "npm:context-mode",
-      "skills": [],
-      "prompts": []
-    },
-    "npm:pi-hashline-edit-pro",
-    {
-      "source": "npm:bigpowers",
-      "skills": [],
-      "prompts": []
-    },
-    "npm:pi-zentui",
-    {
-      "source": "npm:mitsupi",
-      "extensions": [
-        "extensions/answer.ts",
-        "extensions/context.ts",
-        "extensions/go-to-bed.ts",
-        "extensions/loop.ts"
-      ],
-      "skills": [],
-      "prompts": [],
-      "themes": []
-    },
-    "npm:@narumitw/pi-lsp",
-    "npm:pi-web-access",
-    "npm:pi-mcp-adapter",
-    "npm:pi-caveman",
-    "npm:@dietrichgebert/ponytail",
-    "npm:@narumitw/pi-goal",
-    "npm:pi-cursor-sdk",
-    "git:github.com/kaankoken/pi-dynamic-workflows@15a1361"
-  ],
-  "lastChangelogVersion": "0.85.1",
-  "theme": "rose-pine-moon",
-  "defaultProvider": "openai-codex",
-  "defaultModel": "gpt-6-astra",
-  "defaultThinkingLevel": "xhigh",
-  "images": {
-    "blockImages": false
-  },
-  "showHardwareCursor": true,
-  "terminal": {
-    "showTerminalProgress": true,
-    "clearOnShrink": true
-  },
-  "enableInstallTelemetry": false,
-  "tuiMode": "fullscreen",
-  "editorPaddingX": 1,
-  "outputPad": 1,
-  "steeringMode": "one-at-a-time",
-  "treeFilterMode": "default",
-  "skills": [
-    "!skills/superpowers/**",
-    "!skills/stack-*/**",
-    "!skills/architect/**",
-    "!skills/design-flow/**",
-    "!skills/goal-harness/**",
-    "!skills/adapters/**"
-  ],
-  "extensions": [
-    "extensions/rtk.ts",
-    "extensions/goal-harness.ts",
-    "extensions/pr-reviewer.ts",
-    "extensions/btw.ts"
-  ]
+	"npmCommand": [],
+	"packages": [
+		{
+			"source": "npm:context-mode",
+			"skills": [],
+			"prompts": []
+		},
+		"npm:pi-hashline-edit-pro",
+		{
+			"source": "npm:bigpowers",
+			"skills": [],
+			"prompts": []
+		},
+		"npm:pi-zentui",
+		{
+			"source": "npm:mitsupi",
+			"extensions": [
+				"extensions/answer.ts",
+				"extensions/context.ts",
+				"extensions/go-to-bed.ts",
+				"extensions/loop.ts"
+			],
+			"skills": [],
+			"prompts": [],
+			"themes": []
+		},
+		"npm:@narumitw/pi-lsp",
+		"npm:pi-web-access",
+		"npm:pi-mcp-adapter",
+		"npm:pi-caveman",
+		"npm:@dietrichgebert/ponytail",
+		"npm:@narumitw/pi-goal",
+		"npm:pi-cursor-sdk",
+		"git:github.com/kaankoken/pi-dynamic-workflows@15a1361"
+	],
+	"lastChangelogVersion": "0.85.1",
+	"theme": "rose-pine-moon",
+	"defaultProvider": "openai-codex",
+	"defaultModel": "gpt-6-astra",
+	"defaultThinkingLevel": "xhigh",
+	"images": {
+		"blockImages": false
+	},
+	"showHardwareCursor": true,
+	"terminal": {
+		"showTerminalProgress": true,
+		"clearOnShrink": true
+	},
+	"enableInstallTelemetry": false,
+	"tuiMode": "fullscreen",
+	"editorPaddingX": 1,
+	"outputPad": 1,
+	"steeringMode": "one-at-a-time",
+	"treeFilterMode": "default",
+	"skills": [
+		"!skills/superpowers/**",
+		"!skills/stack-*/**",
+		"!skills/architect/**",
+		"!skills/design-flow/**",
+		"!skills/goal-harness/**",
+		"!skills/adapters/**"
+	],
+	"extensions": [
+		"extensions/rtk.ts",
+		"extensions/goal-harness.ts",
+		"extensions/pr-reviewer.ts",
+		"extensions/btw.ts",
+		"extensions/typesafe.ts"
+	]
 }
