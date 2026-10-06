@@ -1,6 +1,50 @@
 # Pi setup and orchestration
 
-## Current audit — 2026-09-12
+## Input-edge pets
+
+Owned extension: `extensions/pets/index.ts`. Codex V1/V2 PNG/WebP pets appear beside input editor's right edge; native Kitty/Ghostty images, ANSI fallback elsewhere. No pet selected by default. Import with `/pet import /path/to/pet-folder`; use `/pet` to choose, `/pet hide`, `/pet renderer ansi`, or `/pet animate off`.
+
+Install local decoder with `npm --prefix ~/.pi/agent/extensions/pets ci`, then `/reload`. Assets/selection live in ignored `~/.pi/agent/pets/`; node_modules is ignored, dependency lock is tracked. Existing editor factory is retained, with expanded draft text preserved during installation. See [pet controls and verification](extensions/pets/README.md).
+
+## Native MCP — Pi 1.0
+
+Pi built-in MCP now owns connections; `pi-mcp-adapter` is disabled in `settings.json`. Global servers live in `agent/mcp.json`; this repository's four additional servers are migrated from `.mcp.json` to `.pi/mcp.json` (trusted projects only). All use `codemode` exposure: no startup schema dump or first-prompt connection wait. Adapter config and credentials are left untouched for rollback.
+
+Restart Pi after this package change. Use native `/mcp` for status and `/mcp login atlassian` if sign-in is needed. Scripts discover tools with `searchTools()` and `describeTool()`, and read server guidance with `describeNamespace()`. Native names are `mcp__<server>__<tool>`; adapter's `mcp` gateway and `mcp__tokensave` proxy are gone. `pi mcp list --json` checks native connections from shell.
+
+## Pi 1.0 migration
+
+Reviewed all four releases in the installed 0.9x range: 0.99.0, 0.99.1, 0.99.2 and 1.0.0; no 0.90–0.98 releases are listed. Native MCP/codemode/tool search are enabled; fullscreen was already enabled. Quiet header is cosmetic, not a token optimization. Theme, model pins, credentials and bd history are preserved. New login/classifier/image/virtual-model APIs need no duplicate wrappers.
+
+`pi-goal-x` solely owns `/goal` and `/sisyphus`; old `@narumitw/pi-goal` is disabled, not deleted. Old goal history is not automatically converted. `/harness` retains quality/process gates and bd ownership. Use one controller per task. Installed goal/background packages still declare pre-1.0 peer ranges; offline loading proves tested paths, not every upstream feature.
+
+Lean startup uses `codemode.mode: "only"`, inline budget 1200, and deferred MCP exposure. All tools stay registered and discoverable via searchTools()/describeTool(); edits remain hashline. Real resource-loader/provider-request probe with a faux model measured ~32.8k → ~13.7k estimated tokens, 58.3% fewer request characters. Tool-declaration characters fell 79,584 → 6,751. Tokens are characters/4 estimates; this is not the screenshot's exact session payload and does not connect MCP servers.
+
+Workflow settings SoT is `agent/workflows/settings.json`, linked from `~/.pi/workflows/settings.json`; prior file is preserved as `settings.before-pi-1.0.json`. Concurrency defaults to 8. Parent fans independent scouts out, then supplies actual results to research-orchestrator. Independent claimed bites may fan out with disjoint ownership; dependent work and quality gates remain sequential. Batch evidence `{ implementations: [...] }` requires every result; null/failed results do not advance. Native nested workflow calls checkpoint harness phase state because their individual results are not persisted in the outer codemode transcript.
+
+Implementer/verify children load installed pi-background-tasks and expose bg_run/bg_status/bg_logs/bg_kill. Recursive delegate/Fusion/attested tools are denied. Use isAgent:false; finish checks and retain exit codes before returning. Child shutdown stops unfinished jobs; persistent servers belong to parent. These extensions run with host privileges, not in a sandbox.
+
+```sh
+cd ~/.pi/agent
+bun test ./tests/*.test.ts
+node scripts/measure-startup.mjs
+node scripts/check-subagent-background.mjs
+bash scripts/assert-no-superpowers.sh
+```
+
+76 owned tests and four fork concurrency/hashline regressions passed. Real Pi 1.0 child SDK executed bg_status with process tools present and recursive tools absent, using a faux model and no paid calls. Tests now resolve real TypeBox validation and workflow parsing from the enabled local checkout, not the old managed Git copy. Live-provider parallelism, interactive goal auditing and delegate/Fusion routes still need a controlled smoke test after restart.
+
+## Current workflow runtime
+
+`settings.json` loads `/Users/legolas/Projects/pi-dynamic-workflows` directly, on local branch `feat/upstream-hashline`: upstream v3.13.1 (`3bea96c`) plus Hashline subagent support only. Nothing is published. Keep this checkout and its local changes backed up; a clean-machine restore needs it separately. Run `npm run build` there after source edits, then restart Pi.
+
+Verification: 1,657 upstream tests passed with disposable HOME; build, TypeScript, tracked-source Biome, docs/context and release checks passed. A real Grok subagent on host Pi 0.99.1 completed anchored read → replace → read. Upstream now provides thinking support and fail-closed, uniquely named worktrees. Other extension tools and role `route:` execution are not automatically inherited.
+
+Pre-switch backup: `/Users/legolas/Projects/pi-workflows-before-local.Vtjn11` (workflow history and previous settings). The previous managed checkout remains untouched. New workflow storage can migrate on write and is not readable by older versions; restore the backup before downgrading.
+
+## Previous audit — 2026-09-12
+
+Historical findings below predate the local runtime switch above.
 
 Live tree: `~/.pi/agent` → `~/.dotfiles/.pi/agent`.
 Host checked: Pi 0.85.1, Bun 1.4.2. Current session: `openai-codex/gpt-6-astra`.
@@ -60,7 +104,7 @@ Never run third-party test suites with the live HOME. Use their supported test r
 | Independent parallel investigation | Explicitly request a workflow; bound agent count and scope |
 | Resume | Read `bd ready` / issue evidence; inspect saved workflow state rather than starting duplicate work |
 
-**Controllers:** default parent, `/harness` (`/goal-harness`), `/design`, `/architect`, `/architect-layered`, and `research-orchestrator` now prefer `openai-codex/gpt-6-astra:xhigh`. Flow commands explicitly select the controller model before starting; they do not inherit a previously selected specialist model. Shared chain remains named `harness-research` in `workflows/model-routes.json`. Existing Grok → Terra availability/auth fallbacks remain and emit warnings; no available authenticated model means no new run. Writers, reviewers, scouts, and model tiers are unchanged.
+**Controllers:** default parent, `/harness` (`/goal-harness`), `/design`, `/architect`, `/architect-layered`, and `research-orchestrator` now prefer `openai-codex/gpt-6-astra:medium`. Flow commands explicitly select the controller model before starting; they do not inherit a previously selected specialist model. Shared chain remains named `harness-research` in `workflows/model-routes.json`. Existing Grok → Terra availability/auth fallbacks remain and emit warnings; no available authenticated model means no new run. Writers, reviewers, scouts, and model tiers are unchanged.
 
 Controller-routing follow-up: **60 local tests passed**, including all five command names, effort selection, and failed authentication preserving an active run. Use `/reload` to activate the updated command handlers; new sessions use the updated default settings.
 

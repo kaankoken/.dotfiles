@@ -10,6 +10,7 @@
 /.pi/agent/cursor-sdk-model-list.json
 /.pi/agent/models-store.json
 /.pi/agent/mcp-cache.json
+/.pi/agent/pets/
 /.config/pi/web-search-cache
 /.pi/workflows
 /specs/
