@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test"
 import { readdirSync, readFileSync } from "node:fs"
 import { join } from "node:path"
-import { parseAgentDefinition } from "../git/github.com/kaankoken/pi-dynamic-workflows/src/agent-registry.ts"
+import { workflowRoot } from "./host-peers.ts"
+const { parseAgentDefinition } = await import(join(workflowRoot, "src/agent-registry.ts"))
 import { loadRouteDoc } from "../workflows/model-routes.ts"
 
 const AGENTS_DIR = join(import.meta.dir, "../agents")
@@ -17,6 +18,10 @@ const KNOWN_TOOLS = new Set([
   "web_search",
   "fetch_content",
   "source_check",
+  "bg_run",
+  "bg_status",
+  "bg_logs",
+  "bg_kill",
 ])
 const FORBIDDEN_TOOLS = new Set(["search", "edit", "grep"])
 
@@ -55,7 +60,7 @@ describe("agent registry", () => {
       "implementer.md",
     )!
     expect(def.isolation).toBeUndefined()
-    expect(def.tools).toEqual(["bash", "read", "replace", "insert", "write"])
+    expect(def.tools).toEqual(["bash", "read", "replace", "insert", "write", "bg_run", "bg_status", "bg_logs", "bg_kill"])
   })
 
   test("route matches model-routes.json first hop", () => {

@@ -46,7 +46,7 @@ Use the live skill catalog; excluded flow skills must be read by absolute path.
 
 ## Models
 
-Controller: `openai-codex/gpt-6-astra:xhigh`, explicitly selected by `/design` using the shared `harness-research` chain. Grok → Terra availability/auth fallbacks emit warnings.
+Controller: `openai-codex/gpt-6-astra:medium`, explicitly selected by `/design` using the shared `harness-research` chain. Grok → Terra availability/auth fallbacks emit warnings.
 
 SoT: `~/.pi/agent/workflows/model-routes.json`. Writers use the `writer` pin (Sol xhigh); reviewers use the `reviewer` pin (Opus max). Role metadata alone does not execute provider failover; callers must apply it.
 

@@ -1,5 +1,6 @@
 #!/bin/sh
-# kaaninspace → GitHub CLI read-only. Write: gh auth switch --user kaankoken
+# kaaninspace: agents may read and create PRs (PI_CODING_AGENT / CLAUDECODE / CURSOR_AGENT).
+# Humans retain full access. Other agent writes require an authorized account.
 REAL=/opt/homebrew/bin/gh
 RO=kaaninspace
 
@@ -10,6 +11,11 @@ fi
 
 active=$(awk '/^    user:/{print $2; exit}' "${GH_CONFIG_DIR:-$HOME/.config/gh}/hosts.yml" 2>/dev/null || true)
 if [ "$active" != "$RO" ]; then
+  exec "$REAL" "$@"
+fi
+
+# Human (no agent env): do not apply the write denylist.
+if [ -z "${PI_CODING_AGENT:-}" ] && [ -z "${CLAUDECODE:-}" ] && [ -z "${CURSOR_AGENT:-}" ]; then
   exec "$REAL" "$@"
 fi
 
@@ -88,7 +94,7 @@ case $cmd in
 esac
 
 case ${cmd}/${sub:-} in
-  pr/|pr/list|pr/view|pr/status|pr/checks|pr/diff|pr/files|pr/checkout|\
+  pr/|pr/list|pr/view|pr/status|pr/checks|pr/diff|pr/files|pr/checkout|pr/create|\
   issue/|issue/list|issue/view|issue/status|\
   repo/|repo/list|repo/view|repo/clone|repo/gitignore|\
   gist/|gist/list|gist/view|gist/clone|\

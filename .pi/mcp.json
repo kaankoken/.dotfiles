@@ -1,0 +1,28 @@
+{
+  "mcpServers": {
+    "parallel-search": {
+      "url": "https://search.parallel.ai/mcp",
+      "description": "Web search and targeted page extraction",
+      "exposure": "codemode"
+    },
+    "context7": {
+      "url": "https://mcp.context7.com/mcp",
+      "description": "Current library documentation and API examples",
+      "exposure": "codemode"
+    },
+    "github": {
+      "url": "https://api.githubcopilot.com/mcp",
+      "headers": {
+        "Authorization": "!token=$(gh auth token --hostname github.com) && printf 'Bearer %s' \"$token\""
+      },
+      "description": "GitHub repositories, issues and pull requests",
+      "exposure": "codemode"
+    },
+    "chrome-devtools": {
+      "command": "npx",
+      "args": ["-y", "chrome-devtools-mcp@1.6.0"],
+      "description": "Browser inspection and debugging through Chrome DevTools",
+      "exposure": "codemode"
+    }
+  }
+}

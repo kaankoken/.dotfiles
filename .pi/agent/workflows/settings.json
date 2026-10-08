@@ -1,0 +1,16 @@
+{
+  "keywordTriggerEnabled": true,
+  "defaultAgentTimeoutMs": null,
+  "persistAgentSessions": false,
+  "defaultConcurrency": 8,
+  "providerMiddlewareExtensions": ["pi-background-tasks"],
+  "excludeSubagentTools": [
+    "bg_delegate",
+    "bg_result",
+    "bg_run_pi_attested",
+    "fusion_investigate",
+    "fusion_reason",
+    "fusion_research",
+    "fusion_validate"
+  ]
+}

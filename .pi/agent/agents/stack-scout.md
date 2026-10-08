@@ -1,6 +1,6 @@
 ---
 name: stack-scout
-model: xai/grok-4.6:xhigh
+model: xai/grok-4.7:xhigh
 route: scout
 description: Narrow research — Rust / iOS Axiom / Android stack skill routes (on-demand packs).
 tools: [bash, read]

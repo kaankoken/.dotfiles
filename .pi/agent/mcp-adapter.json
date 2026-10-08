@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "tokensave": {
+      "command": "/opt/homebrew/bin/tokensave",
+      "args": [
+        "serve"
+      ]
+    },
+    "atlassian": {
+      "url": "https://mcp.atlassian.com/v1/mcp/authv2",
+      "auth": "oauth",
+      "directTools": [
+        "search",
+        "getJiraIssue",
+        "addCommentToJiraIssue"
+      ]
+    }
+  }
+}

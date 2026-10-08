@@ -4,7 +4,7 @@ description: >
   Pi structured behavioral process for /harness. Process engine: Bigpowers
   (path-load live SKILL.md under npm package root skills/), owned adapters,
   bd SoT, DW/hashline contracts. Roles under ~/.pi/agent/agents/. Does not
-  shadow native /goal or /guided-goal. Not a second methodology orchestrator.
+  shadow pi-goal-x /goal or /sisyphus. Not a second methodology orchestrator.
 ---
 
 # Pi Goal harness
@@ -73,10 +73,10 @@ Spec, plan, grill-me, and elaborate-spec still run against that full goal — do
 ### Shell checks and scouts
 
 - Run checks with `bash`; retain exit codes and summarize large saved output with context-mode.
-- Delegate scouts through dynamic-workflows with user opt-in. Do not assume a background-task package or approval gate is installed.
+- Delegate scouts through dynamic-workflows with user opt-in. pi-background-tasks is enabled; implementer/verify roles get bg_run/bg_status/bg_logs/bg_kill. No approval gate is installed.
 - Tools and worktrees use host permissions; neither is a security sandbox.
 
-### Dynamic workflows (`git:github.com/kaankoken/pi-dynamic-workflows`)
+### Dynamic workflows (local `quintinshaw/pi-dynamic-workflows` checkout)
 - Parallel multi-step: `/harness` **is** `workflow` opt-in. Call the tool; `background: false` for implementer + gates. `/workflows run` / keyword still work.
 - isolation optional: `agent(prompt, { agentType, isolation: 'worktree' })`. `isolation: false` opts out of a def.
   Default **keep** the worktree. Test runs may pass `keepWorktree: false` to delete.
@@ -168,12 +168,12 @@ SoT: `~/.pi/agent/workflows/model-routes.json`. No native anthropic (third-party
 
 | Role | Chain |
 |------|--------|
-| Writers | sol:xhigh → cursor opus@1m:xhigh → grok-4.6 → composer |
+| Writers | sol:xhigh → cursor opus@1m:xhigh → grok-4.7 → composer |
 | Reviewers | cursor opus@1m:max → sol:max → sol:xhigh. **Max 3 rounds; first ok:true ends.** |
 | Judges | cursor opus@1m:max → sol:xhigh |
-| Milestone | terra:max → grok-4.6:xhigh |
-| Scouts | grok-4.6:xhigh → terra:max |
-| Flow controllers + research orchestrator | gpt-6-astra:xhigh → grok-4.6:xhigh → terra:max |
+| Milestone | terra:max → grok-4.7:xhigh |
+| Scouts | grok-4.7:xhigh → terra:max |
+| Flow controllers + research orchestrator | gpt-6-astra:medium → grok-4.7:xhigh → terra:max |
 
 ## Agent yields over 50 KiB (`agent://`)
 
@@ -199,7 +199,7 @@ create their own worktree (`kickoff-branch` consumes assignment only).
 | `/design` | Design-flow only (not full implement) |
 | `/code-review` | Owned by dynamic-workflows (local/diff) |
 | `/pr-review` | Local Pi freeze (Grok+Sol+Opus reviewers, Terra judge) |
-| `/goal`, `/guided-goal` | **Native Pi** — do not override |
+| `/goal`, `/sisyphus` | Owned by **pi-goal-x**; do not run alongside /harness for the same work |
 
 ## Chain
 

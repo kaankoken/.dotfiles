@@ -1,6 +1,6 @@
 ---
 name: assumption-griller
-model: xai/grok-4.6:xhigh
+model: xai/grok-4.7:xhigh
 route: scout
 description: Design-phase intermediary. Path-load grill-me (grill-with-docs when a library is in play). Required gate architect → design.
 tools: [bash, read, web_search]

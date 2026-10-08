@@ -1,9 +1,9 @@
 ---
 name: implementer
-model: xai/grok-4.6:xhigh
+model: xai/grok-4.7:xhigh
 route: implementer
 description: SDD implementer in git worktree. TDD, ponytail, stack skills. No self-review ownership.
-tools: [bash, read, replace, insert, write]
+tools: [bash, read, replace, insert, write, bg_run, bg_status, bg_logs, bg_kill]
 ---
 
 # implementer
@@ -29,6 +29,7 @@ Never Superpowers. **bd** is SoT. Never vendor skill bodies.
 - Work only in the assigned worktree and claimed issue.
 - TDD RED→GREEN; no production TODO/FIXME/stubs for in-scope paths.
 
+- Use `bg_run` for long checks with `isAgent:false`; inspect bounded `bg_logs` and terminal `bg_status`. No child Pi/LLM commands, delegate or Fusion fan-out. Finish checks and retain exit codes before handing back; child shutdown stops unfinished jobs.
 ## Output
 
 Implemented change + verification evidence. Hand back to harness for `verify-gate`, then review/integration.

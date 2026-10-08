@@ -1,6 +1,6 @@
 ---
 name: webwright-scout
-model: xai/grok-4.6:xhigh
+model: xai/grok-4.7:xhigh
 route: scout
 description: Long-horizon scripted browse (Playwright/Webwright) with screenshots. Commissioned by research-orchestrator.
 tools: [bash, read]

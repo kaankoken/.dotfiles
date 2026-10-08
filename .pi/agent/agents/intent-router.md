@@ -1,6 +1,6 @@
 ---
 name: intent-router
-model: xai/grok-4.6:xhigh
+model: xai/grok-4.7:xhigh
 route: scout
 description: Optional classifier for ambiguous freeform requests. Suggest one existing Pi entry point; do not start another controller.
 tools: [bash, read]

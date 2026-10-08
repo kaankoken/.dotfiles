@@ -1,6 +1,6 @@
 ---
 name: pr-opener
-model: openai-codex/gpt-5.6-sol:xhigh
+model: openai-codex/gpt-6.1-sol:xhigh
 route: writer
 description: Open PR after milestone PASS. gh CLI. Body from bd + commits.
 tools: [bash, read]

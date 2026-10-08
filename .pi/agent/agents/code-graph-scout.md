@@ -1,6 +1,6 @@
 ---
 name: code-graph-scout
-model: xai/grok-4.6:xhigh
+model: xai/grok-4.7:xhigh
 route: scout
 description: Narrow research — structure, callers, impact via tokensave. Read-mostly.
 tools: [bash, read]

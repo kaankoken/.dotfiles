@@ -1,6 +1,6 @@
 ---
 name: web-scout
-model: xai/grok-4.6:xhigh
+model: xai/grok-4.7:xhigh
 route: scout
 description: Default internet research — search APIs and fetch pages. Read-mostly.
 tools: [bash, read, web_search, fetch_content]

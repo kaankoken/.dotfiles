@@ -47,9 +47,9 @@ export function expandHop(hop: ModelHop, doc: RouteDoc): ModelHop[] {
 }
 
 const FALLBACK_RESEARCH: ModelHop[] = [
-  { provider: "openai-codex", modelId: "gpt-6-astra", effort: "xhigh" },
-  { provider: "xai", modelId: "grok-4.6", effort: "xhigh" },
-  { provider: "xai-oauth", modelId: "grok-4.6", effort: "xhigh" },
+  { provider: "openai-codex", modelId: "gpt-6-astra", effort: "medium" },
+  { provider: "xai", modelId: "grok-4.7", effort: "xhigh" },
+  { provider: "xai-oauth", modelId: "grok-4.7", effort: "xhigh" },
   { provider: "openai-codex", modelId: "gpt-5.6-terra", effort: "max" },
   { provider: "cursor", modelId: "gpt-5.6-terra@1m", effort: "max" },
 ]

@@ -18,9 +18,9 @@
  *   - Bigpowers skills under package install path
  */
 
-import type { ExtensionAPI, ExtensionCommandContext } from "@earendil-works/pi-coding-agent"
+import type { ExtensionAPI, ExtensionCommandContext, SessionEntry } from "@earendil-works/pi-coding-agent"
 import { formatHop, loadChain, type ModelHop } from "../workflows/model-routes.ts"
-import { Check } from "../npm/node_modules/typebox/build/value/index.mjs"
+import { Check } from "typebox/value"
 import implementerEvidenceSchema from "../schemas/implementer-evidence.schema.json"
 /** Installed via `pi install npm:bigpowers@…` */
 const BIGPOWERS = "~/.pi/agent/npm/node_modules/bigpowers/skills"
@@ -162,7 +162,7 @@ function buildHarnessStart(goal: string, usedDefault: boolean, cwd: string): str
     ...packageContractsBlock(),
     "### Process (ordered)",
     "1. **Research** — DW `tier: 'small'` then path-load",
-    `   - ${PI_AGENTS}/research-orchestrator.md (required; commissions scouts)`,
+    `   - ${PI_AGENTS}/research-orchestrator.md (required; synthesizes scout results). Parent workflow fans independent scouts out with parallel(thunks), then passes their actual results to research-orchestrator; subagents cannot spawn workflows`,
     `   - ${BIGPOWERS}/research-first/SKILL.md`,
     `   - ${BIGPOWERS}/map-codebase/SKILL.md`,
     "   - tokensave MCP for live symbols; graphify for architecture/corpus",
@@ -178,7 +178,7 @@ function buildHarnessStart(goal: string, usedDefault: boolean, cwd: string): str
     `   - ${PI_AGENTS}/impact-assessor.md (required when touching existing modules; ${BIGPOWERS}/assess-impact/SKILL.md)`,
     `   - ${BIGPOWERS}/scope-work/SKILL.md → ${BIGPOWERS}/slice-tasks/SKILL.md → ${BIGPOWERS}/plan-work/SKILL.md`,
     `   - ${PI_ADAPTERS}/bp-plan-to-bd/SKILL.md (bd output contract)`,
-    "5. **Implement** — no human confirm. One task at a time; TDD evidence; hashline `read`/`replace` only. Loop until bound goal. Path-load",
+    "5. **Implement** — no human confirm. Run independent claimed bd bites with parallel(thunks), unique labels and disjoint file/worktree ownership; dependent bites stay sequential. Return { implementations: [...] } with every result, including null failures; TDD evidence; hashline `read`/`replace` only. Loop until bound goal. Path-load",
     `   - ${BIGPOWERS}/kickoff-branch/SKILL.md (worktree/branch; harness still owns assignment policy)`,
     `   - ${BIGPOWERS}/develop-tdd/SKILL.md`,
     `   - ${PI_ADAPTERS}/dispatch-via-dw/SKILL.md when parallel/delegate`,
@@ -364,6 +364,11 @@ const HUMAN_GATE_NEXT: Record<string, string> = {
   "plan-confirm": "implement",
 }
 
+const HUMAN_GATE_MESSAGES: Record<string, string> = {
+  plan: "User approved the spec. Start Plan then BiteSize now. Do not ask the user until plan-confirm after BiteSize reviewer ok.",
+  implement: "User approved the plan. Start Implement now. Do not ask the user again. Build until the bound goal has evidence.",
+}
+
 export function isHumanApprove(text: string): boolean {
   const t = text.trim()
   if (!t || t.length > 80) return false
@@ -401,9 +406,9 @@ function firstGatedRole(
   }
 }
 
-function setPhase(run: ActiveRun, phase: string): void {
+function setPhase(run: ActiveRun, phase: string, preserveAttempts = false): void {
   run.phase = phase
-  run.attempts = 0
+  if (!preserveAttempts) run.attempts = 0
   run.injects = 0
 }
 
@@ -519,13 +524,23 @@ function applyWorkflowResult(
       return
     }
     if (applyReviewGate(run, roles, objs)) return
-    if (run.phase === "implement" && roles.includes("implementer") && objs.some(isImplementerEvidence)) {
-      setPhase(run, "verify")
+    if (run.phase === "implement" && roles.includes("implementer") && objs.length > 0 && objs.every((obj) => {
+      if (obj && typeof obj === "object" && "implementations" in obj) {
+        const batch = (obj as { implementations: unknown }).implementations
+        return Array.isArray(batch) && batch.length > 0 && batch.every(isImplementerEvidence)
+      }
+      return isImplementerEvidence(obj)
+    })) {
+      setPhase(run, "verify", true)
       return
     }
     if (run.phase === "verify" && roles.includes("verify-gate") && !isError) {
-      const reviews = objs.map(asReview).filter(Boolean)
-      if (reviews.length > 0 && reviews.every((r) => r!.ok && r!.blocking.length === 0)) setPhase(run, "milestone")
+      const reviews = objs.map(asReview).filter((review) => review !== undefined)
+      if (reviews.length > 0 && reviews.every((r) => r.ok && r.blocking.length === 0)) {
+        setPhase(run, "milestone", true)
+      } else if (reviews.some((r) => !r.ok && r.blocking.length > 0)) {
+        setPhase(run, "implement", true)
+      }
       return
     }
     if (run.phase === "milestone" && roles.includes("milestone-organizer")) {
@@ -534,10 +549,13 @@ function applyWorkflowResult(
       if (review.ok && review.blocking.length === 0) {
         const complete = findGoalComplete(objs)
         if (complete === undefined) return
-        setPhase(run, complete ? "pr" : "bitesize")
+        setPhase(run, complete ? "pr" : "implement")
         return
       }
-      if (!review.ok && review.blocking.length > 0 && run.attempts < 3) run.attempts += 1
+      if (!review.ok && review.blocking.length > 0 && run.attempts < 3) {
+        run.attempts += 1
+        if (run.attempts < 3) setPhase(run, "implement", true)
+      }
       return
     }
     if (run.phase === "pr" && roles.includes("pr-opener") && !isError && /https:\/\/github\.com\/[^/\s]+\/[^/\s]+\/pull\/\d+/.test(text)) {
@@ -729,6 +747,74 @@ function assistantText(message: unknown): string {
     .join("\n")
 }
 
+export function restoreHarness(entries: readonly SessionEntry[]): void {
+  activeRun = null
+  const calls = new Map<string, Record<string, unknown>>()
+  let pending: { text: string; tools: Set<string> } | undefined
+  const finishTurn = () => {
+    if (!pending || pending.tools.size > 0) return
+    if (activeRun && !isKindInjection(pending.text)) {
+      applyWorkflowResult(activeRun, [...(PHASE_ALLOWED[activeRun.phase] ?? [])], pending.text, false)
+    }
+    pending = undefined
+  }
+  for (const entry of entries) {
+    if (entry.type === "custom" && entry.customType === "harness-state") {
+      const state = entry.data as Partial<ActiveRun> | null
+      if (state === null) activeRun = null
+      else if (state?.kind === "harness" && typeof state.goal === "string" &&
+        typeof state.phase === "string" && Object.hasOwn(PHASE_ALLOWED, state.phase) &&
+        typeof state.attempts === "number" && Number.isSafeInteger(state.attempts) && state.attempts >= 0 && state.attempts <= 3 &&
+        typeof state.injects === "number" && Number.isSafeInteger(state.injects) && state.injects >= 0 && state.injects <= 3) {
+        activeRun = { ...state } as ActiveRun
+        pending = undefined
+      }
+      continue
+    }
+    if (entry.type !== "message") continue
+    const message = entry.message
+    const text = assistantText(message)
+    const run = getActiveRun()
+    if (message.role === "user") {
+      if (text.startsWith("kind: goal-harness-start\n")) {
+        activeRun = null
+        calls.clear()
+        pending = undefined
+        const goal = text.match(/\nBound goal[^\n]*:\n([\s\S]+?)\n\n## Controller instructions/)?.[1]
+        if (goal) startRun("harness", goal)
+      } else if (/^kind: (?:design-flow-start|architect-consult)\n/.test(text)) {
+        activeRun = null
+      } else if (run) {
+        if (text.startsWith("kind: harness-review-resume\n") && run.kind === "harness" && run.phase === "milestone" && run.attempts >= 3) {
+          setPhase(run, "implement")
+        }
+        const next = HUMAN_GATE_NEXT[run.phase]
+        // Legacy input handlers persisted the transformed approval, not the raw "go".
+        if (next && text === HUMAN_GATE_MESSAGES[next]) setPhase(run, next)
+      }
+      continue
+    }
+    if (!run) continue
+    if (message.role === "assistant") {
+      pending = { text, tools: new Set() }
+      for (const part of message.content) {
+        if (part.type !== "toolCall") continue
+        pending.tools.add(part.id)
+        if (part.name === "workflow") calls.set(part.id, part.arguments)
+      }
+      finishTurn()
+    } else if (message.role === "toolResult") {
+      const input = calls.get(message.toolCallId)
+      if (message.toolName === "workflow" && input) {
+        applyWorkflowResult(run, evidenceRoles(input), text, message.isError)
+      }
+      calls.delete(message.toolCallId)
+      pending?.tools.delete(message.toolCallId)
+      finishTurn()
+    }
+  }
+}
+
 export default function (pi: ExtensionAPI) {
   const harnessCommand = {
     description:
@@ -736,6 +822,16 @@ export default function (pi: ExtensionAPI) {
     handler: async (args: string, ctx: ExtensionCommandContext) => {
       if (!ctx.isIdle()) {
         ctx.ui.notify("Agent busy — try again when idle.", "warning")
+        return
+      }
+      if (args.trim() === "resume") {
+        const run = activeRun
+        if (run?.kind !== "harness" || run.phase !== "milestone" || run.attempts < 3) {
+          ctx.ui.notify("Resume requires an exhausted harness milestone; existing approvals are unchanged.", "warning")
+          return
+        }
+        setPhase(run, "implement")
+        pi.sendUserMessage("kind: harness-review-resume\nUser reopened the exhausted review cycle. Fix outstanding blockers, then run fresh verification and independent review. Prior failed reviews remain evidence; no milestone PASS or completion is implied.")
         return
       }
       const { goal, usedDefault } = bindHarnessGoal(args)
@@ -788,12 +884,28 @@ export default function (pi: ExtensionAPI) {
     },
   })
 
+  pi.on("session_start", (event, ctx) => {
+    restoreHarness(ctx.sessionManager.getBranch())
+    if (event.reason === "reload" && activeRun && ["implement", "verify", "milestone", "pr"].includes(activeRun.phase)) {
+      pi.sendUserMessage([
+        "kind: harness-resumed",
+        `phase: ${activeRun.phase}`,
+        `allowed: ${allowedNext(activeRun)}`,
+        activeRun.goal,
+        "Continue the already-approved bd tasks with workflow background:false. Preserve existing work and approvals. No new go is needed.",
+      ].join("\n"), { deliverAs: "followUp" })
+    }
+  })
+  pi.on("session_tree", (_event, ctx) => {
+    restoreHarness(ctx.sessionManager.getBranch())
+  })
+
   pi.on("session_shutdown", () => {
     activeRun = null
   })
   pi.on("input", (event) => {
     const run = activeRun
-    if (!run || run.kind !== "harness") return
+    if (run?.kind !== "harness") return
     const next = HUMAN_GATE_NEXT[run.phase]
     if (!next) return
     const e = event as { text?: string; source?: string }
@@ -802,9 +914,7 @@ export default function (pi: ExtensionAPI) {
     setPhase(run, next)
     return {
       action: "transform",
-      text: next === "plan"
-        ? "User approved the spec. Start Plan then BiteSize now. Do not ask the user until plan-confirm after BiteSize reviewer ok."
-        : "User approved the plan. Start Implement now. Do not ask the user again. Build until the bound goal has evidence.",
+      text: HUMAN_GATE_MESSAGES[next],
     }
   })
   pi.on("turn_end", (event) => {
@@ -877,6 +987,7 @@ export default function (pi: ExtensionAPI) {
     }
     if (e.toolName !== "workflow") return
     applyWorkflowResult(run, evidenceRoles(e.input ?? {}), assistantText({ content: e.content }), e.isError === true)
+    if (run.kind === "harness") pi.appendEntry("harness-state", activeRun ? { ...activeRun } : null)
   })
   pi.on("tool_call", (event) => {
     const run = activeRun

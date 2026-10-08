@@ -1,6 +1,6 @@
 ---
 name: spec-writer
-model: openai-codex/gpt-5.6-sol:xhigh
+model: openai-codex/gpt-6.1-sol:xhigh
 route: writer
 description: Brainstorm and write design/spec from goal + research. Producer for Spec gate.
 tools: [bash, read, web_search]

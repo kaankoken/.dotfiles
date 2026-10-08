@@ -1,6 +1,6 @@
 ---
 name: bite-size-writer
-model: openai-codex/gpt-5.6-sol:xhigh
+model: openai-codex/gpt-6.1-sol:xhigh
 route: writer
 description: Split plan tasks until each is implementable in one focused worktree pass.
 tools: [bash, read]

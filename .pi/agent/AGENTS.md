@@ -19,6 +19,7 @@ Upstream **Pi** host (`pi` / [pi.dev](https://pi.dev)).
 6. Prefer **`/harness`** for multi-step build/fix work.
 7. **Methodology = Bigpowers** (ADR-0001). Never path-load `~/.agents/skills/superpowers/**`.
 8. **bd is task SoT** (ADR-0002). Optional `specs/` only via `skills/adapters/bp-bd-bridge`.
+9. **Worktrees stay inside the repo.** Create all new Git worktrees under `<project-root>/.worktrees/<name>/`, using the primary checkout root even when working from a linked worktree. Never use sibling directories, `/tmp`, or global worktree folders. Ensure `.worktrees/` is Git-ignored before creation. Apply this rule to delegated agents and workflows too; do not use tooling that creates worktrees elsewhere. Do not relocate existing worktrees unless explicitly requested.
 
 ## Methodology and checks
 
@@ -40,33 +41,36 @@ ADR-0001 and ADR-0002 are policy references; their original documents are not in
 | Package | Role |
 |---------|------|
 | `pi-hashline-edit-pro` | anchored read/edit tools |
-| `git:github.com/kaankoken/pi-dynamic-workflows` | parallel agents, workflows, exact `/code-review`; pinned fork with `thinking:` frontmatter |
+| `/Users/legolas/Projects/pi-dynamic-workflows` | local branch `feat/upstream-hashline`; upstream 3.13.1 + Hashline subagents; build with `npm run build` |
 | `npm:bigpowers` | methodology; cold skills/prompts disabled |
 | `npm:context-mode` | indexed context tools and hooks |
-| `npm:pi-mcp-adapter` | MCP gateway |
+| Pi built-in MCP + codemode | deferred server tools; `mcp.json` is SoT |
 | `npm:pi-cursor-sdk` | Cursor bridge; unpinned |
+| `npm:pi-goal-x` | sole `/goal` owner; old goal data left untouched |
+| `npm:pi-background-tasks` | managed parent jobs; opted-in process tools for workflow children |
 | `extensions/rtk.ts` | RTK/bash rewrites |
 | `extensions/goal-harness.ts` | `/harness`, `/design`, `/architect`, `/architect-layered`, `/init` |
 | `extensions/pr-reviewer.ts` | local freeze PR review |
 | `extensions/typesafe.ts` | TypeSafe Jev `typesafe_judge` + `/typesafe` key |
 
-**Not enabled:** `pi-background-tasks`, `smart-approve`. Do not promise `/bg`, `/jobs`, `/logs`, `/fusion`, or an approval gate. Worktrees and tool allowlists are not security sandboxes. Ask before destructive operations or external publishing.
+**Enabled:** `pi-background-tasks` for parent shell jobs and explicit delegation/Fusion. Workflow implementer/verify roles get process tools only; recursive delegate/Fusion tools are denied. **Not enabled:** `smart-approve`; do not promise an approval gate. Worktrees and tool allowlists are not security sandboxes. Ask before destructive operations or external publishing.
 
 ## Agents and routing
 
 `~/.pi/agent/agents/*.md` are loaded by dynamic-workflows as `agentType`. Policy: `~/.pi/agent/policy/REVIEW-POLICY.md`.
 
-Default parent and flow controllers (`/harness`, `/design`, `/architect`, `/architect-layered`) prefer `openai-codex/gpt-6-astra:xhigh`. `research-orchestrator` uses the same pin. Shared `harness-research` chain keeps Grok → Terra availability/auth fallbacks, with warnings. Specialist role pins and tiers are unchanged.
+Default parent and flow controllers (`/harness`, `/design`, `/architect`, `/architect-layered`) prefer `openai-codex/gpt-6-astra:medium`. `research-orchestrator` uses the same pin. Shared `harness-research` chain keeps Grok → Terra availability/auth fallbacks, with warnings. Specialist role pins and tiers are unchanged.
 
 | PR review agentType | Model | Role |
 |---------------------|-------|------|
-| `pr-grok-reviewer` | `xai/grok-4.6:xhigh` | initial + rebuttal |
-| `pr-sol-reviewer` | `openai-codex/gpt-5.6-sol:xhigh` | initial + rebuttal |
+| `pr-grok-reviewer` | `xai/grok-4.7:xhigh` | initial + rebuttal |
+| `pr-sol-reviewer` | `openai-codex/gpt-6.1-sol:xhigh` | initial + rebuttal |
 | `pr-opus-reviewer` | `cursor/claude-opus-5@1m`, `thinking: max` | initial + rebuttal |
 | `pr-terra-judge` | `cursor/claude-opus-5@1m`, `thinking: max` | sole adjudication |
 
 Agent `route:` names a chain in `workflows/model-routes.json`; it is **not** a DW field. DW binds `name`, `model`, `thinking`, `tools`, `isolation`, and body. Callers must explicitly apply failover; a role file alone does not implement it.
 
+Workflow settings SoT: `agent/workflows/settings.json`; `~/.pi/workflows/settings.json` links there. Concurrency defaults to 8. Parent workflows fan out scouts then synthesize; independent claimed bites may run in parallel with disjoint ownership. Dependent work and quality gates stay ordered.
 Tiers: `~/.pi/workflows/model-tiers.json` → `../agent/workflows/model-tiers.json`. Tier labels are routing choices, not cost guarantees. Named role model pins override tiers; explicit workflow `model` overrides both.
 
 ## Commands
@@ -81,7 +85,7 @@ Tiers: `~/.pi/workflows/model-tiers.json` → `../agent/workflows/model-tiers.js
 | `/pr-review` | immutable local freeze, Grok/Sol/Opus review, Terra adjudication, single publish |
 | `/workflows …` | workflow management |
 
-One owner per command. No same-named prompt templates. `/harness` is a process controller, not the separate `pi-goal` completion-tool contract.
+One owner per command. No same-named prompt templates. `pi-goal-x` owns `/goal` and `/sisyphus`; the old `@narumitw/pi-goal` is disabled. `/harness` retains spec/plan gates and bd task ownership; it is not a second autonomous goal loop. Do not run both controllers for the same work.
 
 ## Skills and MCP
 
@@ -90,5 +94,5 @@ Local cold skills: `gh-stack`, `graphify`. Architect/design/harness/stack/adapte
 - Bigpowers: package path above.
 - Ponytail: `~/.pi/agent/npm/node_modules/@dietrichgebert/ponytail/skills/<name>/SKILL.md`.
 - Caveman: `npm:pi-caveman` extension, not a skill file.
-- MCP config currently declares Tokensave (keep-alive) and Atlassian. Context-mode is an extension; Headroom and Context7 are not configured here.
+- Native `agent/mcp.json`: Tokensave + Atlassian. Trusted dotfiles `.pi/mcp.json`: Parallel Search, Context7, GitHub, Chrome DevTools. All use codemode exposure. Context-mode remains an extension.
 - Auth: `~/.pi/agent/auth.json`; use `/login`, never print credentials.

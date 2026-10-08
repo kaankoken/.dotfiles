@@ -1,6 +1,6 @@
 ---
 name: pr-grok-reviewer
-model: xai/grok-4.6:xhigh
+model: xai/grok-4.7:xhigh
 route: scout
 description: Grok PR reviewer against a local freeze bundle (initial + rebuttal).
 tools: [read, find, ls]

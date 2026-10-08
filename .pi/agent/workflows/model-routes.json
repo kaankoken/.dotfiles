@@ -6,53 +6,52 @@
     "cursor": ["cursor"]
   },
   "cursorModelIds": {
-    "gpt-5.6-sol": "gpt-5.6-sol@1m",
     "gpt-5.6-terra": "gpt-5.6-terra@1m",
     "claude-opus-5": "claude-opus-5@1m",
     "fable-5": "claude-fable-5@1m",
     "claude-fable-5": "claude-fable-5@1m",
     "composer-2.5-fast": "composer-2.5:fast",
     "composer-2.5": "composer-2.5:fast",
-    "grok-4.6": "grok-4.6"
+    "grok-4.7": "grok-4.7@500k"
   },
-  "composerThen": { "provider": "xai", "modelId": "grok-4.6", "effort": "xhigh" },
+  "composerThen": { "provider": "xai", "modelId": "grok-4.7", "effort": "xhigh" },
   "chains": {
     "writer": [
-      { "provider": "openai-codex", "modelId": "gpt-5.6-sol", "effort": "xhigh" },
+      { "provider": "openai-codex", "modelId": "gpt-6.1-sol", "effort": "xhigh" },
       { "provider": "cursor", "modelId": "claude-opus-5@1m", "effort": "xhigh" },
-      { "provider": "xai", "modelId": "grok-4.6", "effort": "xhigh" },
+      { "provider": "xai", "modelId": "grok-4.7", "effort": "xhigh" },
       { "provider": "cursor", "modelId": "composer-2.5:fast", "effort": "high" }
     ],
     "plan-writer": [
-      { "provider": "openai-codex", "modelId": "gpt-5.6-sol", "effort": "max" },
+      { "provider": "openai-codex", "modelId": "gpt-6.1-sol", "effort": "max" },
       { "provider": "cursor", "modelId": "claude-opus-5@1m", "effort": "max" },
-      { "provider": "openai-codex", "modelId": "gpt-5.6-sol", "effort": "xhigh" },
+      { "provider": "openai-codex", "modelId": "gpt-6.1-sol", "effort": "xhigh" },
       { "provider": "cursor", "modelId": "claude-opus-5@1m", "effort": "xhigh" }
     ],
     "implementer": [
-      { "provider": "xai", "modelId": "grok-4.6", "effort": "xhigh" },
+      { "provider": "xai", "modelId": "grok-4.7", "effort": "xhigh" },
       { "provider": "cursor", "modelId": "composer-2.5:fast", "effort": "high" }
     ],
     "reviewer": [
       { "provider": "cursor", "modelId": "claude-opus-5@1m", "effort": "max" },
-      { "provider": "openai-codex", "modelId": "gpt-5.6-sol", "effort": "max" },
-      { "provider": "openai-codex", "modelId": "gpt-5.6-sol", "effort": "xhigh" }
+      { "provider": "openai-codex", "modelId": "gpt-6.1-sol", "effort": "max" },
+      { "provider": "openai-codex", "modelId": "gpt-6.1-sol", "effort": "xhigh" }
     ],
     "judge": [
       { "provider": "cursor", "modelId": "claude-opus-5@1m", "effort": "max" },
-      { "provider": "openai-codex", "modelId": "gpt-5.6-sol", "effort": "xhigh" }
+      { "provider": "openai-codex", "modelId": "gpt-6.1-sol", "effort": "xhigh" }
     ],
     "milestone": [
       { "provider": "openai-codex", "modelId": "gpt-5.6-terra", "effort": "max" },
-      { "provider": "xai", "modelId": "grok-4.6", "effort": "xhigh" }
+      { "provider": "xai", "modelId": "grok-4.7", "effort": "xhigh" }
     ],
     "scout": [
-      { "provider": "xai", "modelId": "grok-4.6", "effort": "xhigh" },
+      { "provider": "xai", "modelId": "grok-4.7", "effort": "xhigh" },
       { "provider": "openai-codex", "modelId": "gpt-5.6-terra", "effort": "max" }
     ],
     "harness-research": [
-      { "provider": "openai-codex", "modelId": "gpt-6-astra", "effort": "xhigh" },
-      { "provider": "xai", "modelId": "grok-4.6", "effort": "xhigh" },
+      { "provider": "openai-codex", "modelId": "gpt-6-astra", "effort": "medium" },
+      { "provider": "xai", "modelId": "grok-4.7", "effort": "xhigh" },
       { "provider": "openai-codex", "modelId": "gpt-5.6-terra", "effort": "max" }
     ]
   }

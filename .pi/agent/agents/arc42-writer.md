@@ -1,6 +1,6 @@
 ---
 name: arc42-writer
-model: openai-codex/gpt-5.6-sol:xhigh
+model: openai-codex/gpt-6.1-sol:xhigh
 route: writer
 description: Produce Arc42 architecture sections + diagram sources for /design.
 tools: [bash, read, web_search]

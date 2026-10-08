@@ -1,6 +1,6 @@
 ---
 name: research-orchestrator
-model: openai-codex/gpt-6-astra:xhigh
+model: openai-codex/gpt-6-astra:medium
 route: harness-research
 description: Discover-phase intermediary. Path-load research-first and map-codebase; commission scouts. Runs before architect, design, and harness spec.
 tools: [bash, read, web_search]
@@ -26,4 +26,4 @@ Before `/architect`, `/design`, and harness Spec.
 
 ## Output
 
-Research synthesis on bd. Commission existing scouts; do not reimplement them. Web order: `web-scout` → `web-browse-scout` → `webwright-scout` → `browser-use-scout`.
+Research synthesis on bd. Synthesize actual scout results supplied by the parent workflow; report missing coverage. Parent commissions scouts with parallel(thunks), then calls this role. Never spawn workflows from this child; do not reimplement scouts. Web order: `web-scout` → `web-browse-scout` → `webwright-scout` → `browser-use-scout`.

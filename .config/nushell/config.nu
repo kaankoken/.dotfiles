@@ -16,7 +16,3 @@ alias batl = ^bat --style=plain --paging=never
 # --- Integrations ---
 source ~/.local/share/atuin/init.nu
 source ~/.config/nushell/.zoxide.nu
-
-def --wrapped pi [...args: string] {
-  ^bun $"($env.HOME)/.bun/bin/pi" ...$args
-}

@@ -1,9 +1,11 @@
 import { describe, expect, test } from "bun:test"
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent"
+import type { ExtensionAPI, SessionEntry } from "@earendil-works/pi-coding-agent"
 import goalHarness, { needsAfterBiteGate, buildAfterBiteContinue, getActiveRun, isHumanApprove, looksStopped, bindHarnessGoal } from "../extensions/goal-harness.ts"
 import prReviewer, { buildPrReviewWorkflowScript } from "../extensions/pr-reviewer.ts"
 import { Script } from "node:vm"
-import { parseWorkflowScript } from "../git/github.com/kaankoken/pi-dynamic-workflows/src/workflow.ts"
+import { join } from "node:path"
+import { workflowRoot } from "./host-peers.ts"
+const { parseWorkflowScript } = await import(join(workflowRoot, "src/workflow.ts"))
 
 type RegisteredCommand = {
   name: string
@@ -35,14 +37,18 @@ function createFakePi(options: FakePiOptions = {}) {
   const userMessageOptions: unknown[] = []
   const notifications: Array<{ message: string; kind?: string }> = []
   const availableModels = options.models ?? [
-    { provider: "xai", id: "grok-4.6" },
-    { provider: "openai-codex", id: "gpt-5.6-sol" },
+    { provider: "xai", id: "grok-4.7" },
+    { provider: "openai-codex", id: "gpt-6.1-sol" },
   ]
   const selectedModels: FakeModel[] = []
   const thinkingLevels: string[] = []
-  const listeners: Array<{ event: string; handler: (event: unknown) => unknown }> = []
+  const listeners: Array<{ event: string; handler: (event: unknown, ctx?: unknown) => unknown }> = []
+  const checkpoints: unknown[] = []
 
   const pi = {
+    appendEntry(customType: string, data: unknown) {
+      checkpoints.push({ type: "custom", customType, data })
+    },
     registerCommand(
       name: string,
       options: { description?: string; handler: RegisteredCommand["handler"] },
@@ -67,7 +73,7 @@ function createFakePi(options: FakePiOptions = {}) {
     setThinkingLevel(level: string) {
       thinkingLevels.push(level)
     },
-    on(_event: string, handler: (event: unknown) => unknown) {
+    on(_event: string, handler: (event: unknown, ctx?: unknown) => unknown) {
       listeners.push({ event: _event, handler })
     },
   } as unknown as ExtensionAPI
@@ -99,6 +105,7 @@ function createFakePi(options: FakePiOptions = {}) {
     selectedModels,
     thinkingLevels,
     listeners,
+    checkpoints,
     ctx,
   }
 }
@@ -181,19 +188,41 @@ describe("local extension slash command registration", () => {
 })
 
 describe("goal-harness handler start messages", () => {
-  test("every flow controller selects Astra xhigh before starting", async () => {
+  test("explicit resume reopens only an exhausted milestone and survives reload", async () => {
+    const fake = createFakePi()
+    goalHarness(fake.pi)
+    const command = fake.commands.get("harness")
+    if (!command) throw new Error("Missing harness command")
+    await command.handler("preserve approved goal", fake.ctx)
+    const run = getActiveRun()
+    if (!run) throw new Error("Missing active run")
+    await command.handler("resume", fake.ctx)
+    expect(getActiveRun()).toBe(run)
+    expect(run.phase).toBe("research")
+    expect(fake.userMessages).toHaveLength(1)
+    run.phase = "milestone"
+    run.attempts = 3
+    await command.handler("resume", fake.ctx)
+    expect(getActiveRun()).toBe(run)
+    expect(run.phase).toBe("implement")
+    expect(run.attempts).toBe(0)
+    expect(run.goal).toContain("preserve approved goal")
+    expect(fake.userMessages.at(-1)).toContain("kind: harness-review-resume")
+  })
+
+  test("every flow controller selects Astra medium before starting", async () => {
     for (const name of ["harness", "goal-harness", "design", "architect", "architect-layered"]) {
       const astra = { provider: "openai-codex", id: "gpt-6-astra" }
-      const fake = createFakePi({ models: [astra, { provider: "xai", id: "grok-4.6" }] })
+      const fake = createFakePi({ models: [astra, { provider: "xai", id: "grok-4.7" }] })
       goalHarness(fake.pi)
       const command = fake.commands.get(name)
       if (!command) throw new Error(`Missing command ${name}`)
       await command.handler("controller test", fake.ctx)
       expect(fake.selectedModels).toEqual([astra])
-      expect(fake.thinkingLevels).toEqual(["xhigh"])
+      expect(fake.thinkingLevels).toEqual(["medium"])
       expect(fake.userMessages).toHaveLength(1)
       expect(fake.notifications).toContainEqual({
-        message: `/${name === "goal-harness" ? "harness" : name} controller: openai-codex/gpt-6-astra:xhigh`,
+        message: `/${name === "goal-harness" ? "harness" : name} controller: openai-codex/gpt-6-astra:medium`,
         kind: "info",
       })
     }
@@ -232,11 +261,11 @@ describe("goal-harness handler start messages", () => {
     await commands.get("harness")!.handler("", ctx)
 
     expect(notifications.some((n) => /default 8 quality/i.test(n.message))).toBe(true)
-    expect(selectedModels).toEqual([{ provider: "xai", id: "grok-4.6" }])
+    expect(selectedModels).toEqual([{ provider: "xai", id: "grok-4.7" }])
     expect(thinkingLevels).toEqual(["xhigh"])
     expect(
       notifications.some((notification) =>
-        notification.message.includes("/harness controller: xai/grok-4.6:xhigh"),
+        notification.message.includes("/harness controller: xai/grok-4.7:xhigh"),
       ),
     ).toBe(true)
     expect(userMessages).toHaveLength(1)
@@ -387,7 +416,7 @@ describe("goal-harness handler start messages", () => {
 
     expect(userMessages).toHaveLength(0)
     expect(notifications).toContainEqual({
-      message: expect.stringMatching(/^\/harness stopped: no authenticated controller model \(openai-codex\/gpt-6-astra:xhigh/),
+      message: expect.stringMatching(/^\/harness stopped: no authenticated controller model \(openai-codex\/gpt-6-astra:medium/),
       kind: "error",
     })
   })
@@ -854,6 +883,104 @@ describe("phase evidence, attempts, and bounded follow-ups", () => {
     expect(fake.userMessages.filter((m) => /^\/(harness|design)\b/.test(m.trim()))).toEqual([])
   }
 
+  test("reload restores recorded approvals and repairs a failed milestone without new prompts", async () => {
+    const fake = setup()
+    await startHarness(fake, "preserve approved goal")
+    const entries: SessionEntry[] = []
+    const append = (role: string, content: unknown, extra = {}) => {
+      entries.push({ type: "message", message: { role, content, ...extra } } as SessionEntry)
+    }
+    append("user", fake.userMessages[0])
+    for (const step of harnessPath) {
+      if (step.from === "milestone") break
+      if ("approve" in step) {
+        const result = approve(fake) as { text: string }
+        append("user", result.text)
+      } else {
+        const id = `call-${entries.length}`
+        append("assistant", [{ type: "toolCall", id, name: "workflow", arguments: { name: step.role } }])
+        append("toolResult", [{ type: "text", text: step.text }], { toolCallId: id, toolName: "workflow", isError: false })
+        fire(fake, step.role, step.text)
+      }
+    }
+    append("assistant", [{ type: "toolCall", id: "failed-milestone", name: "workflow", arguments: { name: "milestone-organizer" } }])
+    append("toolResult", [{ type: "text", text: FAIL }], { toolCallId: "failed-milestone", toolName: "workflow", isError: false })
+    const original = JSON.stringify(entries)
+    const shutdown = fake.listeners.find((l) => l.event === "session_shutdown")
+    if (!shutdown) throw new Error("Missing session_shutdown handler")
+    shutdown.handler({ reason: "reload" })
+    const reloaded = setup()
+    const restore = reloaded.listeners.find((l) => l.event === "session_start")
+    if (!restore) throw new Error("Missing session_start handler")
+    restore.handler({ reason: "reload" }, { sessionManager: { getBranch: () => entries } })
+    expect(getActiveRun()).toMatchObject({
+      kind: "harness", goal: bindHarnessGoal("preserve approved goal").goal, phase: "implement", attempts: 1,
+    })
+    expect(workflow(reloaded, { name: "implementer" })?.block).toBeFalsy()
+    expect(workflow(reloaded, { name: "pr-opener" })?.block).toBe(true)
+    expect(reloaded.userMessages).toHaveLength(1)
+    expect(reloaded.userMessages[0]).toContain("kind: harness-resumed")
+    expect(reloaded.userMessages[0]).toContain("allowed: implementer, kickoff-branch")
+    expect(reloaded.userMessageOptions[0]).toEqual({ deliverAs: "followUp" })
+    expect(JSON.stringify(entries)).toBe(original)
+
+    for (let round = 0; round < 2; round++) {
+      for (const [role, text] of [["implementer", evidence("resume-test", 0)], ["verify-gate", OK], ["milestone-organizer", FAIL]]) {
+        const id = `resume-${entries.length}`
+        append("assistant", [{ type: "toolCall", id, name: "workflow", arguments: { name: role } }])
+        append("toolResult", [{ type: "text", text }], { toolCallId: id, toolName: "workflow", isError: false })
+      }
+    }
+    restore.handler({ reason: "reload" }, { sessionManager: { getBranch: () => entries } })
+    expect(getActiveRun()).toMatchObject({ phase: "milestone", attempts: 3 })
+    const resumeCommand = reloaded.commands.get("harness")
+    if (!resumeCommand) throw new Error("Missing harness command")
+    await resumeCommand.handler("resume", reloaded.ctx)
+    append("user", reloaded.userMessages.at(-1))
+    restore.handler({ reason: "reload" }, { sessionManager: { getBranch: () => entries } })
+    expect(getActiveRun()).toMatchObject({ phase: "implement", attempts: 0 })
+    expect(workflow(reloaded, { name: "implementer" })?.block).toBeFalsy()
+    expect(workflow(reloaded, { name: "pr-opener" })?.block).toBe(true)
+
+    const approval = entries.findIndex((e) => e.type === "message" && e.message.role === "user" &&
+      String(e.message.content).startsWith("User approved the plan."))
+    expect(approval).toBeGreaterThan(0)
+    restore.handler({ reason: "reload" }, { sessionManager: { getBranch: () => entries.slice(0, approval) } })
+    expect(getActiveRun()?.phase).toBe("plan-confirm")
+    expect(workflow(reloaded, { name: "implementer" })?.block).toBe(true)
+    const unapproved = entries.slice(0, approval)
+    for (const role of ["user", "assistant"] as const) {
+      restore.handler({ reason: "reload" }, { sessionManager: { getBranch: () => [
+        ...unapproved, { type: "message", message: { role, content: "go" } },
+      ] } })
+      expect(getActiveRun()?.phase).toBe("plan-confirm")
+    }
+    const design = setup()
+    await design.commands.get("design")?.handler("different goal", design.ctx)
+    restore.handler({ reason: "reload" }, { sessionManager: { getBranch: () => [
+      ...entries, { type: "message", message: { role: "user", content: design.userMessages[0] } },
+    ] } })
+    expect(getActiveRun()).toBeNull()
+    restore.handler({ reason: "new" }, { sessionManager: { getBranch: () => [] } })
+    expect(getActiveRun()).toBeNull()
+  })
+
+  test("native codemode workflow checkpoints restore phases without nested tool results", async () => {
+    const fake = setup()
+    await startHarness(fake)
+    const start = { type: "message", message: { role: "user", content: fake.userMessages[0] } }
+    fire(fake, "research-orchestrator", '{"researchComplete":true}')
+    const checkpoint = fake.checkpoints.at(-1) as { data: Record<string, unknown> }
+    const reloaded = setup()
+    const restore = reloaded.listeners.find(listener => listener.event === "session_start")!
+    restore.handler({ reason: "new" }, { sessionManager: { getBranch: () => [start, checkpoint] } })
+    expect(getActiveRun()?.phase).toBe("spec")
+    restore.handler({ reason: "new" }, { sessionManager: { getBranch: () => [start,
+      { ...checkpoint, data: { ...checkpoint.data, attempts: -1 } },
+    ] } })
+    expect(getActiveRun()?.phase).toBe("research")
+  })
+
   test("failed workflow results never advance harness gates", async () => {
     const fake = setup()
     const cases = [
@@ -868,6 +995,29 @@ describe("phase evidence, attempts, and bounded follow-ups", () => {
       fire(fake, role, text, { isError: true })
       expect(getActiveRun()?.phase).toBe(phase)
     }
+  })
+
+  test("parallel implementation batches require every result; null and failed checks block advancement", async () => {
+    const fake = setup()
+    for (const implementations of [[], [null], [JSON.parse(evidence("a", 0)), null],
+      [JSON.parse(evidence("a", 0)), JSON.parse(evidence("b", 1))]]) {
+      await startHarness(fake)
+      advanceHarnessTo(fake, "implement")
+      fire(fake, "implementer", JSON.stringify({ implementations }))
+      expect(getActiveRun()?.phase).toBe("implement")
+    }
+    fire(fake, "implementer", JSON.stringify({ implementations: [
+      JSON.parse(evidence("a", 0)), JSON.parse(evidence("b", 0)),
+    ] }))
+    expect(getActiveRun()?.phase).toBe("verify")
+  })
+
+  test("harness requests parent fan-out and independent implementation batches", async () => {
+    const fake = setup()
+    await startHarness(fake)
+    expect(fake.userMessages[0]).toContain("Parent workflow fans independent scouts out with parallel(thunks)")
+    expect(fake.userMessages[0]).toContain("independent claimed bd bites with parallel(thunks)")
+    expect(fake.userMessages[0]).not.toContain("One task at a time")
   })
 
   test("harness walks research→pr from mixed tool_result JSON; kind: headers are not evidence", async () => {
@@ -1068,15 +1218,59 @@ describe("phase evidence, attempts, and bounded follow-ups", () => {
     expect(getActiveRun()?.phase).toBe("verify")
   })
 
-  test("verify-gate review ok:false stays in verify", async () => {
+  test("failed milestone returns to approved implementation and preserves its retry ceiling", async () => {
+    const fake = setup()
+    await startHarness(fake, "continue approved bites")
+    advanceHarnessTo(fake, "milestone")
+    const run = getActiveRun()
+    const messages = fake.userMessages.length
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      fire(fake, "milestone-organizer", FAIL)
+      expect(getActiveRun()).toBe(run)
+      expect(getActiveRun()?.attempts).toBe(attempt)
+      if (attempt === 3) break
+      expect(getActiveRun()?.phase).toBe("implement")
+      expect(workflow(fake, { name: "implementer" })?.block).toBeFalsy()
+      expect(workflow(fake, { name: "pr-opener" })?.block).toBe(true)
+      fire(fake, "implementer", evidence("dotfiles-x", 1))
+      expect(getActiveRun()?.phase).toBe("implement")
+      fire(fake, "implementer", evidence("dotfiles-x", 0))
+      expect(getActiveRun()?.phase).toBe("verify")
+      expect(getActiveRun()?.attempts).toBe(attempt)
+      fire(fake, "verify-gate", OK)
+      expect(getActiveRun()?.phase).toBe("milestone")
+      expect(getActiveRun()?.attempts).toBe(attempt)
+    }
+    expect(workflow(fake, { name: "implementer" })?.block).toBe(true)
+    fire(fake, "milestone-organizer", FAIL)
+    expect(getActiveRun()).toMatchObject({ phase: "milestone", attempts: 3 })
+    expect(getActiveRun()?.goal).toBe(bindHarnessGoal("continue approved bites").goal)
+    expect(fake.userMessages).toHaveLength(messages)
+  })
+
+  test("passed partial milestone starts next approved bite with a fresh review budget", async () => {
+    const fake = setup()
+    await startHarness(fake)
+    advanceHarnessTo(fake, "milestone")
+    fire(fake, "milestone-organizer", FAIL)
+    expect(getActiveRun()?.phase).toBe("implement")
+    fire(fake, "implementer", evidence("dotfiles-x", 0))
+    fire(fake, "verify-gate", OK)
+    fire(fake, "milestone-organizer", `${OK}\n{"goalComplete":false}`)
+    expect(getActiveRun()).toMatchObject({ phase: "implement", attempts: 0, injects: 0 })
+    expect(workflow(fake, { name: "implementer" })?.block).toBeFalsy()
+    expect(workflow(fake, { name: "pr-opener" })?.block).toBe(true)
+  })
+
+  test("verify-gate review ok:false returns to implementation for repair", async () => {
     const fake = setup()
     await startHarness(fake)
     advanceHarnessTo(fake, "verify")
     fire(fake, "verify-gate", JSON.stringify({ ok: false, feedback: "nope", blocking: ["x"] }))
-    expect(getActiveRun()).toMatchObject({ phase: "verify", attempts: 0 })
+    expect(getActiveRun()).toMatchObject({ phase: "implement", attempts: 0 })
   })
 
-  test("verify mixed reviews: ok:true then ok:false stays in verify", async () => {
+  test("verify mixed reviews return to repair, never milestone", async () => {
     const fake = setup()
     await startHarness(fake)
     advanceHarnessTo(fake, "verify")
@@ -1088,7 +1282,7 @@ describe("phase evidence, attempts, and bounded follow-ups", () => {
       },
       content: [{ type: "text", text: `${OK}\n${FAIL}` }],
     })
-    expect(getActiveRun()?.phase).toBe("verify")
+    expect(getActiveRun()?.phase).toBe("implement")
   })
 
   test("verify-gate prose without review JSON stays in verify", async () => {
@@ -1148,14 +1342,14 @@ describe("phase evidence, attempts, and bounded follow-ups", () => {
     await startHarness(fake)
     advanceHarnessTo(fake, "milestone")
     fire(fake, "milestone-organizer", `${OK}\n${JSON.stringify({ goalComplete: false })}`)
-    expect(getActiveRun()).toMatchObject({ phase: "bitesize", attempts: 0 })
+    expect(getActiveRun()).toMatchObject({ phase: "implement", attempts: 0 })
     advanceHarnessTo(fake, "milestone")
     fire(
       fake,
       "milestone-organizer",
       JSON.stringify({ ok: true, feedback: "p", blocking: [], goalComplete: false }),
     )
-    expect(getActiveRun()).toMatchObject({ phase: "bitesize", attempts: 0 })
+    expect(getActiveRun()).toMatchObject({ phase: "implement", attempts: 0 })
   })
 
   test("injects cap at 3 per phase and reset on phase change; design/architect cannot inject forever", async () => {

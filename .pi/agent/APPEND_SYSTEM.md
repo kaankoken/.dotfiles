@@ -1,7 +1,8 @@
 Tool routing (mandatory):
 
 1. Symbols, callers, impact, "how does this function work":
-   mcp__tokensave → tokensave_context, then tokensave_search.
+   Native codemode → mcp__tokensave__tokensave_context, then mcp__tokensave__tokensave_search.
+   Discover MCP tools with searchTools() / describeTool(); read instructions with describeNamespace().
    Not repo-wide grep for symbol lookup.
    Verify returned paths and index freshness. If graph is stale, empty, or unrelated,
    report that limit and fall back to scoped `anchor_grep`/`read`; never treat unrelated hits as evidence.

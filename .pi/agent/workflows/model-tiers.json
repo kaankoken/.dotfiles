@@ -1,7 +1,7 @@
 {
   "tiers": {
-    "small": "xai/grok-4.6:xhigh",
+    "small": "xai/grok-4.7:xhigh",
     "medium": "cursor/claude-opus-5@1m:max",
-    "big": "openai-codex/gpt-5.6-sol:xhigh"
+    "big": "openai-codex/gpt-6.1-sol:xhigh"
   }
 }

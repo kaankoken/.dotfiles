@@ -1,6 +1,6 @@
 ---
 name: pr-sol-reviewer
-model: openai-codex/gpt-5.6-sol:xhigh
+model: openai-codex/gpt-6.1-sol:xhigh
 route: writer
 description: Sol PR reviewer against a local freeze bundle (initial + rebuttal).
 tools: [read, find, ls]

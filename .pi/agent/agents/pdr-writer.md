@@ -1,6 +1,6 @@
 ---
 name: pdr-writer
-model: openai-codex/gpt-5.6-sol:xhigh
+model: openai-codex/gpt-6.1-sol:xhigh
 route: writer
 description: Write a Product/Project Design Requirements doc for /design. Design only.
 tools: [bash, read, web_search]

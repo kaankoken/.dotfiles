@@ -6,13 +6,13 @@ const root = join(import.meta.dir, "..")
 const settings = JSON.parse(readFileSync(join(root, "settings.json"), "utf8"))
 
 
-test("default parent and harness controller use Astra xhigh", () => {
+test("default parent and harness controller use Astra medium", () => {
   expect(settings.defaultProvider).toBe("openai-codex")
   expect(settings.defaultModel).toBe("gpt-6-astra")
-  expect(settings.defaultThinkingLevel).toBe("xhigh")
+  expect(settings.defaultThinkingLevel).toBe("medium")
   const routes = JSON.parse(readFileSync(join(root, "workflows/model-routes.json"), "utf8"))
   expect(routes.chains["harness-research"][0]).toEqual({
-    provider: "openai-codex", modelId: "gpt-6-astra", effort: "xhigh",
+    provider: "openai-codex", modelId: "gpt-6-astra", effort: "medium",
   })
 })
 test("default test discovery stays inside owned tests, not installed packages", () => {
